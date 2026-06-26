@@ -4,11 +4,11 @@
     "name": "Caterpillar, Inc.",
     "sector": "Industrials",
     "date_added": "2026-06-26",
-    "buy_zone": "$1050～$1060",
+    "buy_zone": "$1050～$1065",
     "buy_zone_lower": 1050.0,
-    "buy_zone_upper": 1060.0,
+    "buy_zone_upper": 1065.0,
     "target": "$1160",
-    "stop_loss": "$950",
+    "stop_loss": "$1008",
     "hold_period": "1～4週",
     "strategy": "動能策略",
     "tracked_dates": [
@@ -27,7 +27,7 @@
     "buy_zone_lower": 225.0,
     "buy_zone_upper": 230.0,
     "target": "$250",
-    "stop_loss": "$192",
+    "stop_loss": "$207",
     "hold_period": "1～4週",
     "strategy": "動能策略",
     "tracked_dates": [
@@ -46,7 +46,7 @@
     "buy_zone_lower": 240.0,
     "buy_zone_upper": 245.0,
     "target": "$265",
-    "stop_loss": "$225",
+    "stop_loss": "$234",
     "hold_period": "1～4週",
     "strategy": "動能策略",
     "tracked_dates": [
@@ -84,8 +84,8 @@
     "buy_zone_lower": 465.0,
     "buy_zone_upper": 475.0,
     "target": "$520",
-    "stop_loss": "$440",
-    "hold_period": "1～2週",
+    "stop_loss": "$441",
+    "hold_period": "1～4週",
     "strategy": "動能策略",
     "tracked_dates": [
       "2026-06-26"
@@ -131,5 +131,24 @@
     "status": "active",
     "invalid_reason": null,
     "current_price": 118.21
+  },
+  {
+    "symbol": "SW",
+    "name": "Smurfit WestRock plc",
+    "sector": "Consumer Cyclical",
+    "date_added": "2026-06-26",
+    "buy_zone": "$46～$47",
+    "buy_zone_lower": 46.0,
+    "buy_zone_upper": 47.0,
+    "target": "$52",
+    "stop_loss": "$45",
+    "hold_period": "1～4週",
+    "strategy": "動能策略",
+    "tracked_dates": [
+      "2026-06-26"
+    ],
+    "status": "active",
+    "invalid_reason": null,
+    "current_price": 46.84
   }
 ]
