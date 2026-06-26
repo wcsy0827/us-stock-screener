@@ -112,5 +112,24 @@
     "status": "active",
     "invalid_reason": null,
     "current_price": 503.46
+  },
+  {
+    "symbol": "DLTR",
+    "name": "Dollar Tree, Inc.",
+    "sector": "Consumer Defensive",
+    "date_added": "2026-06-26",
+    "buy_zone": "$116～$119",
+    "buy_zone_lower": 116.0,
+    "buy_zone_upper": 119.0,
+    "target": "$130",
+    "stop_loss": "$111",
+    "hold_period": "1～4週",
+    "strategy": "動能策略",
+    "tracked_dates": [
+      "2026-06-26"
+    ],
+    "status": "active",
+    "invalid_reason": null,
+    "current_price": 118.21
   }
 ]

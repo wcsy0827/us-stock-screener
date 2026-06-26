@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>美股 AI 選股系統</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0f172a; --card: #1e293b; --border: #334155;
+  --text: #e2e8f0; --muted: #94a3b8; --subtle: #475569;
+  --active: #22c55e; --watch: #eab308; --invalid: #ef4444;
+  --expired: #6b7280; --new: #3b82f6; --reset: #a855f7;
+}
+body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 15px; line-height: 1.6; }
+a { color: var(--new); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.container { max-width: 860px; margin: 0 auto; padding: 28px 16px 48px; }
+
+/* Header */
+.page-header { margin-bottom: 28px; }
+.page-header h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 4px; }
+.page-header .date-line { font-size: 1rem; color: var(--muted); margin-bottom: 12px; }
+.scan-bar { background: var(--card); border-radius: 8px; padding: 10px 14px; font-size: 0.85rem; color: var(--muted); border-left: 3px solid var(--new); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.scan-bar .arrow { color: var(--border); }
+.scan-bar strong { color: var(--text); }
+.back-link { display: inline-flex; align-items: center; gap: 4px; margin-top: 12px; font-size: 0.85rem; color: var(--muted); }
+.back-link:hover { color: var(--new); text-decoration: none; }
+
+/* Section */
+.section { margin-bottom: 24px; }
+.section-title { font-size: 0.9rem; font-weight: 600; letter-spacing: 0.03em; padding-bottom: 8px; border-bottom: 1px solid var(--border); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+.section-count { font-weight: 400; color: var(--muted); font-size: 0.82rem; margin-left: 2px; }
+
+/* Tracking rows */
+.track-item { background: var(--card); border-radius: 8px; padding: 11px 14px; margin-bottom: 7px; border-left: 3px solid var(--expired); display: grid; gap: 2px; }
+.track-item.active  { border-left-color: var(--active); }
+.track-item.watch   { border-left-color: var(--watch); }
+.track-item.invalid { border-left-color: var(--invalid); }
+.track-item.expired { border-left-color: var(--expired); opacity: 0.6; }
+.track-header { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.track-symbol { font-weight: 700; font-size: 0.95rem; }
+.track-name { color: var(--muted); font-size: 0.85rem; }
+.strategy-tag { font-size: 0.72rem; padding: 1px 7px; border-radius: 4px; background: var(--border); color: var(--subtle); margin-left: auto; white-space: nowrap; }
+.track-status { font-size: 0.82rem; color: var(--muted); }
+.track-prices { font-size: 0.82rem; color: var(--text); margin-top: 2px; }
+.track-prices .cur-price { color: var(--text); font-weight: 600; }
+
+/* Stock cards */
+.stock-card { background: var(--card); border-radius: 10px; border: 1px solid var(--border); padding: 16px; margin-bottom: 12px; transition: border-color 0.15s; }
+.stock-card:hover { border-color: var(--new); }
+.stock-card.reset-card:hover { border-color: var(--reset); }
+.card-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+.card-rank { background: var(--border); color: var(--muted); border-radius: 50%; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+.card-title { flex: 1; }
+.card-symbol { font-size: 1.1rem; font-weight: 800; color: var(--new); }
+.reset-card .card-symbol { color: var(--reset); }
+.card-company { font-size: 0.88rem; color: var(--muted); }
+.card-price { text-align: right; }
+.card-price .price-val { font-size: 1rem; font-weight: 700; display: block; }
+.card-price .price-chg { font-size: 0.8rem; }
+.price-chg.up   { color: var(--active); }
+.price-chg.down { color: var(--invalid); }
+.price-chg.flat { color: var(--muted); }
+.card-badges { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 10px; }
+.badge { font-size: 0.73rem; padding: 2px 8px; border-radius: 4px; background: var(--border); color: var(--muted); }
+.reason-box { font-size: 0.875rem; line-height: 1.55; color: var(--text); padding: 10px 12px; background: #0f172a; border-radius: 7px; margin-bottom: 10px; }
+.trade-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px; margin-bottom: 10px; }
+.trade-cell { background: #0f172a; border-radius: 7px; padding: 8px 10px; }
+.trade-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-bottom: 2px; }
+.trade-val { font-size: 0.9rem; font-weight: 700; }
+.trade-val.buy  { color: var(--new); }
+.trade-val.tgt  { color: var(--active); }
+.trade-val.stop { color: var(--invalid); }
+.risk-box { font-size: 0.8rem; line-height: 1.5; color: #fcd34d; background: rgba(234,179,8,0.08); border-radius: 7px; padding: 8px 12px; border-left: 2px solid var(--watch); }
+
+/* Summary footer */
+.summary-box { background: var(--card); border-radius: 10px; padding: 16px 20px; margin-top: 12px; border-top: 3px solid var(--new); }
+.summary-box h2 { font-size: 0.9rem; margin-bottom: 12px; color: var(--muted); letter-spacing: 0.03em; }
+.stat-row { display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 8px; }
+.stat-row:last-child { margin-bottom: 0; }
+.stat-group { display: flex; align-items: baseline; gap: 6px; }
+.stat-num { font-size: 1.1rem; font-weight: 800; }
+.stat-num.c-active  { color: var(--active); }
+.stat-num.c-watch   { color: var(--watch); }
+.stat-num.c-invalid { color: var(--invalid); }
+.stat-num.c-new     { color: var(--new); }
+.stat-num.c-reset   { color: var(--reset); }
+.stat-num.c-removed { color: var(--expired); }
+.stat-lbl { font-size: 0.8rem; color: var(--muted); }
+
+/* Index page */
+.index-hero { text-align: center; padding: 32px 0 20px; }
+.index-hero h1 { font-size: 1.8rem; font-weight: 800; margin-bottom: 6px; }
+.index-hero p { color: var(--muted); font-size: 0.9rem; }
+.report-list { display: flex; flex-direction: column; gap: 8px; margin-top: 24px; }
+.report-entry { background: var(--card); border-radius: 9px; padding: 14px 18px; border: 1px solid var(--border); display: flex; align-items: center; gap: 16px; text-decoration: none; color: var(--text); transition: border-color 0.15s; }
+.report-entry:hover { border-color: var(--new); text-decoration: none; color: var(--text); }
+.report-date { font-weight: 700; font-size: 0.95rem; min-width: 130px; }
+.report-weekday { font-size: 0.8rem; color: var(--muted); margin-top: 1px; }
+.report-chips { display: flex; gap: 7px; flex-wrap: wrap; margin-left: auto; }
+.chip { font-size: 0.75rem; padding: 2px 9px; border-radius: 12px; font-weight: 600; }
+.chip.active  { background: rgba(34,197,94,0.15);  color: var(--active); }
+.chip.watch   { background: rgba(234,179,8,0.15);  color: var(--watch); }
+.chip.invalid { background: rgba(239,68,68,0.12);  color: var(--invalid); }
+.chip.new     { background: rgba(59,130,246,0.15); color: var(--new); }
+.chip.reset   { background: rgba(168,85,247,0.12); color: var(--reset); }
+.chip.neutral { background: var(--border); color: var(--muted); }
+.arrow-icon { color: var(--border); font-size: 1rem; }
+.empty-state { text-align: center; padding: 48px; color: var(--muted); }
+
+@media (max-width: 600px) {
+  .scan-bar { flex-direction: column; align-items: flex-start; gap: 2px; }
+  .card-header { flex-wrap: wrap; }
+  .card-price { text-align: left; }
+  .report-entry { flex-wrap: wrap; }
+  .report-chips { margin-left: 0; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="index-hero">
+    <h1>📈 美股 AI 選股系統</h1>
+    <p>每日選股報告 · 訊號追蹤 · S&amp;P 500</p>
+  </div>
+  <div class="report-list">
+    
+<a class="report-entry" href="reports/2026-06-26.html">
+  <div>
+    <div class="report-date">2026-06-26</div>
+    <div class="report-weekday">（五）</div>
+  </div>
+  <div class="report-chips"><span class="chip active">3 有效</span><span class="chip new">1 新增</span><span class="chip reset">4 重置</span></div>
+  <span class="arrow-icon">›</span>
+</a>
+  </div>
+</div>
+</body>
+</html>
