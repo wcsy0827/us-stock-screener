@@ -146,6 +146,13 @@ def run_tracker(new_ranked: list[dict]) -> tuple[list[dict], dict]:
         if "tracked_dates" not in entry:
             entry["tracked_dates"] = []
 
+    # 同一天重跑時，清除今天才新增的股票（讓新結果完整取代）
+    # 跨日追蹤中的舊股票（date_added != today）不受影響
+    is_rerun = any(today in e.get("tracked_dates", []) for e in watchlist)
+    if is_rerun:
+        watchlist = [e for e in watchlist if e.get("date_added") != today]
+        print(f"[tracker] 今日重複執行，已清除今日新增的股票，重新以新結果取代")
+
     existing = {e["symbol"]: e for e in watchlist}
     reset_symbols: set[str] = set()
     new_entries: list[dict] = []
