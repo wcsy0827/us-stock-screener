@@ -114,6 +114,7 @@ a:hover { text-decoration: underline; }
 .trade-val.tgt  { color: var(--active); }
 .trade-val.stop { color: var(--invalid); }
 .risk-box { font-size: 0.8rem; line-height: 1.5; color: #fcd34d; background: rgba(234,179,8,0.08); border-radius: 7px; padding: 8px 12px; border-left: 2px solid var(--watch); }
+.detail-box { font-size: 0.8rem; line-height: 1.5; color: #94a3b8; background: rgba(148,163,184,0.06); border-radius: 7px; padding: 8px 12px; border-left: 2px solid #475569; margin-top: 6px; }
 
 /* Summary footer */
 .summary-box { background: var(--card); border-radius: 10px; padding: 16px 20px; margin-top: 12px; border-top: 3px solid var(--new); }
@@ -215,6 +216,11 @@ def _stock_card(i: int, rec: dict, card_cls: str = "") -> str:
     sl = _esc(rec.get("stop_loss", "-"))
     hold = _esc(rec.get("hold_period", "-"))
     strategy = _esc(rec.get("strategy", "-"))
+    strategy_reason = _esc(rec.get("strategy_reason", ""))
+    confidence_reason = _esc(rec.get("confidence_reason", ""))
+
+    strategy_reason_html = f'<div class="detail-box">📋 策略依據：{strategy_reason}</div>' if strategy_reason else ""
+    confidence_reason_html = f'<div class="detail-box">💡 信心評分依據：{confidence_reason}</div>' if confidence_reason else ""
 
     return f"""
 <div class="stock-card {card_cls}">
@@ -236,6 +242,7 @@ def _stock_card(i: int, rec: dict, card_cls: str = "") -> str:
     <span class="badge">📋 {strategy}</span>
   </div>
   <div class="reason-box">🤖 {reason}</div>
+  {strategy_reason_html}
   <div class="trade-grid">
     <div class="trade-cell">
       <div class="trade-label">買入區間</div>
@@ -255,6 +262,7 @@ def _stock_card(i: int, rec: dict, card_cls: str = "") -> str:
     </div>
   </div>
   <div class="risk-box">⚠️ {risk}</div>
+  {confidence_reason_html}
 </div>"""
 
 

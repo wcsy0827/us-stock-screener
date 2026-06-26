@@ -73,6 +73,7 @@ a:hover { text-decoration: underline; }
 .trade-val.tgt  { color: var(--active); }
 .trade-val.stop { color: var(--invalid); }
 .risk-box { font-size: 0.8rem; line-height: 1.5; color: #fcd34d; background: rgba(234,179,8,0.08); border-radius: 7px; padding: 8px 12px; border-left: 2px solid var(--watch); }
+.detail-box { font-size: 0.8rem; line-height: 1.5; color: #94a3b8; background: rgba(148,163,184,0.06); border-radius: 7px; padding: 8px 12px; border-left: 2px solid #475569; margin-top: 6px; }
 
 /* Summary footer */
 .summary-box { background: var(--card); border-radius: 10px; padding: 16px 20px; margin-top: 12px; border-top: 3px solid var(--new); }
@@ -126,7 +127,7 @@ a:hover { text-decoration: underline; }
     <div class="scan-bar">
       掃描 <strong>S&amp;P500 503支</strong>
       <span class="arrow">→</span> L1 <strong>486支</strong>
-      <span class="arrow">→</span> L2 <strong>215支</strong>
+      <span class="arrow">→</span> L2 <strong>140支</strong>
       <span class="arrow">→</span> AI精選 <strong>5支</strong>
     </div>
     <a class="back-link" href="../index.html">← 返回首頁</a>
@@ -145,7 +146,7 @@ a:hover { text-decoration: underline; }
     <span class="strategy-tag">動能策略</span>
   </div>
   <div class="track-status">第 1 天 ── 已落入買入區間 ✅</div>
-  <div class="track-prices"><span class="cur-price">$1057.01</span>｜買入區間 $1050～$1060｜目標 $1160｜止損 $950</div>
+  <div class="track-prices"><span class="cur-price">$1057.01</span>｜買入區間 $1050～$1060｜目標 $1160｜止損 $948</div>
 </div>
 
 <div class="track-item active">
@@ -160,32 +161,32 @@ a:hover { text-decoration: underline; }
 
 <div class="track-item active">
   <div class="track-header">
+    <span class="track-symbol">TER</span>
+    <span class="track-name">Teradyne, Inc.</span>
+    <span class="strategy-tag">動能策略</span>
+  </div>
+  <div class="track-status">第 1 天 ── 已落入買入區間 ✅</div>
+  <div class="track-prices"><span class="cur-price">$471.96</span>｜買入區間 $465～$475｜目標 $520｜止損 $408</div>
+</div>
+
+<div class="track-item active">
+  <div class="track-header">
     <span class="track-symbol">ABBV</span>
     <span class="track-name">AbbVie Inc.</span>
     <span class="strategy-tag">動能策略</span>
   </div>
   <div class="track-status">第 1 天 ── 已落入買入區間 ✅</div>
-  <div class="track-prices"><span class="cur-price">$243.14</span>｜買入區間 $240～$245｜目標 $265｜止損 $225</div>
+  <div class="track-prices"><span class="cur-price">$243.14</span>｜買入區間 $240～$244｜目標 $265｜止損 $225</div>
 </div>
 
 <div class="track-item active">
   <div class="track-header">
-    <span class="track-symbol">WST</span>
-    <span class="track-name">West Pharmaceutical Services, I</span>
+    <span class="track-symbol">MRK</span>
+    <span class="track-name">Merck &amp; Company, Inc.</span>
     <span class="strategy-tag">動能策略</span>
   </div>
   <div class="track-status">第 1 天 ── 已落入買入區間 ✅</div>
-  <div class="track-prices"><span class="cur-price">$346.56</span>｜買入區間 $343～$350｜目標 $380｜止損 $327</div>
-</div>
-
-<div class="track-item active">
-  <div class="track-header">
-    <span class="track-symbol">DLTR</span>
-    <span class="track-name">Dollar Tree, Inc.</span>
-    <span class="strategy-tag">動能策略</span>
-  </div>
-  <div class="track-status">第 1 天 ── 已落入買入區間 ✅</div>
-  <div class="track-prices"><span class="cur-price">$118.21</span>｜買入區間 $116～$119｜目標 $130｜止損 $111</div>
+  <div class="track-prices"><span class="cur-price">$125.45</span>｜買入區間 $124～$126｜目標 $138｜止損 $118</div>
 </div>
 </div>
 <div class="section">
@@ -211,7 +212,8 @@ a:hover { text-decoration: underline; }
     <span class="badge">🏭 Industrials</span>
     <span class="badge">📋 動能策略</span>
   </div>
-  <div class="reason-box">🤖 均線多頭排列，RSI 69.83 健康，MACD 向上，量能放大，工業 ETF 強勢，動能充足。</div>
+  <div class="reason-box">🤖 均線多頭排列，RSI 69.83 健康，MACD 正值，量能放大 1.53 倍，接近歷史高點，動能強勁。</div>
+  <div class="detail-box">📋 策略依據：均線多頭排列（EMA5&gt;EMA10&gt;EMA20&gt;EMA50），RSI=69.83，volume_ratio=1.53，符合動能策略條件。</div>
   <div class="trade-grid">
     <div class="trade-cell">
       <div class="trade-label">買入區間</div>
@@ -223,14 +225,15 @@ a:hover { text-decoration: underline; }
     </div>
     <div class="trade-cell">
       <div class="trade-label">止損</div>
-      <div class="trade-val stop">$950</div>
+      <div class="trade-val stop">$948</div>
     </div>
     <div class="trade-cell">
       <div class="trade-label">持有週期</div>
-      <div class="trade-val">1～4週</div>
+      <div class="trade-val">1～2週</div>
     </div>
   </div>
-  <div class="risk-box">⚠️ RSI 接近超買區，短線可能回調；大盤偏弱需注意系統性風險。</div>
+  <div class="risk-box">⚠️ RSI 接近 70，短線可能過熱；大盤偏弱，需注意回調風險。</div>
+  <div class="detail-box">💡 信心評分依據：技術面完美，量能放大，產業ETF XLI 強勢上漲，信心高。</div>
 </div>
 
 <div class="stock-card ">
@@ -251,7 +254,8 @@ a:hover { text-decoration: underline; }
     <span class="badge">🏭 Technology</span>
     <span class="badge">📋 動能策略</span>
   </div>
-  <div class="reason-box">🤖 均線多頭排列，RSI 64.68，MACD 向上，量能放大，科技股反彈動能強。</div>
+  <div class="reason-box">🤖 均線多頭排列，RSI 64.68 健康，MACD 向上，量能放大 1.82 倍，接近歷史高點。</div>
+  <div class="detail-box">📋 策略依據：均線多頭排列，RSI=64.68，volume_ratio=1.82，MACD 正值，動能強。</div>
   <div class="trade-grid">
     <div class="trade-cell">
       <div class="trade-label">買入區間</div>
@@ -267,15 +271,58 @@ a:hover { text-decoration: underline; }
     </div>
     <div class="trade-cell">
       <div class="trade-label">持有週期</div>
-      <div class="trade-val">1～4週</div>
+      <div class="trade-val">1～2週</div>
     </div>
   </div>
-  <div class="risk-box">⚠️ 科技 ETF 近 5 日下跌，個股可能受產業拖累；短線漲幅已大。</div>
+  <div class="risk-box">⚠️ 科技產業 ETF XLK 近5日下跌，可能壓制股價；短線漲幅較大。</div>
+  <div class="detail-box">💡 信心評分依據：技術面佳，量能充足，但產業偏弱，扣分。</div>
 </div>
 
 <div class="stock-card ">
   <div class="card-header">
     <div class="card-rank">3</div>
+    <div class="card-title">
+      <div class="card-symbol">TER</div>
+      <div class="card-company">Teradyne, Inc.</div>
+    </div>
+    <div class="card-price">
+      <span class="price-val">$471.96</span>
+      <span class="price-chg up">▲10.48%</span>
+    </div>
+  </div>
+  <div class="card-badges">
+    <span class="badge">📊 評分 100</span>
+    <span class="badge">信心 8/10</span>
+    <span class="badge">🏭 Technology</span>
+    <span class="badge">📋 動能策略</span>
+  </div>
+  <div class="reason-box">🤖 均線多頭排列，RSI 64.24，MACD 向上，量能放大 1.59 倍，接近歷史高點。</div>
+  <div class="detail-box">📋 策略依據：均線多頭排列，RSI=64.24，volume_ratio=1.59，MACD 正值，符合動能策略。</div>
+  <div class="trade-grid">
+    <div class="trade-cell">
+      <div class="trade-label">買入區間</div>
+      <div class="trade-val buy">$465～$475</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">目標價</div>
+      <div class="trade-val tgt">$520</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">止損</div>
+      <div class="trade-val stop">$408</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">持有週期</div>
+      <div class="trade-val">1～2週</div>
+    </div>
+  </div>
+  <div class="risk-box">⚠️ 科技產業 ETF XLK 近5日下跌，可能影響；短線漲幅較大。</div>
+  <div class="detail-box">💡 信心評分依據：技術面強勢，量能放大，但產業偏弱，信心略降。</div>
+</div>
+
+<div class="stock-card ">
+  <div class="card-header">
+    <div class="card-rank">4</div>
     <div class="card-title">
       <div class="card-symbol">ABBV</div>
       <div class="card-company">AbbVie Inc.</div>
@@ -291,11 +338,12 @@ a:hover { text-decoration: underline; }
     <span class="badge">🏭 Healthcare</span>
     <span class="badge">📋 動能策略</span>
   </div>
-  <div class="reason-box">🤖 均線多頭排列，RSI 71.15 健康，MACD 向上，量能放大，醫療 ETF 強勢。</div>
+  <div class="reason-box">🤖 均線多頭排列，RSI 71.15 健康，MACD 向上，量能放大 1.74 倍，接近歷史高點。</div>
+  <div class="detail-box">📋 策略依據：均線多頭排列，RSI=71.15，volume_ratio=1.74，MACD 正值，動能強。</div>
   <div class="trade-grid">
     <div class="trade-cell">
       <div class="trade-label">買入區間</div>
-      <div class="trade-val buy">$240～$245</div>
+      <div class="trade-val buy">$240～$244</div>
     </div>
     <div class="trade-cell">
       <div class="trade-label">目標價</div>
@@ -307,22 +355,23 @@ a:hover { text-decoration: underline; }
     </div>
     <div class="trade-cell">
       <div class="trade-label">持有週期</div>
-      <div class="trade-val">1～4週</div>
+      <div class="trade-val">1～2週</div>
     </div>
   </div>
-  <div class="risk-box">⚠️ RSI 偏高，短線可能震盪；股價接近歷史高點。</div>
+  <div class="risk-box">⚠️ RSI 略高，短線可能過熱；但醫療保健產業強勢，風險可控。</div>
+  <div class="detail-box">💡 信心評分依據：技術面佳，量能放大，產業ETF XLV 強勢上漲，加分。</div>
 </div>
 
 <div class="stock-card ">
   <div class="card-header">
-    <div class="card-rank">4</div>
+    <div class="card-rank">5</div>
     <div class="card-title">
-      <div class="card-symbol">WST</div>
-      <div class="card-company">West Pharmaceutical Services, I</div>
+      <div class="card-symbol">MRK</div>
+      <div class="card-company">Merck &amp; Company, Inc.</div>
     </div>
     <div class="card-price">
-      <span class="price-val">$346.56</span>
-      <span class="price-chg up">▲1.81%</span>
+      <span class="price-val">$125.45</span>
+      <span class="price-chg up">▲4.02%</span>
     </div>
   </div>
   <div class="card-badges">
@@ -331,66 +380,28 @@ a:hover { text-decoration: underline; }
     <span class="badge">🏭 Healthcare</span>
     <span class="badge">📋 動能策略</span>
   </div>
-  <div class="reason-box">🤖 均線多頭排列，RSI 71.11，MACD 向上，量能放大 2.15 倍，醫療 ETF 強勢。</div>
+  <div class="reason-box">🤖 均線多頭排列，RSI 67.15，MACD 向上，接近歷史高點，醫療保健產業強勢。</div>
+  <div class="detail-box">📋 策略依據：均線多頭排列，RSI=67.15，MACD 正值，符合動能策略。</div>
   <div class="trade-grid">
     <div class="trade-cell">
       <div class="trade-label">買入區間</div>
-      <div class="trade-val buy">$343～$350</div>
+      <div class="trade-val buy">$124～$126</div>
     </div>
     <div class="trade-cell">
       <div class="trade-label">目標價</div>
-      <div class="trade-val tgt">$380</div>
+      <div class="trade-val tgt">$138</div>
     </div>
     <div class="trade-cell">
       <div class="trade-label">止損</div>
-      <div class="trade-val stop">$327</div>
+      <div class="trade-val stop">$118</div>
     </div>
     <div class="trade-cell">
       <div class="trade-label">持有週期</div>
-      <div class="trade-val">1～4週</div>
+      <div class="trade-val">1～2週</div>
     </div>
   </div>
-  <div class="risk-box">⚠️ RSI 接近超買，短線回調風險；股價波動較大。</div>
-</div>
-
-<div class="stock-card ">
-  <div class="card-header">
-    <div class="card-rank">5</div>
-    <div class="card-title">
-      <div class="card-symbol">DLTR</div>
-      <div class="card-company">Dollar Tree, Inc.</div>
-    </div>
-    <div class="card-price">
-      <span class="price-val">$118.21</span>
-      <span class="price-chg down">▼0.96%</span>
-    </div>
-  </div>
-  <div class="card-badges">
-    <span class="badge">📊 評分 89</span>
-    <span class="badge">信心 7/10</span>
-    <span class="badge">🏭 Consumer Defensive</span>
-    <span class="badge">📋 動能策略</span>
-  </div>
-  <div class="reason-box">🤖 均線多頭排列，RSI 62.5 健康，MACD 向上，量能放大 2.12 倍，消費防禦 ETF 強勢。</div>
-  <div class="trade-grid">
-    <div class="trade-cell">
-      <div class="trade-label">買入區間</div>
-      <div class="trade-val buy">$116～$119</div>
-    </div>
-    <div class="trade-cell">
-      <div class="trade-label">目標價</div>
-      <div class="trade-val tgt">$130</div>
-    </div>
-    <div class="trade-cell">
-      <div class="trade-label">止損</div>
-      <div class="trade-val stop">$111</div>
-    </div>
-    <div class="trade-cell">
-      <div class="trade-label">持有週期</div>
-      <div class="trade-val">1～4週</div>
-    </div>
-  </div>
-  <div class="risk-box">⚠️ 消費防禦類股漲勢溫和，動能可能不如科技股。</div>
+  <div class="risk-box">⚠️ 量能未明顯放大，可能動能不足；但整體技術面穩健。</div>
+  <div class="detail-box">💡 信心評分依據：技術面良好，產業強勢，但量能普通，信心略降。</div>
 </div>
 </div>
 

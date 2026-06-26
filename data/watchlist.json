@@ -8,8 +8,8 @@
     "buy_zone_lower": 1050.0,
     "buy_zone_upper": 1060.0,
     "target": "$1160",
-    "stop_loss": "$950",
-    "hold_period": "1～4週",
+    "stop_loss": "$948",
+    "hold_period": "1～2週",
     "strategy": "動能策略",
     "tracked_dates": [
       "2026-06-26"
@@ -28,7 +28,7 @@
     "buy_zone_upper": 230.0,
     "target": "$250",
     "stop_loss": "$192",
-    "hold_period": "1～4週",
+    "hold_period": "1～2週",
     "strategy": "動能策略",
     "tracked_dates": [
       "2026-06-26"
@@ -38,16 +38,35 @@
     "current_price": 228.01
   },
   {
+    "symbol": "TER",
+    "name": "Teradyne, Inc.",
+    "sector": "Technology",
+    "date_added": "2026-06-26",
+    "buy_zone": "$465～$475",
+    "buy_zone_lower": 465.0,
+    "buy_zone_upper": 475.0,
+    "target": "$520",
+    "stop_loss": "$408",
+    "hold_period": "1～2週",
+    "strategy": "動能策略",
+    "tracked_dates": [
+      "2026-06-26"
+    ],
+    "status": "active",
+    "invalid_reason": null,
+    "current_price": 471.96
+  },
+  {
     "symbol": "ABBV",
     "name": "AbbVie Inc.",
     "sector": "Healthcare",
     "date_added": "2026-06-26",
-    "buy_zone": "$240～$245",
+    "buy_zone": "$240～$244",
     "buy_zone_lower": 240.0,
-    "buy_zone_upper": 245.0,
+    "buy_zone_upper": 244.0,
     "target": "$265",
     "stop_loss": "$225",
-    "hold_period": "1～4週",
+    "hold_period": "1～2週",
     "strategy": "動能策略",
     "tracked_dates": [
       "2026-06-26"
@@ -57,41 +76,22 @@
     "current_price": 243.14
   },
   {
-    "symbol": "WST",
-    "name": "West Pharmaceutical Services, I",
+    "symbol": "MRK",
+    "name": "Merck & Company, Inc.",
     "sector": "Healthcare",
     "date_added": "2026-06-26",
-    "buy_zone": "$343～$350",
-    "buy_zone_lower": 343.0,
-    "buy_zone_upper": 350.0,
-    "target": "$380",
-    "stop_loss": "$327",
-    "hold_period": "1～4週",
+    "buy_zone": "$124～$126",
+    "buy_zone_lower": 124.0,
+    "buy_zone_upper": 126.0,
+    "target": "$138",
+    "stop_loss": "$118",
+    "hold_period": "1～2週",
     "strategy": "動能策略",
     "tracked_dates": [
       "2026-06-26"
     ],
     "status": "active",
     "invalid_reason": null,
-    "current_price": 346.56
-  },
-  {
-    "symbol": "DLTR",
-    "name": "Dollar Tree, Inc.",
-    "sector": "Consumer Defensive",
-    "date_added": "2026-06-26",
-    "buy_zone": "$116～$119",
-    "buy_zone_lower": 116.0,
-    "buy_zone_upper": 119.0,
-    "target": "$130",
-    "stop_loss": "$111",
-    "hold_period": "1～4週",
-    "strategy": "動能策略",
-    "tracked_dates": [
-      "2026-06-26"
-    ],
-    "status": "active",
-    "invalid_reason": null,
-    "current_price": 118.21
+    "current_price": 125.45
   }
 ]

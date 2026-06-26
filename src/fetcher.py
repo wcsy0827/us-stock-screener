@@ -178,6 +178,8 @@ def fetch_info(symbols: list[str]) -> dict[str, dict]:
                     "market_cap": info.get("marketCap") or info.get("market_cap"),
                     "sector": info.get("sector", "Unknown"),
                     "name": info.get("shortName") or info.get("longName") or sym,
+                    "fifty_two_week_high": info.get("fiftyTwoWeekHigh"),
+                    "fifty_two_week_low":  info.get("fiftyTwoWeekLow"),
                 }
                 break
             except Exception as e:
