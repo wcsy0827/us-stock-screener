@@ -48,6 +48,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="忽略快取，強制重新下載所有數據",
     )
+    parser.add_argument(
+        "--yes",
+        action="store_true",
+        help="跳過今日重複執行確認（CI 環境用）",
+    )
     return parser.parse_args()
 
 
@@ -60,7 +65,7 @@ if __name__ == "__main__":
     print(f"  最低評分：{args.min_score}　輸出數量：Top {args.top}")
     print("=" * 60)
 
-    if check_already_run_today():
+    if check_already_run_today() and not args.yes:
         print(f"\n⚠️  今日已執行過選股，再次執行不會增加追蹤天數。")
         try:
             confirm = input("是否繼續？(y/N) ").strip().lower()
