@@ -82,7 +82,7 @@ a:hover { text-decoration: underline; }
 .track-header { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .track-symbol { font-weight: 700; font-size: 0.95rem; }
 .track-name { color: var(--muted); font-size: 0.85rem; }
-.strategy-tag { font-size: 0.72rem; padding: 1px 7px; border-radius: 4px; background: var(--border); color: var(--subtle); margin-left: auto; white-space: nowrap; }
+.strategy-tag { font-size: 0.72rem; padding: 1px 7px; border-radius: 4px; background: var(--border); color: var(--text); margin-left: auto; white-space: nowrap; }
 .track-status { font-size: 0.82rem; color: var(--muted); }
 .track-prices { font-size: 0.82rem; color: var(--text); margin-top: 2px; }
 .track-prices .cur-price { color: var(--text); font-weight: 600; }
