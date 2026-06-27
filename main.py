@@ -96,4 +96,5 @@ if __name__ == "__main__":
         "ai_count": len(ranked),
         "date":     datetime.now(),
     }
-    publish(categories, stats, dry_run=args.dry_run)
+    market_context = summary.get("market_context", {})
+    publish(categories, stats, dry_run=args.dry_run, market_context=market_context)

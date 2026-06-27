@@ -105,12 +105,28 @@ def compute_indicators(sym: str, df: pd.DataFrame) -> dict:
 
 # ── Prompt 建構 ──────────────────────────────────────────────────
 
+def _format_regime_hint(market_context: dict) -> str:
+    """將市場 Regime 指令格式化為顯眼的高優先級區塊。"""
+    hint = market_context.get("ai_prompt_hint", "")
+    primary = market_context.get("primary_strategy", "")
+    if not hint:
+        return ""
+    constraint = (
+        f"今天只能將最高信心分數賦予符合【{primary}】的個股，"
+        f"其他策略的個股除非極度完美否則不予錄取。"
+    ) if primary else ""
+    return f"\n【⚡ 今日大盤指令 — 最高優先級，必須嚴格遵守】\n{hint}\n{constraint}\n"
+
+
 def _format_market_context(market_context: dict) -> str:
-    """將 market_context 格式化為易讀的 JSON 字串附加在 prompt 中。"""
+    """將 market_context 的統計數據格式化為 JSON 字串（排除已獨立顯示的 Regime 欄位）。"""
     if not market_context:
         return ""
-    import json
-    return "\n【市場背景數據】\n" + json.dumps(market_context, ensure_ascii=False, indent=2)
+    _REGIME_KEYS = {"regime", "primary_strategy", "ai_prompt_hint", "market_breadth_pct"}
+    filtered = {k: v for k, v in market_context.items() if k not in _REGIME_KEYS}
+    if not filtered:
+        return ""
+    return "\n【市場背景數據】\n" + json.dumps(filtered, ensure_ascii=False, indent=2)
 
 
 def _build_prompt(
@@ -169,8 +185,9 @@ def _build_prompt(
         })
 
     candidate_json = json.dumps(rows, ensure_ascii=False, indent=2)
+    regime_hint = _format_regime_hint(market_context or {})
     market_section = _format_market_context(market_context or {})
-    return f"{market_section}\n\n【候選股數據】\n{candidate_json}"
+    return f"{regime_hint}{market_section}\n\n【候選股數據】\n{candidate_json}"
 
 
 SYSTEM_PROMPT = """你是一位經驗豐富的美股量化分析師，擅長技術面與動能選股。
@@ -348,6 +365,12 @@ def rank_candidates(
         return _enrich_fallback(candidates[:top_n], info_data, price_data)
 
     market_context = market_context or {}
+
+    # BEAR_DISTRIBUTION 防禦機制：直接回傳空列表，不呼叫 AI，不 fallback
+    regime = market_context.get("regime", "")
+    if regime == "BEAR_DISTRIBUTION":
+        print("[ranker] 大盤進入【陰跌熊市 BEAR_DISTRIBUTION】，系統全面防禦，不輸出買入標的")
+        return []
 
     print(f"[ranker] 送出 {min(len(candidates), MAX_CANDIDATES_TO_AI)} 支候選股給 DeepSeek AI...")
     prompt_content = _build_prompt(candidates, price_data, info_data, market_context)
