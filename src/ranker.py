@@ -174,11 +174,11 @@ def _generate_candidates_markdown_table(
     }
 
     header = (
-        "| Ticker | Sector | L2_Score | Strategy_Tag | MA_Trend"
+        "| Ticker | Close_Price | Sector | L2_Score | Strategy_Tag | MA_Trend"
         " | RSI | MACD_Hist | Vol_Ratio | Price_20D_Pct | 52W_High_Dist |"
     )
     sep = (
-        "|--------|--------|----------|--------------|----------"
+        "|--------|-------------|--------|----------|--------------|----------"
         "|-----|-----------|-----------|---------------|---------------|"
     )
     rows = [header, sep]
@@ -193,9 +193,10 @@ def _generate_candidates_markdown_table(
         info  = info_data.get(sym, {})
         close = df["Close"].dropna()
 
-        ma_trend = _ma_trend_tag(indic.get("ema5"), indic.get("ema10"), indic.get("ema20"), indic.get("ema50"))
-        macd_tag = _macd_hist_tag(close)
-        strategy = _strategy_tag(indic)
+        ma_trend  = _ma_trend_tag(indic.get("ema5"), indic.get("ema10"), indic.get("ema20"), indic.get("ema50"))
+        macd_tag  = _macd_hist_tag(close)
+        strategy  = _strategy_tag(indic)
+        price_str = f"${indic['price']:.2f}"
 
         rsi_val = indic.get("rsi")
         rsi_str = f"{rsi_val:.1f}" if rsi_val is not None else "N/A"
@@ -212,7 +213,7 @@ def _generate_candidates_markdown_table(
             sector = sector.replace(k, v)
 
         rows.append(
-            f"| {sym} | {sector} | {c['total_score']:.0f} | {strategy}"
+            f"| {sym} | {price_str} | {sector} | {c['total_score']:.0f} | {strategy}"
             f" | {ma_trend} | {rsi_str} | {macd_tag} | {vol_ratio:.2f}"
             f" | {p20d_str} | {dist_str} |"
         )

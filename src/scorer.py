@@ -104,28 +104,12 @@ def _score_momentum(close: pd.Series) -> float:
     return 0.0
 
 
-RSI_OVERBOUGHT = 80  # 超過此值直接排除
-
-
 def score_stock(sym: str, df: pd.DataFrame) -> dict:
     """計算單支股票技術指標評分，回傳含各項分數與總分的字典。"""
     close = df["Close"].dropna()
     latest_close = float(close.iloc[-1]) if len(close) > 0 else 0.0
 
     rsi_val = _calc_rsi(close)
-
-    # 硬條件：RSI > 80 超買，直接給 0 分排除出 L3
-    if not pd.isna(rsi_val) and rsi_val > RSI_OVERBOUGHT:
-        return {
-            "symbol": sym,
-            "price": latest_close,
-            "total_score": 0.0,
-            "ma_score": 0.0,
-            "rsi_score": 0.0,
-            "macd_score": 0.0,
-            "volume_score": 0.0,
-            "momentum_score": 0.0,
-        }
 
     ma = _score_ma(close)
     rsi = _score_rsi(rsi_val)
