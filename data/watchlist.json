@@ -102,56 +102,94 @@
     "name": "Incyte Corporation",
     "sector": "Healthcare",
     "date_added": "2026-06-27",
-    "buy_zone": "$112～$115",
-    "buy_zone_lower": 112.0,
-    "buy_zone_upper": 115.0,
-    "target": "$126",
-    "stop_loss": "$103",
-    "hold_period": "1～2週",
+    "buy_zone": "$106～$108",
+    "buy_zone_lower": 106.0,
+    "buy_zone_upper": 108.0,
+    "target": "$118",
+    "stop_loss": "$102",
+    "hold_period": "1～4週",
     "strategy": "動能策略",
     "tracked_dates": [
       "2026-06-27"
     ],
-    "status": "active",
+    "status": "watch",
     "invalid_reason": null,
     "current_price": 113.75
   },
   {
-    "symbol": "SHW",
-    "name": "Sherwin-Williams Company (The)",
-    "sector": "Basic Materials",
+    "symbol": "LRCX",
+    "name": "Lam Research Corporation",
+    "sector": "Technology",
     "date_added": "2026-06-27",
-    "buy_zone": "$341～$345",
-    "buy_zone_lower": 341.0,
-    "buy_zone_upper": 345.0,
-    "target": "$375",
-    "stop_loss": "$319",
-    "hold_period": "1～2週",
+    "buy_zone": "$398～$405",
+    "buy_zone_lower": 398.0,
+    "buy_zone_upper": 405.0,
+    "target": "$442",
+    "stop_loss": "$385",
+    "hold_period": "1～4週",
     "strategy": "動能策略",
     "tracked_dates": [
       "2026-06-27"
     ],
     "status": "active",
     "invalid_reason": null,
-    "current_price": 344.07
+    "current_price": 379.09
   },
   {
-    "symbol": "URI",
-    "name": "United Rentals, Inc.",
-    "sector": "Industrials",
+    "symbol": "RCL",
+    "name": "Royal Caribbean Cruises Ltd.",
+    "sector": "Consumer Cyclical",
     "date_added": "2026-06-27",
-    "buy_zone": "$1,110～$1,140",
-    "buy_zone_lower": 1110.0,
-    "buy_zone_upper": 1140.0,
-    "target": "$1,250",
-    "stop_loss": "$1,062",
-    "hold_period": "1～2週",
+    "buy_zone": "$318～$325",
+    "buy_zone_lower": 318.0,
+    "buy_zone_upper": 325.0,
+    "target": "$355",
+    "stop_loss": "$308",
+    "hold_period": "1～4週",
     "strategy": "動能策略",
     "tracked_dates": [
       "2026-06-27"
     ],
     "status": "active",
     "invalid_reason": null,
-    "current_price": 1121.66
+    "current_price": 318.13
+  },
+  {
+    "symbol": "JNJ",
+    "name": "Johnson & Johnson",
+    "sector": "Healthcare",
+    "date_added": "2026-06-27",
+    "buy_zone": "$242～$246",
+    "buy_zone_lower": 242.0,
+    "buy_zone_upper": 246.0,
+    "target": "$269",
+    "stop_loss": "$235",
+    "hold_period": "1～4週",
+    "strategy": "動能策略",
+    "tracked_dates": [
+      "2026-06-27"
+    ],
+    "status": "watch",
+    "invalid_reason": null,
+    "current_price": 254.66
+  },
+  {
+    "symbol": "MRK",
+    "name": "Merck & Company, Inc.",
+    "sector": "Healthcare",
+    "date_added": "2026-06-27",
+    "buy_zone": "$124～$126",
+    "buy_zone_lower": 124.0,
+    "buy_zone_upper": 126.0,
+    "target": "$138",
+    "stop_loss": "$120",
+    "hold_period": "1～4週",
+    "strategy": "動能策略",
+    "tracked_dates": [
+      "2026-06-27"
+    ],
+    "status": "watch",
+    "invalid_reason": null,
+    "current_price": 128.66
   }
 ]

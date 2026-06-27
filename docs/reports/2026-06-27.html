@@ -123,6 +123,9 @@ a:hover { text-decoration: underline; }
 .regime-metric { min-width: 80px; }
 .regime-metric-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 2px; }
 .regime-metric-val { font-size: 1rem; font-weight: 700; }
+.regime-metric-sub { font-size: 0.72rem; color: var(--muted); margin-top: 1px; }
+.spy-above { color: var(--active); }
+.spy-below { color: var(--invalid); }
 .defense-banner { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.3); border-radius: 10px; padding: 20px 24px; text-align: center; margin-bottom: 16px; }
 .defense-banner .defense-title { font-size: 1rem; font-weight: 700; color: var(--invalid); margin-bottom: 6px; }
 .defense-banner .defense-desc { font-size: 0.85rem; color: var(--muted); line-height: 1.7; }
@@ -145,7 +148,7 @@ a:hover { text-decoration: underline; }
     <div class="scan-bar">
       掃描 <strong>S&amp;P500 503支</strong>
       <span class="arrow">→</span> L1 <strong>487支</strong>
-      <span class="arrow">→</span> L2 <strong>231支</strong>
+      <span class="arrow">→</span> L2 <strong>238支</strong>
       <span class="arrow">→</span> AI精選 <strong>5支</strong>
     </div>
     <a class="back-link" href="../index.html">← 返回首頁</a>
@@ -160,15 +163,16 @@ a:hover { text-decoration: underline; }
   <div class="regime-metrics">
     <div class="regime-metric">
       <div class="regime-metric-label">市場廣度</div>
-      <div class="regime-metric-val">64.5%</div>
+      <div class="regime-metric-val">63.9%</div>
     </div>
     <div class="regime-metric">
       <div class="regime-metric-label">VIX</div>
       <div class="regime-metric-val">18.4</div>
+      <div class="regime-metric-sub">正常</div>
     </div>
     <div class="regime-metric">
-      <div class="regime-metric-label">S&amp;P500 5日</div>
-      <div class="regime-metric-val">-2.1%</div>
+      <div class="regime-metric-label">SPY 位置</div>
+      <div class="regime-metric-val spy-below">⚠️ EMA20 之下</div>
     </div>
   </div>
 </div>
@@ -176,9 +180,29 @@ a:hover { text-decoration: underline; }
   
 <div class="section">
   <div class="section-title">
-    ✅ 有效追蹤清單<span class="section-count">（6支）</span>
+    ✅ 有效追蹤清單<span class="section-count">（7支）</span>
   </div>
   
+<div class="track-item active">
+  <div class="track-header">
+    <span class="track-symbol">BIIB</span>
+    <span class="track-name">Biogen Inc.</span>
+    <span class="strategy-tag">動能策略</span>
+  </div>
+  <div class="track-status">第 1 天 ── 已落入買入區間 ✅</div>
+  <div class="track-prices"><span class="cur-price">$216.03</span>｜買入區間 $214～$218｜目標 $240｜止損 $198</div>
+</div>
+
+<div class="track-item active">
+  <div class="track-header">
+    <span class="track-symbol">KMB</span>
+    <span class="track-name">Kimberly-Clark Corporation</span>
+    <span class="strategy-tag">動能策略</span>
+  </div>
+  <div class="track-status">第 1 天 ── 已落入買入區間 ✅</div>
+  <div class="track-prices"><span class="cur-price">$109.37</span>｜買入區間 $108～$110｜目標 $120｜止損 $102</div>
+</div>
+
 <div class="track-item active">
   <div class="track-header">
     <span class="track-symbol">CNP</span>
@@ -211,37 +235,62 @@ a:hover { text-decoration: underline; }
 
 <div class="track-item active">
   <div class="track-header">
-    <span class="track-symbol">INCY</span>
-    <span class="track-name">Incyte Corporation</span>
+    <span class="track-symbol">LRCX</span>
+    <span class="track-name">Lam Research Corporation</span>
     <span class="strategy-tag">動能策略</span>
   </div>
   <div class="track-status">第 1 天 ── 已落入買入區間 ✅</div>
-  <div class="track-prices"><span class="cur-price">$113.75</span>｜買入區間 $112～$115｜目標 $126｜止損 $103</div>
+  <div class="track-prices"><span class="cur-price">$379.09</span>｜買入區間 $398～$405｜目標 $442｜止損 $385</div>
 </div>
 
 <div class="track-item active">
   <div class="track-header">
-    <span class="track-symbol">SHW</span>
-    <span class="track-name">Sherwin-Williams Company (The)</span>
+    <span class="track-symbol">RCL</span>
+    <span class="track-name">Royal Caribbean Cruises Ltd.</span>
     <span class="strategy-tag">動能策略</span>
   </div>
   <div class="track-status">第 1 天 ── 已落入買入區間 ✅</div>
-  <div class="track-prices"><span class="cur-price">$344.07</span>｜買入區間 $341～$345｜目標 $375｜止損 $319</div>
-</div>
-
-<div class="track-item active">
-  <div class="track-header">
-    <span class="track-symbol">URI</span>
-    <span class="track-name">United Rentals, Inc.</span>
-    <span class="strategy-tag">動能策略</span>
-  </div>
-  <div class="track-status">第 1 天 ── 已落入買入區間 ✅</div>
-  <div class="track-prices"><span class="cur-price">$1121.66</span>｜買入區間 $1,110～$1,140｜目標 $1,250｜止損 $1,062</div>
+  <div class="track-prices"><span class="cur-price">$318.13</span>｜買入區間 $318～$325｜目標 $355｜止損 $308</div>
 </div>
 </div>
 <div class="section">
   <div class="section-title">
-    🆕 今日新進觀察名單<span class="section-count">（3支）</span>
+    🟡 留意清單<span class="section-count">（3支）</span>
+  </div>
+  
+<div class="track-item watch">
+  <div class="track-header">
+    <span class="track-symbol">INCY</span>
+    <span class="track-name">Incyte Corporation</span>
+    <span class="strategy-tag">動能策略</span>
+  </div>
+  <div class="track-status">第 1 天（等待回落至買入區間）</div>
+  <div class="track-prices"><span class="cur-price">$113.75</span>｜買入區間 $106～$108｜目標 $118｜止損 $102</div>
+</div>
+
+<div class="track-item watch">
+  <div class="track-header">
+    <span class="track-symbol">JNJ</span>
+    <span class="track-name">Johnson &amp; Johnson</span>
+    <span class="strategy-tag">動能策略</span>
+  </div>
+  <div class="track-status">第 1 天（等待回落至買入區間）</div>
+  <div class="track-prices"><span class="cur-price">$254.66</span>｜買入區間 $242～$246｜目標 $269｜止損 $235</div>
+</div>
+
+<div class="track-item watch">
+  <div class="track-header">
+    <span class="track-symbol">MRK</span>
+    <span class="track-name">Merck &amp; Company, Inc.</span>
+    <span class="strategy-tag">動能策略</span>
+  </div>
+  <div class="track-status">第 1 天（等待回落至買入區間）</div>
+  <div class="track-prices"><span class="cur-price">$128.66</span>｜買入區間 $124～$126｜目標 $138｜止損 $120</div>
+</div>
+</div>
+<div class="section">
+  <div class="section-title">
+    🆕 今日新進觀察名單<span class="section-count">（5支）</span>
   </div>
   
 <div class="stock-card ">
@@ -252,139 +301,8 @@ a:hover { text-decoration: underline; }
       <div class="card-company">Incyte Corporation</div>
     </div>
     <div class="card-price">
-      <span class="price-val">$113.75</span>
-      <span class="price-chg up">▲5.78%</span>
-    </div>
-  </div>
-  <div class="card-badges">
-    <span class="badge">📊 評分 100</span>
-    <span class="badge">信心 8/10</span>
-    <span class="badge">🏭 Healthcare</span>
-    <span class="badge">📋 動能策略</span>
-  </div>
-  <div class="reason-box">🤖 醫療保健強勢，均線多頭排列，RSI 68.63健康，MACD向上，量能放大近2倍。</div>
-  <div class="detail-box">📋 策略依據：均線多頭排列(EMA5&gt;EMA10&gt;EMA20&gt;EMA50)，RSI=68.63，volume_ratio=1.97，符合動能策略。</div>
-  <div class="trade-grid">
-    <div class="trade-cell">
-      <div class="trade-label">買入區間</div>
-      <div class="trade-val buy">$112～$115</div>
-    </div>
-    <div class="trade-cell">
-      <div class="trade-label">目標價</div>
-      <div class="trade-val tgt">$126</div>
-    </div>
-    <div class="trade-cell">
-      <div class="trade-label">止損</div>
-      <div class="trade-val stop">$103</div>
-    </div>
-    <div class="trade-cell">
-      <div class="trade-label">持有週期</div>
-      <div class="trade-val">1～2週</div>
-    </div>
-  </div>
-  <div class="risk-box">⚠️ RSI接近70，短線可能過熱；大盤科技股弱勢可能拖累。</div>
-  <div class="detail-box">💡 信心評分依據：產業ETF XLV強勢，個股技術面佳，量能放大，但RSI略高扣1分。</div>
-</div>
-
-<div class="stock-card ">
-  <div class="card-header">
-    <div class="card-rank">2</div>
-    <div class="card-title">
-      <div class="card-symbol">SHW</div>
-      <div class="card-company">Sherwin-Williams Company (The)</div>
-    </div>
-    <div class="card-price">
-      <span class="price-val">$344.07</span>
-      <span class="price-chg up">▲1.47%</span>
-    </div>
-  </div>
-  <div class="card-badges">
-    <span class="badge">📊 評分 100</span>
-    <span class="badge">信心 7/10</span>
-    <span class="badge">🏭 Basic Materials</span>
-    <span class="badge">📋 動能策略</span>
-  </div>
-  <div class="reason-box">🤖 基礎材料強勢，均線多頭排列，RSI 68.21健康，MACD向上，量能放大2.25倍。</div>
-  <div class="detail-box">📋 策略依據：均線多頭排列(EMA5&gt;EMA10&gt;EMA20&gt;EMA50)，RSI=68.21，volume_ratio=2.25，符合動能策略。</div>
-  <div class="trade-grid">
-    <div class="trade-cell">
-      <div class="trade-label">買入區間</div>
-      <div class="trade-val buy">$341～$345</div>
-    </div>
-    <div class="trade-cell">
-      <div class="trade-label">目標價</div>
-      <div class="trade-val tgt">$375</div>
-    </div>
-    <div class="trade-cell">
-      <div class="trade-label">止損</div>
-      <div class="trade-val stop">$319</div>
-    </div>
-    <div class="trade-cell">
-      <div class="trade-label">持有週期</div>
-      <div class="trade-val">1～2週</div>
-    </div>
-  </div>
-  <div class="risk-box">⚠️ RSI接近70，短線可能過熱；產業ETF XLB盤整。</div>
-  <div class="detail-box">💡 信心評分依據：個股技術面佳，量能放大，但產業ETF XLB盤整無明顯加分，信心中等。</div>
-</div>
-
-<div class="stock-card ">
-  <div class="card-header">
-    <div class="card-rank">3</div>
-    <div class="card-title">
-      <div class="card-symbol">URI</div>
-      <div class="card-company">United Rentals, Inc.</div>
-    </div>
-    <div class="card-price">
-      <span class="price-val">$1121.66</span>
-      <span class="price-chg down">▼1.57%</span>
-    </div>
-  </div>
-  <div class="card-badges">
-    <span class="badge">📊 評分 100</span>
-    <span class="badge">信心 7/10</span>
-    <span class="badge">🏭 Industrials</span>
-    <span class="badge">📋 動能策略</span>
-  </div>
-  <div class="reason-box">🤖 工業強勢，均線多頭排列，RSI 64.42健康，MACD向上，量能放大1.8倍。</div>
-  <div class="detail-box">📋 策略依據：均線多頭排列(EMA5&gt;EMA10&gt;EMA20&gt;EMA50)，RSI=64.42，volume_ratio=1.8，符合動能策略。</div>
-  <div class="trade-grid">
-    <div class="trade-cell">
-      <div class="trade-label">買入區間</div>
-      <div class="trade-val buy">$1,110～$1,140</div>
-    </div>
-    <div class="trade-cell">
-      <div class="trade-label">目標價</div>
-      <div class="trade-val tgt">$1,250</div>
-    </div>
-    <div class="trade-cell">
-      <div class="trade-label">止損</div>
-      <div class="trade-val stop">$1,062</div>
-    </div>
-    <div class="trade-cell">
-      <div class="trade-label">持有週期</div>
-      <div class="trade-val">1～2週</div>
-    </div>
-  </div>
-  <div class="risk-box">⚠️ 大盤工業ETF XLI溫和下跌，可能壓抑股價。</div>
-  <div class="detail-box">💡 信心評分依據：個股技術面佳，量能放大，但產業ETF XLI近5日下跌，信心扣分。</div>
-</div>
-</div>
-<div class="section">
-  <div class="section-title">
-    🔄 重新入選，重置追蹤<span class="section-count">（2支）</span>
-  </div>
-  
-<div class="stock-card reset-card">
-  <div class="card-header">
-    <div class="card-rank">1</div>
-    <div class="card-title">
-      <div class="card-symbol">BIIB</div>
-      <div class="card-company">Biogen Inc.</div>
-    </div>
-    <div class="card-price">
-      <span class="price-val">$216.03</span>
-      <span class="price-chg up">▲6.97%</span>
+      <span class="price-val">$107.53</span>
+      <span class="price-chg down">▼0.86%</span>
     </div>
   </div>
   <div class="card-badges">
@@ -393,58 +311,16 @@ a:hover { text-decoration: underline; }
     <span class="badge">🏭 Healthcare</span>
     <span class="badge">📋 動能策略</span>
   </div>
-  <div class="reason-box">🤖 醫療保健強勢，均線多頭排列，RSI 69.41健康，MACD向上，量能放大2倍，逼近52週高點。</div>
-  <div class="detail-box">📋 策略依據：均線多頭排列(EMA5&gt;EMA10&gt;EMA20&gt;EMA50)，RSI=69.41，volume_ratio=2.0，符合動能策略條件。</div>
+  <div class="reason-box">🤖 完美多頭排列，RSI=61.9健康，MACD正增，量比1.96，Healthcare產業強勢，動能充足。</div>
+  <div class="detail-box">📋 策略依據：均線多頭排列(EMA5&gt;EMA10&gt;EMA20&gt;EMA50)，RSI=61.9，MACD正增，量比1.96，符合動能策略條件。</div>
   <div class="trade-grid">
     <div class="trade-cell">
       <div class="trade-label">買入區間</div>
-      <div class="trade-val buy">$214～$218</div>
+      <div class="trade-val buy">$106～$108</div>
     </div>
     <div class="trade-cell">
       <div class="trade-label">目標價</div>
-      <div class="trade-val tgt">$240</div>
-    </div>
-    <div class="trade-cell">
-      <div class="trade-label">止損</div>
-      <div class="trade-val stop">$198</div>
-    </div>
-    <div class="trade-cell">
-      <div class="trade-label">持有週期</div>
-      <div class="trade-val">1～2週</div>
-    </div>
-  </div>
-  <div class="risk-box">⚠️ RSI接近70，短線可能過熱；大盤科技股弱勢可能拖累。</div>
-  <div class="detail-box">💡 信心評分依據：產業ETF XLV強勢上漲，個股技術面完美，量能放大，信心高。</div>
-</div>
-
-<div class="stock-card reset-card">
-  <div class="card-header">
-    <div class="card-rank">2</div>
-    <div class="card-title">
-      <div class="card-symbol">KMB</div>
-      <div class="card-company">Kimberly-Clark Corporation</div>
-    </div>
-    <div class="card-price">
-      <span class="price-val">$109.37</span>
-      <span class="price-chg up">▲1.17%</span>
-    </div>
-  </div>
-  <div class="card-badges">
-    <span class="badge">📊 評分 100</span>
-    <span class="badge">信心 8/10</span>
-    <span class="badge">🏭 Consumer Defensive</span>
-    <span class="badge">📋 動能策略</span>
-  </div>
-  <div class="reason-box">🤖 消費防禦強勢，均線多頭排列，RSI 69.7健康，MACD向上，量能放大2.55倍。</div>
-  <div class="detail-box">📋 策略依據：均線多頭排列(EMA5&gt;EMA10&gt;EMA20&gt;EMA50)，RSI=69.7，volume_ratio=2.55，符合動能策略。</div>
-  <div class="trade-grid">
-    <div class="trade-cell">
-      <div class="trade-label">買入區間</div>
-      <div class="trade-val buy">$108～$110</div>
-    </div>
-    <div class="trade-cell">
-      <div class="trade-label">目標價</div>
-      <div class="trade-val tgt">$120</div>
+      <div class="trade-val tgt">$118</div>
     </div>
     <div class="trade-cell">
       <div class="trade-label">止損</div>
@@ -452,24 +328,192 @@ a:hover { text-decoration: underline; }
     </div>
     <div class="trade-cell">
       <div class="trade-label">持有週期</div>
-      <div class="trade-val">1～2週</div>
+      <div class="trade-val">1～4週</div>
     </div>
   </div>
-  <div class="risk-box">⚠️ RSI接近70，短線可能過熱；距離52週高點較遠。</div>
-  <div class="detail-box">💡 信心評分依據：產業ETF XLP強勢，個股技術面佳，量能放大，但距離52週高點-20%扣1分。</div>
+  <div class="risk-box">⚠️ 股價距52週高點-6.9%，仍有空間但需注意大盤EMA20下方壓力。</div>
+  <div class="detail-box">💡 信心評分依據：產業ETF(XLV)強勢+6.8%，技術面完美，量能放大，信心高。</div>
+</div>
+
+<div class="stock-card ">
+  <div class="card-header">
+    <div class="card-rank">2</div>
+    <div class="card-title">
+      <div class="card-symbol">LRCX</div>
+      <div class="card-company">Lam Research Corporation</div>
+    </div>
+    <div class="card-price">
+      <span class="price-val">$401.82</span>
+      <span class="price-chg up">▲7.21%</span>
+    </div>
+  </div>
+  <div class="card-badges">
+    <span class="badge">📊 評分 100</span>
+    <span class="badge">信心 8/10</span>
+    <span class="badge">🏭 Technology</span>
+    <span class="badge">📋 動能策略</span>
+  </div>
+  <div class="reason-box">🤖 完美多頭排列，RSI=64.7，MACD正增，量比1.69，接近52週高點，動能強勁。</div>
+  <div class="detail-box">📋 策略依據：均線多頭排列，RSI=64.7，MACD正增，量比1.69，距52週高點-1.9%，動能強。</div>
+  <div class="trade-grid">
+    <div class="trade-cell">
+      <div class="trade-label">買入區間</div>
+      <div class="trade-val buy">$398～$405</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">目標價</div>
+      <div class="trade-val tgt">$442</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">止損</div>
+      <div class="trade-val stop">$385</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">持有週期</div>
+      <div class="trade-val">1～4週</div>
+    </div>
+  </div>
+  <div class="risk-box">⚠️ Technology產業ETF近5日下跌5.8%，可能拖累股價。</div>
+  <div class="detail-box">💡 信心評分依據：技術面強勢但產業ETF偏弱，扣分，整體信心仍高。</div>
+</div>
+
+<div class="stock-card ">
+  <div class="card-header">
+    <div class="card-rank">3</div>
+    <div class="card-title">
+      <div class="card-symbol">RCL</div>
+      <div class="card-company">Royal Caribbean Cruises Ltd.</div>
+    </div>
+    <div class="card-price">
+      <span class="price-val">$322.65</span>
+      <span class="price-chg up">▲0.53%</span>
+    </div>
+  </div>
+  <div class="card-badges">
+    <span class="badge">📊 評分 100</span>
+    <span class="badge">信心 7/10</span>
+    <span class="badge">🏭 Consumer Cyclical</span>
+    <span class="badge">📋 動能策略</span>
+  </div>
+  <div class="reason-box">🤖 完美多頭排列，RSI=64.6，MACD正增，量比2.38顯著放量，Consumer產業中性偏弱但個股動能佳。</div>
+  <div class="detail-box">📋 策略依據：均線多頭排列，RSI=64.6，MACD正增，量比2.38，符合動能策略。</div>
+  <div class="trade-grid">
+    <div class="trade-cell">
+      <div class="trade-label">買入區間</div>
+      <div class="trade-val buy">$318～$325</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">目標價</div>
+      <div class="trade-val tgt">$355</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">止損</div>
+      <div class="trade-val stop">$308</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">持有週期</div>
+      <div class="trade-val">1～4週</div>
+    </div>
+  </div>
+  <div class="risk-box">⚠️ Consumer Cyclical產業ETF近5日下跌0.5%，且股價距52週高點-12%，動能稍弱。</div>
+  <div class="detail-box">💡 信心評分依據：量能顯著放大加分，但產業ETF偏弱且距高點較遠，信心中等。</div>
+</div>
+
+<div class="stock-card ">
+  <div class="card-header">
+    <div class="card-rank">4</div>
+    <div class="card-title">
+      <div class="card-symbol">JNJ</div>
+      <div class="card-company">Johnson &amp; Johnson</div>
+    </div>
+    <div class="card-price">
+      <span class="price-val">$244.88</span>
+      <span class="price-chg up">▲1.61%</span>
+    </div>
+  </div>
+  <div class="card-badges">
+    <span class="badge">📊 評分 92</span>
+    <span class="badge">信心 8/10</span>
+    <span class="badge">🏭 Healthcare</span>
+    <span class="badge">📋 動能策略</span>
+  </div>
+  <div class="reason-box">🤖 完美多頭排列，RSI=64.9，MACD正增，量比1.86，Healthcare產業強勢，防禦性佳。</div>
+  <div class="detail-box">📋 策略依據：均線多頭排列，RSI=64.9，MACD正增，量比1.86，符合動能策略。</div>
+  <div class="trade-grid">
+    <div class="trade-cell">
+      <div class="trade-label">買入區間</div>
+      <div class="trade-val buy">$242～$246</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">目標價</div>
+      <div class="trade-val tgt">$269</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">止損</div>
+      <div class="trade-val stop">$235</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">持有週期</div>
+      <div class="trade-val">1～4週</div>
+    </div>
+  </div>
+  <div class="risk-box">⚠️ 股價距52週高點-4%，空間有限，且大盤EMA20下方可能影響。</div>
+  <div class="detail-box">💡 信心評分依據：產業ETF強勢，技術面健康，量能放大，信心高。</div>
+</div>
+
+<div class="stock-card ">
+  <div class="card-header">
+    <div class="card-rank">5</div>
+    <div class="card-title">
+      <div class="card-symbol">MRK</div>
+      <div class="card-company">Merck &amp; Company, Inc.</div>
+    </div>
+    <div class="card-price">
+      <span class="price-val">$125.45</span>
+      <span class="price-chg up">▲4.02%</span>
+    </div>
+  </div>
+  <div class="card-badges">
+    <span class="badge">📊 評分 92</span>
+    <span class="badge">信心 7/10</span>
+    <span class="badge">🏭 Healthcare</span>
+    <span class="badge">📋 動能策略</span>
+  </div>
+  <div class="reason-box">🤖 完美多頭排列，RSI=67.0，MACD正增，量比1.59，Healthcare產業強勢，接近52週高點。</div>
+  <div class="detail-box">📋 策略依據：均線多頭排列，RSI=67.0，MACD正增，量比1.59，符合動能策略。</div>
+  <div class="trade-grid">
+    <div class="trade-cell">
+      <div class="trade-label">買入區間</div>
+      <div class="trade-val buy">$124～$126</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">目標價</div>
+      <div class="trade-val tgt">$138</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">止損</div>
+      <div class="trade-val stop">$120</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">持有週期</div>
+      <div class="trade-val">1～4週</div>
+    </div>
+  </div>
+  <div class="risk-box">⚠️ 量比僅1.59，動能略弱，且大盤EMA20下方可能帶來壓力。</div>
+  <div class="detail-box">💡 信心評分依據：產業ETF強勢加分，但量能僅1.59且大盤偏弱，信心中等。</div>
 </div>
 </div>
 
   <div class="summary-box">
     <h2>📈 今日統計</h2>
     <div class="stat-row">
-      <div class="stat-group"><span class="stat-num c-active">6</span><span class="stat-lbl">支有效</span></div>
-      <div class="stat-group"><span class="stat-num c-watch">0</span><span class="stat-lbl">支留意</span></div>
+      <div class="stat-group"><span class="stat-num c-active">7</span><span class="stat-lbl">支有效</span></div>
+      <div class="stat-group"><span class="stat-num c-watch">3</span><span class="stat-lbl">支留意</span></div>
       <div class="stat-group"><span class="stat-num c-invalid">0</span><span class="stat-lbl">支失效</span></div>
     </div>
     <div class="stat-row">
-      <div class="stat-group"><span class="stat-num c-new">3</span><span class="stat-lbl">支新增</span></div>
-      <div class="stat-group"><span class="stat-num c-reset">2</span><span class="stat-lbl">支重新入選</span></div>
+      <div class="stat-group"><span class="stat-num c-new">5</span><span class="stat-lbl">支新增</span></div>
+      <div class="stat-group"><span class="stat-num c-reset">0</span><span class="stat-lbl">支重新入選</span></div>
       <div class="stat-group"><span class="stat-num c-removed">0</span><span class="stat-lbl">支移除</span></div>
     </div>
   </div>
