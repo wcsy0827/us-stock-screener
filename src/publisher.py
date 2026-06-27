@@ -151,14 +151,95 @@ a:hover { text-decoration: underline; }
 .arrow-icon { color: var(--border); font-size: 1rem; }
 .empty-state { text-align: center; padding: 48px; color: var(--muted); }
 
+/* Market Regime Dashboard */
+.market-dashboard { border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; border: 1px solid var(--border); }
+.market-dashboard.bull          { border-left: 4px solid var(--active);  background: rgba(34,197,94,0.07); }
+.market-dashboard.consolidation { border-left: 4px solid var(--watch);   background: rgba(234,179,8,0.07); }
+.market-dashboard.panic         { border-left: 4px solid #f97316;        background: rgba(249,115,22,0.07); }
+.market-dashboard.bear          { border-left: 4px solid var(--invalid); background: rgba(239,68,68,0.1); }
+.regime-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+.regime-name { font-size: 1rem; font-weight: 700; }
+.regime-strategy { font-size: 0.82rem; color: var(--muted); margin-left: auto; }
+.regime-metrics { display: flex; gap: 20px; flex-wrap: wrap; }
+.regime-metric { min-width: 80px; }
+.regime-metric-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 2px; }
+.regime-metric-val { font-size: 1rem; font-weight: 700; }
+.regime-metric-sub { font-size: 0.72rem; color: var(--muted); margin-top: 1px; }
+.spy-above { color: var(--active); }
+.spy-below { color: var(--invalid); }
+.defense-banner { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.3); border-radius: 10px; padding: 20px 24px; text-align: center; margin-bottom: 16px; }
+.defense-banner .defense-title { font-size: 1rem; font-weight: 700; color: var(--invalid); margin-bottom: 6px; }
+.defense-banner .defense-desc { font-size: 0.85rem; color: var(--muted); line-height: 1.7; }
+
 @media (max-width: 600px) {
   .scan-bar { flex-direction: column; align-items: flex-start; gap: 2px; }
   .card-header { flex-wrap: wrap; }
   .card-price { text-align: left; }
   .report-entry { flex-wrap: wrap; }
   .report-chips { margin-left: 0; }
+  .regime-strategy { margin-left: 0; }
 }
 """
+
+
+# ── HTML 生成：大盤儀表板 ────────────────────────────────────────────
+
+def _build_market_dashboard(market_context: dict) -> str:
+    """生成大盤儀表板 HTML 區塊，顯示市場廣度、Regime 與主推策略。"""
+    if not market_context or "regime" not in market_context:
+        return ""
+
+    regime = market_context.get("regime", "")
+    breadth = market_context.get("market_breadth_pct")
+    primary = market_context.get("primary_strategy", "")
+    vix_val = market_context.get("vix", {}).get("value")
+    vix_label = market_context.get("vix", {}).get("label", "")
+    spy_above_ema20 = market_context.get("sp500", {}).get("above_ema20")
+
+    _REGIME_CONFIG = {
+        "BULL_TREND":        ("bull",          "📈 強勢牛市"),
+        "CONSOLIDATION":     ("consolidation", "⚖️ 震盪整理"),
+        "PANIC_REVERSAL":    ("panic",         "🔥 恐慌超跌"),
+        "BEAR_DISTRIBUTION": ("bear",          "🐻 陰跌熊市"),
+    }
+    cls, name = _REGIME_CONFIG.get(regime, ("", _esc(regime)))
+
+    breadth_str = f"{breadth:.1f}%" if breadth is not None else "-"
+    vix_str = f"{vix_val:.1f}" if vix_val is not None else "-"
+    vix_sublabel = f'<div class="regime-metric-sub">{_esc(vix_label)}</div>' if vix_label else ""
+    if spy_above_ema20 is True:
+        spy_str = "✅ EMA20 之上"
+        spy_cls = "spy-above"
+    elif spy_above_ema20 is False:
+        spy_str = "⚠️ EMA20 之下"
+        spy_cls = "spy-below"
+    else:
+        spy_str = "-"
+        spy_cls = ""
+    strategy_label = f"主推：{_esc(primary)}" if primary else "⛔ 全面防禦，無買入建議"
+
+    return f"""
+<div class="market-dashboard {cls}">
+  <div class="regime-header">
+    <span class="regime-name">{_esc(name)}</span>
+    <span class="regime-strategy">{strategy_label}</span>
+  </div>
+  <div class="regime-metrics">
+    <div class="regime-metric">
+      <div class="regime-metric-label">市場廣度</div>
+      <div class="regime-metric-val">{_esc(breadth_str)}</div>
+    </div>
+    <div class="regime-metric">
+      <div class="regime-metric-label">VIX</div>
+      <div class="regime-metric-val">{_esc(vix_str)}</div>
+      {vix_sublabel}
+    </div>
+    <div class="regime-metric">
+      <div class="regime-metric-label">SPY 位置</div>
+      <div class="regime-metric-val {spy_cls}">{_esc(spy_str)}</div>
+    </div>
+  </div>
+</div>"""
 
 
 # ── HTML 生成：每日報告 ───────────────────────────────────────────────
@@ -281,7 +362,13 @@ def _section_html(emoji: str, title: str, items: list[str], note: str = "") -> s
 </div>"""
 
 
-def _build_daily_report(categories: dict, stats: dict, date_str: str, weekday: str) -> str:
+def _build_daily_report(
+    categories: dict,
+    stats: dict,
+    date_str: str,
+    weekday: str,
+    market_context: dict | None = None,
+) -> str:
     total = stats.get("total", 0)
     l1 = stats.get("l1_count", 0)
     l2 = stats.get("l2_count", 0)
@@ -293,6 +380,9 @@ def _build_daily_report(categories: dict, stats: dict, date_str: str, weekday: s
     expired = categories.get("expired", [])
     new     = categories.get("new", [])
     reset   = categories.get("reset", [])
+
+    regime = (market_context or {}).get("regime", "")
+    dashboard_html = _build_market_dashboard(market_context or {})
 
     sections = ""
 
@@ -312,13 +402,23 @@ def _build_daily_report(categories: dict, stats: dict, date_str: str, weekday: s
         rows = [_tracking_row(e, "expired") for e in expired]
         sections += _section_html("🗑", "今日移除", rows)
 
-    if new:
-        cards = [_stock_card(i + 1, rec) for i, rec in enumerate(new)]
-        sections += _section_html("🆕", "今日新進觀察名單", cards)
+    # BEAR_DISTRIBUTION 且無新進標的：顯示全面防禦橫幅
+    if regime == "BEAR_DISTRIBUTION" and not new and not reset:
+        breadth = (market_context or {}).get("market_breadth_pct")
+        breadth_str = _esc(f"{breadth:.1f}%") if breadth is not None else "偏低"
+        sections += f"""
+<div class="defense-banner">
+  <div class="defense-title">🛡️ 今日大盤風險過高，系統啟動全面防禦</div>
+  <div class="defense-desc">市場廣度：{breadth_str}，恐慌情緒蔓延，無新進標的建議。<br>請靜待市場企穩訊號，保留現金為宜。</div>
+</div>"""
+    else:
+        if new:
+            cards = [_stock_card(i + 1, rec) for i, rec in enumerate(new)]
+            sections += _section_html("🆕", "今日新進觀察名單", cards)
 
-    if reset:
-        cards = [_stock_card(i + 1, rec, "reset-card") for i, rec in enumerate(reset)]
-        sections += _section_html("🔄", "重新入選，重置追蹤", cards)
+        if reset:
+            cards = [_stock_card(i + 1, rec, "reset-card") for i, rec in enumerate(reset)]
+            sections += _section_html("🔄", "重新入選，重置追蹤", cards)
 
     if not sections:
         sections = '<p style="color:var(--muted);padding:24px 0;">今日無資料</p>'
@@ -351,6 +451,8 @@ def _build_daily_report(categories: dict, stats: dict, date_str: str, weekday: s
     </div>
     <a class="back-link" href="../index.html">← 返回首頁</a>
   </div>
+
+  {dashboard_html}
 
   {sections}
 
@@ -475,7 +577,12 @@ def _check_git_remote() -> bool:
 
 # ── 主函式 ──────────────────────────────────────────────────────────
 
-def publish(categories: dict, stats: dict, dry_run: bool = False) -> None:
+def publish(
+    categories: dict,
+    stats: dict,
+    dry_run: bool = False,
+    market_context: dict | None = None,
+) -> None:
     """
     生成每日 HTML 報告 + 更新首頁索引，並 git push（dry_run 時略過 push）。
     """
@@ -487,7 +594,7 @@ def publish(categories: dict, stats: dict, dry_run: bool = False) -> None:
     _REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
     # 生成每日報告
-    report_html = _build_daily_report(categories, stats, date_str, weekday)
+    report_html = _build_daily_report(categories, stats, date_str, weekday, market_context=market_context)
     report_path = _REPORTS_DIR / f"{date_str}.html"
     report_path.write_text(report_html, encoding="utf-8")
     print(f"[publisher] 報告已生成：{report_path}")

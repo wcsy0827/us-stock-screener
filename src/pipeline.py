@@ -53,7 +53,7 @@ def run(
         return summary
 
     # ── Step 2: 批次下載日 K 數據 ───────────────────────────────
-    print("\n[pipeline] ── Step 2/6：下載 60 天日 K 數據 ──")
+    print("\n[pipeline] ── Step 2/6：下載 90 天日 K 數據 ──")
     t = time.time()
     try:
         price_data = (use_cache and load_price_cache()) or None
@@ -107,6 +107,7 @@ def run(
         if not candidates:
             print("[pipeline] 無候選股，流程結束")
             summary["ranked"] = []
+            summary["market_context"] = {}
             summary["success"] = True
             return summary
     except Exception as e:
@@ -115,19 +116,20 @@ def run(
         traceback.print_exc()
         return summary
 
-    # ── Step 5.5: 抓大盤 & 產業 ETF 背景數據 ────────────────────
-    print("\n[pipeline] ── Step 5.5：抓大盤與產業 ETF 數據 ──")
+    # ── Step 5.5: 抓大盤 & 產業 ETF 背景數據 + 計算市場廣度 ──────
+    print("\n[pipeline] ── Step 5.5：抓大盤與產業 ETF 數據、計算市場廣度 ──")
     t = time.time()
     try:
         candidate_sectors = {
             info_data.get(c["symbol"], {}).get("sector", "")
             for c in candidates
         } & set(SECTOR_ETF_MAP.keys())
-        market_context = fetch_market_context(candidate_sectors)
-        print(f"[pipeline] 完成 ({_elapsed(t)})")
+        market_context = fetch_market_context(candidate_sectors, all_stocks_data=price_data)
+        print(f"[pipeline] 完成 ({_elapsed(t)})｜Regime={market_context.get('regime', 'N/A')}")
     except Exception as e:
         print(f"[pipeline] 警告：大盤數據抓取失敗，繼續執行：{e}")
         market_context = {}
+    summary["market_context"] = market_context
 
     # ── Step 6: L3 AI 排序 ──────────────────────────────────────
     print("\n[pipeline] ── Step 6/6：L3 AI 排序 ──")

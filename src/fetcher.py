@@ -1,4 +1,4 @@
-"""用 yfinance 批次抓取股票近 60 天日 K 數據與基本面資訊。"""
+"""用 yfinance 批次抓取股票近 90 天日 K 數據與基本面資訊。"""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ import pandas as pd
 
 
 BATCH_SIZE = 50
-PERIOD = "60d"
+PERIOD = "90d"
 INTERVAL = "1d"
 MAX_RETRIES = 3
 RETRY_DELAY = 5
