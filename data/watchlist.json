@@ -12,11 +12,12 @@
     "hold_period": "1～4週",
     "strategy": "動能策略",
     "tracked_dates": [
-      "2026-06-26"
+      "2026-06-26",
+      "2026-06-27"
     ],
     "status": "active",
     "invalid_reason": null,
-    "current_price": 216.03
+    "current_price": 201.96
   },
   {
     "symbol": "KMB",
@@ -31,11 +32,12 @@
     "hold_period": "1～4週",
     "strategy": "動能策略",
     "tracked_dates": [
-      "2026-06-26"
+      "2026-06-26",
+      "2026-06-27"
     ],
     "status": "active",
     "invalid_reason": null,
-    "current_price": 109.37
+    "current_price": 108.1
   },
   {
     "symbol": "CNP",
@@ -50,11 +52,12 @@
     "hold_period": "1～4週",
     "strategy": "動能策略",
     "tracked_dates": [
-      "2026-06-26"
+      "2026-06-26",
+      "2026-06-27"
     ],
     "status": "active",
     "invalid_reason": null,
-    "current_price": 45.04
+    "current_price": 44.22
   },
   {
     "symbol": "MO",
@@ -69,11 +72,12 @@
     "hold_period": "1～4週",
     "strategy": "動能策略",
     "tracked_dates": [
-      "2026-06-26"
+      "2026-06-26",
+      "2026-06-27"
     ],
     "status": "active",
     "invalid_reason": null,
-    "current_price": 73.79
+    "current_price": 73.21
   },
   {
     "symbol": "INVH",
@@ -88,10 +92,106 @@
     "hold_period": "1～4週",
     "strategy": "突破策略",
     "tracked_dates": [
-      "2026-06-26"
+      "2026-06-26",
+      "2026-06-27"
     ],
     "status": "active",
     "invalid_reason": null,
-    "current_price": 30.46
+    "current_price": 29.91
+  },
+  {
+    "symbol": "CAT",
+    "name": "Caterpillar, Inc.",
+    "sector": "Industrials",
+    "date_added": "2026-06-27",
+    "buy_zone": "$1050～$1057",
+    "buy_zone_lower": 1050.0,
+    "buy_zone_upper": 1057.0,
+    "target": "$1163",
+    "stop_loss": "$948",
+    "hold_period": "1～2週",
+    "strategy": "動能策略",
+    "tracked_dates": [
+      "2026-06-27"
+    ],
+    "status": "active",
+    "invalid_reason": null,
+    "current_price": 1057.01
+  },
+  {
+    "symbol": "INCY",
+    "name": "Incyte Corporation",
+    "sector": "Healthcare",
+    "date_added": "2026-06-27",
+    "buy_zone": "$106～$108",
+    "buy_zone_lower": 106.0,
+    "buy_zone_upper": 108.0,
+    "target": "$118",
+    "stop_loss": "$102",
+    "hold_period": "1～3週",
+    "strategy": "動能策略",
+    "tracked_dates": [
+      "2026-06-27"
+    ],
+    "status": "active",
+    "invalid_reason": null,
+    "current_price": 107.53
+  },
+  {
+    "symbol": "VRTX",
+    "name": "Vertex Pharmaceuticals Incorpor",
+    "sector": "Healthcare",
+    "date_added": "2026-06-27",
+    "buy_zone": "$475～$480",
+    "buy_zone_lower": 475.0,
+    "buy_zone_upper": 480.0,
+    "target": "$528",
+    "stop_loss": "$454",
+    "hold_period": "1～3週",
+    "strategy": "動能策略",
+    "tracked_dates": [
+      "2026-06-27"
+    ],
+    "status": "active",
+    "invalid_reason": null,
+    "current_price": 480.18
+  },
+  {
+    "symbol": "JNJ",
+    "name": "Johnson & Johnson",
+    "sector": "Healthcare",
+    "date_added": "2026-06-27",
+    "buy_zone": "$242～$245",
+    "buy_zone_lower": 242.0,
+    "buy_zone_upper": 245.0,
+    "target": "$269",
+    "stop_loss": "$235",
+    "hold_period": "1～3週",
+    "strategy": "動能策略",
+    "tracked_dates": [
+      "2026-06-27"
+    ],
+    "status": "active",
+    "invalid_reason": null,
+    "current_price": 244.88
+  },
+  {
+    "symbol": "ABBV",
+    "name": "AbbVie Inc.",
+    "sector": "Healthcare",
+    "date_added": "2026-06-27",
+    "buy_zone": "$240～$243",
+    "buy_zone_lower": 240.0,
+    "buy_zone_upper": 243.0,
+    "target": "$267",
+    "stop_loss": "$225",
+    "hold_period": "1～2週",
+    "strategy": "動能策略",
+    "tracked_dates": [
+      "2026-06-27"
+    ],
+    "status": "active",
+    "invalid_reason": null,
+    "current_price": 243.14
   }
 ]
