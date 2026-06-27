@@ -12,9 +12,9 @@
   {
     "date": "2026-06-27",
     "weekday": "六",
-    "active": 7,
-    "watch": 3,
-    "invalid": 0,
+    "active": 4,
+    "watch": 5,
+    "invalid": 1,
     "new": 5,
     "reset": 0,
     "removed": 0

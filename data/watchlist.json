@@ -14,9 +14,9 @@
     "tracked_dates": [
       "2026-06-27"
     ],
-    "status": "active",
+    "status": "watch",
     "invalid_reason": null,
-    "current_price": 216.03
+    "current_price": 201.96
   },
   {
     "symbol": "KMB",
@@ -53,9 +53,9 @@
       "2026-06-26",
       "2026-06-27"
     ],
-    "status": "active",
+    "status": "watch",
     "invalid_reason": null,
-    "current_price": 45.04
+    "current_price": 44.22
   },
   {
     "symbol": "MO",
@@ -107,7 +107,7 @@
     "buy_zone_upper": 108.0,
     "target": "$118",
     "stop_loss": "$102",
-    "hold_period": "1～4週",
+    "hold_period": "2～4週",
     "strategy": "動能策略",
     "tracked_dates": [
       "2026-06-27"
@@ -126,13 +126,13 @@
     "buy_zone_upper": 405.0,
     "target": "$442",
     "stop_loss": "$385",
-    "hold_period": "1～4週",
+    "hold_period": "2～4週",
     "strategy": "動能策略",
     "tracked_dates": [
       "2026-06-27"
     ],
-    "status": "active",
-    "invalid_reason": null,
+    "status": "invalid",
+    "invalid_reason": "跌破止損價 $385.00，錯過買點",
     "current_price": 379.09
   },
   {
@@ -145,14 +145,14 @@
     "buy_zone_upper": 325.0,
     "target": "$355",
     "stop_loss": "$308",
-    "hold_period": "1～4週",
+    "hold_period": "2～4週",
     "strategy": "動能策略",
     "tracked_dates": [
       "2026-06-27"
     ],
     "status": "active",
     "invalid_reason": null,
-    "current_price": 318.13
+    "current_price": 322.65
   },
   {
     "symbol": "JNJ",
@@ -164,7 +164,7 @@
     "buy_zone_upper": 246.0,
     "target": "$269",
     "stop_loss": "$235",
-    "hold_period": "1～4週",
+    "hold_period": "2～4週",
     "strategy": "動能策略",
     "tracked_dates": [
       "2026-06-27"
@@ -183,7 +183,7 @@
     "buy_zone_upper": 126.0,
     "target": "$138",
     "stop_loss": "$120",
-    "hold_period": "1～4週",
+    "hold_period": "2～4週",
     "strategy": "動能策略",
     "tracked_dates": [
       "2026-06-27"
