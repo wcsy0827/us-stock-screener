@@ -61,11 +61,24 @@ def save_price_cache(data: dict[str, pd.DataFrame], date_str: str | None = None)
     print(f"[cache] price 快取已儲存：{path.name}")
 
 
-def load_info_cache(date_str: str | None = None) -> dict[str, dict] | None:
-    """讀取當日 info_data 快取，不存在則回傳 None。"""
-    path = _info_cache_path(date_str or _today())
-    if not path.exists():
+def load_info_cache() -> dict[str, dict] | None:
+    """讀取 7 日內最新的 info 快取，不存在則回傳 None。基本面資料變動緩慢，可複用數日。"""
+    if not _CACHE_DIR.exists():
         return None
+    today_ord = date.today().toordinal()
+    candidates = []
+    for f in _CACHE_DIR.glob("info_*.json"):
+        try:
+            ds = f.stem.split("_")[1]
+            y, m, d_ = int(ds[:4]), int(ds[4:6]), int(ds[6:])
+            age = today_ord - date(y, m, d_).toordinal()
+            if 0 <= age <= 7:
+                candidates.append((age, f))
+        except Exception:
+            pass
+    if not candidates:
+        return None
+    _, path = min(candidates, key=lambda x: x[0])
     try:
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
@@ -76,10 +89,10 @@ def load_info_cache(date_str: str | None = None) -> dict[str, dict] | None:
         return None
 
 
-def save_info_cache(data: dict[str, dict], date_str: str | None = None) -> None:
-    """儲存 info_data 到快取。"""
+def save_info_cache(data: dict[str, dict]) -> None:
+    """儲存 info_data 到快取（以今日日期命名）。"""
     _CACHE_DIR.mkdir(exist_ok=True)
-    path = _info_cache_path(date_str or _today())
+    path = _info_cache_path(_today())
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
     print(f"[cache] info 快取已儲存：{path.name}")

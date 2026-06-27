@@ -43,6 +43,19 @@ def check_already_run_today() -> bool:
 
 # ── 工具函式 ─────────────────────────────────────────────────────────
 
+def _parse_stop_loss(stop_loss_str: str) -> float | None:
+    """解析 "$182.50" 或 "182" → 182.5，失敗回傳 None。"""
+    if not stop_loss_str or stop_loss_str.strip() in ("-", ""):
+        return None
+    nums = re.findall(r"[\d,]+\.?\d*", stop_loss_str)
+    if not nums:
+        return None
+    try:
+        return float(nums[0].replace(",", ""))
+    except ValueError:
+        return None
+
+
 def _parse_buy_zone(buy_zone_str: str) -> tuple[float, float] | None:
     """解析 "$185～$188" → (185.0, 188.0)，失敗回傳 None。"""
     if not buy_zone_str or buy_zone_str.strip() in ("-", ""):
@@ -115,27 +128,46 @@ def _eval_status(
     已失效者直接回傳原因，不再重新判斷。
 
     失效條件依策略類型差異化：
-    - 反轉策略：進場點本就在 EMA20 之下，以跌破 EMA50 為失效門檻
+    - 反轉策略：進場點本就在 EMA50 下方，以跌破 AI 止損價為失效門檻
     - 動能/突破策略：跌破 EMA20 即失效
+
+    狀態機下限：
+    - price >= lower → active（進場）
+    - price < lower 但 >= stop_loss → watch（繼續觀察，未觸及止損）
+    - price < lower 且 < stop_loss → invalid（跌穿止損）
     """
     if entry.get("status") == "invalid":
         return "invalid", entry.get("invalid_reason")
 
+    lower = entry.get("buy_zone_lower", 0.0)
     upper = entry["buy_zone_upper"]
     strategy = entry.get("strategy", "")
+    stop_loss_price = _parse_stop_loss(entry.get("stop_loss", "-"))
+    current_status = entry.get("status", "watch")
 
+    # ── 失效條件：依策略差異化 ──
     if strategy == "反轉策略":
-        if ema50 is not None and price < ema50:
-            return "invalid", "跌破 EMA50 支撐，反轉訊號失效"
+        # 反轉股進場點本就在 EMA50 下方，不能以 EMA50 為失效門檻
+        if stop_loss_price is not None and price < stop_loss_price:
+            return "invalid", f"跌破止損價 ${stop_loss_price:.2f}，反轉訊號失效"
     else:
         if ema20 is not None and price < ema20:
             return "invalid", "趨勢轉弱，訊號失效"
 
-    if price > upper * 1.08:
+    # ── 追高失效：僅適用非 active 狀態 ──
+    # active 持倉大漲屬正常獲利波段，由 hold_period 到期接管
+    if current_status != "active" and price > upper * 1.08:
         return "invalid", "已追高，錯過買點"
+
+    # ── 狀態機判定 ──
     if price > upper * 1.01:
-        return "watch", None
-    return "active", None
+        return "watch", None       # 高於買入區間，等回落
+    if price >= lower:
+        return "active", None      # 在買入區間內，視為進場
+    # price < lower：跌穿買入區下限
+    if stop_loss_price is not None and price < stop_loss_price:
+        return "invalid", f"跌破止損價 ${stop_loss_price:.2f}，錯過買點"
+    return "watch", None           # 跌穿下限但未到止損，繼續觀察
 
 
 def _days(entry: dict) -> int:

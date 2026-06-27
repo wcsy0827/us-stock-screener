@@ -104,6 +104,23 @@ def _score_momentum(close: pd.Series) -> float:
     return 0.0
 
 
+def _is_oversold_reversal_candidate(sym: str, df: pd.DataFrame) -> bool:
+    """判斷是否為超賣反轉候選：RSI < 35 且 20 日負乖離超過 15%。
+    PANIC_REVERSAL 環境下強制放行此類股票進入 L3，不受分數門檻限制。
+    """
+    close = df["Close"].dropna()
+    if len(close) < 20:
+        return False
+    rsi_val = _calc_rsi(close)
+    if pd.isna(rsi_val) or rsi_val >= 35:
+        return False
+    p20d = float(close.iloc[-20])
+    if p20d == 0:
+        return False
+    dev_20d = (float(close.iloc[-1]) - p20d) / p20d * 100
+    return dev_20d <= -15.0
+
+
 def score_stock(sym: str, df: pd.DataFrame) -> dict:
     """計算單支股票技術指標評分，回傳含各項分數與總分的字典。"""
     close = df["Close"].dropna()
@@ -132,17 +149,37 @@ def score_all(
     symbols: list[str],
     price_data: dict[str, pd.DataFrame],
     min_score: float = 60.0,
+    regime: str = "",
 ) -> list[dict]:
-    """對所有通過 L1 的股票評分，回傳 >= min_score 候選股，依總分降序排列。"""
+    """對所有通過 L1 的股票評分，回傳候選股，依總分降序排列。
+
+    PANIC_REVERSAL 環境下兩層放行：
+    1. 動態門檻降至 40 分（讓輕度超跌股進入）
+    2. 強制放行 RSI < 35 + 20 日跌幅 > 15% 的超賣反轉股（得分通常 < 20 分但正是目標標的）
+    """
     results = [
         score_stock(sym, price_data[sym])
         for sym in symbols
         if sym in price_data and len(price_data[sym]) >= 20
     ]
+    effective_min = 40.0 if regime == "PANIC_REVERSAL" else min_score
+
+    force_pass: set[str] = set()
+    if regime == "PANIC_REVERSAL":
+        for sym in symbols:
+            if sym in price_data and _is_oversold_reversal_candidate(sym, price_data[sym]):
+                force_pass.add(sym)
+        if force_pass:
+            print(f"[scorer] PANIC_REVERSAL 強制放行 {len(force_pass)} 支超賣反轉候選股")
+
     candidates = sorted(
-        [r for r in results if r["total_score"] >= min_score],
+        [r for r in results if r["total_score"] >= effective_min or r["symbol"] in force_pass],
         key=lambda x: x["total_score"],
         reverse=True,
     )
-    print(f"[scorer] L2 評分：{len(symbols)} 支 → {len(candidates)} 支 >= {min_score} 分")
+    suffix = (
+        f"（PANIC_REVERSAL，門檻 {effective_min:.0f} 分 + 強制放行 {len(force_pass)} 支）"
+        if regime == "PANIC_REVERSAL" else ""
+    )
+    print(f"[scorer] L2 評分：{len(symbols)} 支 → {len(candidates)} 支進入 L3{suffix}")
     return candidates

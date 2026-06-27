@@ -169,6 +169,33 @@ def determine_market_regime(breadth_pct: float, vix_value: float) -> dict:
         }
 
 
+# ── 輕量 Regime 快速判定（L2 評分前使用）────────────────────────────
+
+def fetch_regime_quick(all_stocks_data: dict) -> tuple[str, float, float]:
+    """
+    快速判定大盤 Regime，只下載 VIX，搭配已有 price_data 計算廣度。
+    回傳 (regime, breadth_pct, vix_value)。
+    在 pipeline Step 2.5 呼叫，比 fetch_market_context 早執行，
+    讓 scorer 能根據 regime 動態調整 L2 門檻。
+    """
+    breadth_pct = calculate_market_breadth(all_stocks_data)
+    vix_value = 20.0  # 下載失敗時使用中性值
+    try:
+        raw = yf.download(
+            "^VIX", period="5d", interval="1d",
+            auto_adjust=True, progress=False,
+        )
+        close = raw["Close"].dropna() if "Close" in raw.columns else pd.Series(dtype=float)
+        if not close.empty:
+            vix_value = float(close.iloc[-1])
+    except Exception as e:
+        print(f"[market] fetch_regime_quick VIX 下載失敗，使用預設值 20.0：{e}")
+    regime_dict = determine_market_regime(breadth_pct, vix_value)
+    regime = regime_dict["regime"]
+    print(f"[market] 快速 Regime：{regime}（廣度={breadth_pct}%，VIX={vix_value:.1f}）")
+    return regime, breadth_pct, vix_value
+
+
 # ── 主函式 ───────────────────────────────────────────────────────────
 
 def fetch_market_context(
