@@ -164,6 +164,9 @@ a:hover { text-decoration: underline; }
 .regime-metric { min-width: 80px; }
 .regime-metric-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 2px; }
 .regime-metric-val { font-size: 1rem; font-weight: 700; }
+.regime-metric-sub { font-size: 0.72rem; color: var(--muted); margin-top: 1px; }
+.spy-above { color: var(--active); }
+.spy-below { color: var(--invalid); }
 .defense-banner { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.3); border-radius: 10px; padding: 20px 24px; text-align: center; margin-bottom: 16px; }
 .defense-banner .defense-title { font-size: 1rem; font-weight: 700; color: var(--invalid); margin-bottom: 6px; }
 .defense-banner .defense-desc { font-size: 0.85rem; color: var(--muted); line-height: 1.7; }
@@ -189,8 +192,9 @@ def _build_market_dashboard(market_context: dict) -> str:
     regime = market_context.get("regime", "")
     breadth = market_context.get("market_breadth_pct")
     primary = market_context.get("primary_strategy", "")
-    vix = market_context.get("vix", {}).get("value")
-    spy_5d = market_context.get("sp500", {}).get("change_5d_pct")
+    vix_val = market_context.get("vix", {}).get("value")
+    vix_label = market_context.get("vix", {}).get("label", "")
+    spy_above_ema20 = market_context.get("sp500", {}).get("above_ema20")
 
     _REGIME_CONFIG = {
         "BULL_TREND":        ("bull",          "📈 強勢牛市"),
@@ -201,11 +205,17 @@ def _build_market_dashboard(market_context: dict) -> str:
     cls, name = _REGIME_CONFIG.get(regime, ("", _esc(regime)))
 
     breadth_str = f"{breadth:.1f}%" if breadth is not None else "-"
-    vix_str = f"{vix:.1f}" if vix is not None else "-"
-    if spy_5d is not None:
-        spy_str = f"+{spy_5d:.1f}%" if spy_5d >= 0 else f"{spy_5d:.1f}%"
+    vix_str = f"{vix_val:.1f}" if vix_val is not None else "-"
+    vix_sublabel = f'<div class="regime-metric-sub">{_esc(vix_label)}</div>' if vix_label else ""
+    if spy_above_ema20 is True:
+        spy_str = "✅ EMA20 之上"
+        spy_cls = "spy-above"
+    elif spy_above_ema20 is False:
+        spy_str = "⚠️ EMA20 之下"
+        spy_cls = "spy-below"
     else:
         spy_str = "-"
+        spy_cls = ""
     strategy_label = f"主推：{_esc(primary)}" if primary else "⛔ 全面防禦，無買入建議"
 
     return f"""
@@ -222,10 +232,11 @@ def _build_market_dashboard(market_context: dict) -> str:
     <div class="regime-metric">
       <div class="regime-metric-label">VIX</div>
       <div class="regime-metric-val">{_esc(vix_str)}</div>
+      {vix_sublabel}
     </div>
     <div class="regime-metric">
-      <div class="regime-metric-label">S&amp;P500 5日</div>
-      <div class="regime-metric-val">{_esc(spy_str)}</div>
+      <div class="regime-metric-label">SPY 位置</div>
+      <div class="regime-metric-val {spy_cls}">{_esc(spy_str)}</div>
     </div>
   </div>
 </div>"""
