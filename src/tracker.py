@@ -93,24 +93,44 @@ def _fetch_latest(symbols: list[str]) -> dict[str, dict]:
             continue
         price = float(close.iloc[-1])
         ema20 = float(close.ewm(span=20, adjust=False).mean().iloc[-1]) if len(close) >= 20 else None
-        result[sym] = {"price": round(price, 2), "ema20": round(ema20, 2) if ema20 else None}
+        ema50 = float(close.ewm(span=50, adjust=False).mean().iloc[-1]) if len(close) >= 50 else None
+        result[sym] = {
+            "price": round(price, 2),
+            "ema20": round(ema20, 2) if ema20 else None,
+            "ema50": round(ema50, 2) if ema50 else None,
+        }
 
     return result
 
 
-def _eval_status(entry: dict, price: float, ema20: float | None) -> tuple[str, str | None]:
+def _eval_status(
+    entry: dict,
+    price: float,
+    ema20: float | None,
+    ema50: float | None = None,
+) -> tuple[str, str | None]:
     """
     評估訊號狀態：股價是否已落入買入區間，或訊號是否失效。
     回傳 (new_status, invalid_reason)。
     已失效者直接回傳原因，不再重新判斷。
+
+    失效條件依策略類型差異化：
+    - 反轉策略：進場點本就在 EMA20 之下，以跌破 EMA50 為失效門檻
+    - 動能/突破策略：跌破 EMA20 即失效
     """
     if entry.get("status") == "invalid":
         return "invalid", entry.get("invalid_reason")
 
     upper = entry["buy_zone_upper"]
+    strategy = entry.get("strategy", "")
 
-    if ema20 is not None and price < ema20:
-        return "invalid", "趨勢轉弱，訊號失效"
+    if strategy == "反轉策略":
+        if ema50 is not None and price < ema50:
+            return "invalid", "跌破 EMA50 支撐，反轉訊號失效"
+    else:
+        if ema20 is not None and price < ema20:
+            return "invalid", "趨勢轉弱，訊號失效"
+
     if price > upper * 1.08:
         return "invalid", "已追高，錯過買點"
     if price > upper * 1.01:
@@ -210,7 +230,8 @@ def run_tracker(new_ranked: list[dict]) -> tuple[list[dict], dict]:
         if sym in latest:
             price = latest[sym]["price"]
             ema20 = latest[sym]["ema20"]
-            new_status, reason = _eval_status(entry, price, ema20)
+            ema50 = latest[sym].get("ema50")
+            new_status, reason = _eval_status(entry, price, ema20, ema50)
             entry["status"] = new_status
             entry["invalid_reason"] = reason
             entry["current_price"] = price
