@@ -12,7 +12,8 @@ import yfinance as yf
 
 _DATA_DIR = Path(__file__).parent.parent / "data"
 _WATCHLIST_PATH = _DATA_DIR / "watchlist.json"
-MAX_TRACK_DAYS = 5
+MAX_WATCH_DAYS = 5      # watch 狀態最多等 5 個交易日（進場有效期限）
+_DEFAULT_HOLD_DAYS = 10 # hold_period 無法解析時的預設持倉天數
 
 
 # ── I/O ─────────────────────────────────────────────────────────────
@@ -42,6 +43,16 @@ def check_already_run_today() -> bool:
 
 
 # ── 工具函式 ─────────────────────────────────────────────────────────
+
+def _parse_hold_period(hold_period_str: str, default: int = _DEFAULT_HOLD_DAYS) -> int:
+    """解析 "5-10 個交易日" 或 "7 天" → 取最大數值，無法解析則回傳 default。"""
+    if not hold_period_str or hold_period_str.strip() in ("-", ""):
+        return default
+    nums = re.findall(r"\d+", hold_period_str)
+    if not nums:
+        return default
+    return max(int(n) for n in nums)
+
 
 def _parse_stop_loss(stop_loss_str: str) -> float | None:
     """解析 "$182.50" 或 "182" → 182.5，失敗回傳 None。"""
@@ -111,9 +122,34 @@ def _fetch_latest(symbols: list[str]) -> dict[str, dict]:
             "price": round(price, 2),
             "ema20": round(ema20, 2) if ema20 else None,
             "ema50": round(ema50, 2) if ema50 else None,
+            "close_series": close,   # 保留完整 series 供拆股校正使用
         }
 
     return result
+
+
+def _calc_split_factor(signal_date: str, signal_date_close: float,
+                       close_series: pd.Series) -> float:
+    """
+    從 yfinance auto_adjust 的歷史數據中查找信號日的調整後收盤價，
+    計算拆股平移因子。無拆股時回傳 1.0。
+
+    yfinance auto_adjust=True 會在拆股後回溯調整全部歷史價格，因此：
+    - 若無拆股：signal_date 當日的現行調整價 ≈ 記錄時的 signal_date_close → factor ≈ 1.0
+    - 若發生 N:1 拆股：signal_date 的現行調整價 = signal_date_close / N → factor = 1/N
+    所有門檻乘以 factor 後即等比例修正，消除幽靈止損。
+    """
+    if not signal_date or not signal_date_close:
+        return 1.0
+    try:
+        idx = pd.to_datetime(signal_date)
+        valid = close_series[close_series.index.normalize() <= idx]
+        if valid.empty:
+            return 1.0
+        adjusted_hist = float(valid.iloc[-1])
+        return adjusted_hist / signal_date_close
+    except Exception:
+        return 1.0
 
 
 def _eval_status(
@@ -171,8 +207,21 @@ def _eval_status(
 
 
 def _days(entry: dict) -> int:
-    """回傳已追蹤天數（唯一日期數量）。"""
+    """回傳已追蹤天數（唯一日期數量）。供 is_rerun 防重複執行使用。"""
     return len(entry.get("tracked_dates", []))
+
+
+def _is_expired(entry: dict) -> bool:
+    """
+    判斷是否已到期應移除。依狀態採用不同計時邏輯：
+    - watch / invalid：超過 MAX_WATCH_DAYS 個追蹤日即到期
+    - active：超過 AI 指定的 hold_period 天數即到期
+    """
+    status = entry.get("status", "watch")
+    if status == "active":
+        hold_limit = _parse_hold_period(entry.get("hold_period", "-"))
+        return entry.get("active_days", 0) >= hold_limit
+    return _days(entry) >= MAX_WATCH_DAYS
 
 
 # ── 主函式 ──────────────────────────────────────────────────────────
@@ -229,6 +278,9 @@ def run_tracker(new_ranked: list[dict]) -> tuple[list[dict], dict]:
             "tracked_dates": [today],
             "status": "watch",
             "invalid_reason": None,
+            "watch_days": 0,          # 在 watch 狀態待的交易日數
+            "active_days": 0,         # 在 active 狀態持倉的交易日數
+            "signal_date_close": None, # 信號日 auto_adjust 收盤價（拆股免疫用）
         }
         if sym in existing:
             existing[sym].update(base)
@@ -260,35 +312,65 @@ def run_tracker(new_ranked: list[dict]) -> tuple[list[dict], dict]:
             entry["tracked_dates"].append(today)
 
         if sym in latest:
-            price = latest[sym]["price"]
-            ema20 = latest[sym]["ema20"]
-            ema50 = latest[sym].get("ema50")
-            new_status, reason = _eval_status(entry, price, ema20, ema50)
+            price        = latest[sym]["price"]
+            ema20        = latest[sym]["ema20"]
+            ema50        = latest[sym].get("ema50")
+            close_series = latest[sym].get("close_series")
+
+            # 拆股免疫：以信號日的 auto_adjust 歷史價計算平移因子
+            signal_close = entry.get("signal_date_close")
+            signal_date  = entry["tracked_dates"][0] if entry.get("tracked_dates") else ""
+            split_factor = 1.0
+            if signal_close and close_series is not None:
+                split_factor = _calc_split_factor(signal_date, signal_close, close_series)
+            if abs(split_factor - 1.0) > 0.01:
+                print(f"[tracker] {sym} 偵測到拆股，平移因子={split_factor:.4f}")
+                adj = dict(entry)
+                adj["buy_zone_lower"] = entry.get("buy_zone_lower", 0.0) * split_factor
+                adj["buy_zone_upper"] = entry["buy_zone_upper"] * split_factor
+                sl = _parse_stop_loss(entry.get("stop_loss", "-"))
+                if sl:
+                    adj["stop_loss"] = f"${sl * split_factor:.2f}"
+                new_status, reason = _eval_status(adj, price, ema20, ema50)
+            else:
+                new_status, reason = _eval_status(entry, price, ema20, ema50)
+
             entry["status"] = new_status
             entry["invalid_reason"] = reason
             entry["current_price"] = price
+
+            # 記錄信號日收盤價（首次追蹤時設定，供後續拆股校正使用）
+            if entry.get("signal_date_close") is None:
+                entry["signal_date_close"] = price
+
+            # 計數器遞增（依新狀態分別計時）
+            if new_status == "watch":
+                entry["watch_days"] = entry.get("watch_days", 0) + 1
+            elif new_status == "active":
+                entry["active_days"] = entry.get("active_days", 0) + 1
         else:
             entry.setdefault("current_price", None)
 
     # F. 分類（移除前快照 expired，其餘依狀態分組）
-    expired = [e for e in watchlist if _days(e) >= MAX_TRACK_DAYS]
+    # watch/invalid 以 MAX_WATCH_DAYS 計；active 以 hold_period 計
+    expired = [e for e in watchlist if _is_expired(e)]
     active = [
         e for e in watchlist
         if e["status"] == "active"
         and e["symbol"] not in reset_symbols
-        and _days(e) < MAX_TRACK_DAYS
+        and not _is_expired(e)
     ]
     watch = [
         e for e in watchlist
         if e["status"] == "watch"
         and e["symbol"] not in reset_symbols
-        and _days(e) < MAX_TRACK_DAYS
+        and not _is_expired(e)
     ]
     invalid = [
         e for e in watchlist
         if e["status"] == "invalid"
         and e["symbol"] not in reset_symbols
-        and _days(e) < MAX_TRACK_DAYS
+        and not _is_expired(e)
     ]
 
     categories = {
@@ -301,7 +383,7 @@ def run_tracker(new_ranked: list[dict]) -> tuple[list[dict], dict]:
     }
 
     # G. 移除已到期
-    watchlist = [e for e in watchlist if _days(e) < MAX_TRACK_DAYS]
+    watchlist = [e for e in watchlist if not _is_expired(e)]
 
     # H. 儲存
     save_watchlist(watchlist)

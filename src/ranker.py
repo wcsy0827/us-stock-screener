@@ -46,12 +46,14 @@ def compute_indicators(sym: str, df: pd.DataFrame) -> dict:
     close = df["Close"].dropna()
     volume = df["Volume"].dropna()
 
-    price_now = float(close.iloc[-1])
-    price_prev = float(close.iloc[-2]) if len(close) >= 2 else price_now
-    price_20d = float(close.iloc[-20]) if len(close) >= 20 else price_now
+    price_now  = float(close.iloc[-1])
+    price_prev = float(close.iloc[-2])  if len(close) >= 2  else price_now
+    price_5d   = float(close.iloc[-5])  if len(close) >= 5  else price_now
+    price_20d  = float(close.iloc[-20]) if len(close) >= 20 else price_now
 
-    change_1d = (price_now - price_prev) / price_prev * 100 if price_prev else 0.0
-    change_20d = (price_now - price_20d) / price_20d * 100 if price_20d else 0.0
+    change_1d  = (price_now - price_prev) / price_prev * 100 if price_prev else 0.0
+    change_5d  = (price_now - price_5d)   / price_5d   * 100 if price_5d   else 0.0
+    change_20d = (price_now - price_20d)  / price_20d  * 100 if price_20d  else 0.0
 
     avg_vol_30 = float(volume.tail(30).mean()) if len(volume) >= 30 else float(volume.mean())
     today_vol = float(volume.iloc[-1])
@@ -82,7 +84,8 @@ def compute_indicators(sym: str, df: pd.DataFrame) -> dict:
     return {
         "symbol": sym,
         "price": round(price_now, 2),
-        "change_1d_pct": round(change_1d, 2),
+        "change_1d_pct":  round(change_1d, 2),
+        "change_5d_pct":  round(change_5d, 2),
         "change_20d_pct": round(change_20d, 2),
         "avg_volume_30d": int(avg_vol_30),
         "volume_ratio": round(vol_ratio, 2),
@@ -175,11 +178,11 @@ def _generate_candidates_markdown_table(
 
     header = (
         "| Ticker | Close_Price | Sector | L2_Score | Strategy_Tag | MA_Trend"
-        " | RSI | MACD_Hist | Vol_Ratio | Price_20D_Pct | 52W_High_Dist |"
+        " | RSI | MACD_Hist | Vol_Ratio | Price_5D_Pct | Price_20D_Pct | 52W_High_Dist |"
     )
     sep = (
         "|--------|-------------|--------|----------|--------------|----------"
-        "|-----|-----------|-----------|---------------|---------------|"
+        "|-----|-----------|-----------|--------------|---------------|---------------|"
     )
     rows = [header, sep]
 
@@ -202,6 +205,7 @@ def _generate_candidates_markdown_table(
         rsi_str = f"{rsi_val:.1f}" if rsi_val is not None else "N/A"
 
         vol_ratio = indic.get("volume_ratio", 0.0)
+        p5d_str   = f"{indic.get('change_5d_pct', 0.0):+.1f}%"
         p20d_str  = f"{indic.get('change_20d_pct', 0.0):+.1f}%"
 
         fw_high  = info.get("fifty_two_week_high")
@@ -215,7 +219,7 @@ def _generate_candidates_markdown_table(
         rows.append(
             f"| {sym} | {price_str} | {sector} | {c['total_score']:.0f} | {strategy}"
             f" | {ma_trend} | {rsi_str} | {macd_tag} | {vol_ratio:.2f}"
-            f" | {p20d_str} | {dist_str} |"
+            f" | {p5d_str} | {p20d_str} | {dist_str} |"
         )
 
     return "\n".join(rows)
@@ -258,11 +262,11 @@ def _build_prompt(
 
     if sectors:
         etf_parts = [
-            f"{sec}({d.get('etf', '')})={d.get('change_5d_pct', 0):+.1f}%"
+            f"{sec}({d.get('etf', '')}) 5日={d.get('change_5d_pct', 0):+.1f}% 20日={d.get('change_20d_pct', 0):+.1f}%"
             f"{'↑' if d.get('above_ema20') else '↓'}"
             for sec, d in sectors.items()
         ]
-        regime_lines.append("產業ETF（5日漲跌）：" + "  ".join(etf_parts))
+        regime_lines.append("產業ETF（5日/20日漲跌）：" + "  ".join(etf_parts))
 
     regime_block = "\n".join(regime_lines)
 
@@ -273,7 +277,8 @@ def _build_prompt(
         "- MA_Trend: BULL_1=EMA5>EMA10>EMA20>EMA50完美多頭｜BULL_2=EMA5>EMA20>EMA50標準多頭｜MIXED=混合｜BEAR=空頭\n"
         "- MACD_Hist: POS_INC=正且遞增(最強)｜POS_DEC=正但遞減｜NEG_INC=負但回升｜NEG_DEC=負且下降(最弱)\n"
         "- Vol_Ratio: 當日量÷30日均量（>=1.5放量，>=2.0顯著放量）\n"
-        "- Price_20D_Pct: 近20日漲跌幅\n"
+        "- Price_5D_Pct: 近5日漲跌幅（短線爆發力）\n"
+        "- Price_20D_Pct: 近20日漲跌幅（中線趨勢）\n"
         "- 52W_High_Dist: 距52週高點（-2%=接近高點，-30%=遠離高點）\n"
         "- Strategy_Tag: 系統預判策略（MOMENTUM/BREAKOUT/REVERSAL/NEUTRAL），僅供參考"
     )

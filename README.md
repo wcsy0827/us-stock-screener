@@ -94,6 +94,26 @@ S&P 500（~503 支）
 
 ---
 
+## 開發流程（Spec-First）
+
+本專案採用規格驅動開發（SDD）工作流：
+
+```
+需求 → 更新 specs/<module>.md → 實作 → PR 引用規格節次 → 合併
+```
+
+| 模組 | 規格文件 |
+|------|----------|
+| `src/scorer.py` | [`specs/scorer.md`](specs/scorer.md) |
+| `src/tracker.py` | [`specs/tracker.md`](specs/tracker.md) |
+| `src/ranker.py` | [`specs/ranker.md`](specs/ranker.md) |
+| `src/market.py` | [`specs/market.md`](specs/market.md) |
+| `src/pipeline.py` | [`specs/pipeline.md`](specs/pipeline.md) |
+
+新功能請複製 [`specs/_template.md`](specs/_template.md) 建立規格文件，並在實作前完成 Behavior 與 Design Decisions 節。
+
+---
+
 ## 本機執行
 
 ### 環境需求
