@@ -4,8 +4,8 @@
     "name": "Biogen Inc.",
     "sector": "Healthcare",
     "date_added": "2026-06-28",
-    "buy_zone": "$215～$218",
-    "buy_zone_lower": 215.0,
+    "buy_zone": "$214～$218",
+    "buy_zone_lower": 214.0,
     "buy_zone_upper": 218.0,
     "target": "$238",
     "stop_loss": "$210",
@@ -26,7 +26,7 @@
     "vix_value": 20.0,
     "l2_score": 100.0,
     "ai_confidence": 8,
-    "ai_strategy_reason": "Vol_Ratio=2.0顯著放量，dist_from_20d_high接近0，符合突破條件。",
+    "ai_strategy_reason": "Vol_Ratio=2.0，dist_from_20d_high接近0，符合突破條件。",
     "current_price": 216.03
   },
   {
@@ -34,9 +34,9 @@
     "name": "Sherwin-Williams Company (The)",
     "sector": "Basic Materials",
     "date_added": "2026-06-28",
-    "buy_zone": "$342～$346",
-    "buy_zone_lower": 342.0,
-    "buy_zone_upper": 346.0,
+    "buy_zone": "$340～$348",
+    "buy_zone_lower": 340.0,
+    "buy_zone_upper": 348.0,
     "target": "$378",
     "stop_loss": "$335",
     "hold_period": "10",
@@ -56,7 +56,7 @@
     "vix_value": 20.0,
     "l2_score": 100.0,
     "ai_confidence": 7,
-    "ai_strategy_reason": "Vol_Ratio=2.26顯著放量，價格接近20日高點，突破訊號明確。",
+    "ai_strategy_reason": "Vol_Ratio=2.26，dist_from_20d_high接近0，突破訊號明確。",
     "current_price": 344.07
   },
   {
@@ -64,11 +64,11 @@
     "name": "CenterPoint Energy, Inc (Holdin",
     "sector": "Utilities",
     "date_added": "2026-06-28",
-    "buy_zone": "$44.8～$45.2",
-    "buy_zone_lower": 44.8,
-    "buy_zone_upper": 45.2,
+    "buy_zone": "$44.5～$45.5",
+    "buy_zone_lower": 44.5,
+    "buy_zone_upper": 45.5,
     "target": "$49.5",
-    "stop_loss": "$44.0",
+    "stop_loss": "$43.8",
     "hold_period": "10",
     "strategy": "突破策略",
     "tracked_dates": [
@@ -86,7 +86,7 @@
     "vix_value": 20.0,
     "l2_score": 92.5,
     "ai_confidence": 7,
-    "ai_strategy_reason": "Vol_Ratio=2.30顯著放量，dist_from_20d_high接近0，突破確認。",
+    "ai_strategy_reason": "Vol_Ratio=2.3，dist_from_20d_high接近0，突破確認。",
     "current_price": 45.04
   },
   {
@@ -94,11 +94,11 @@
     "name": "Coca-Cola Company (The)",
     "sector": "Consumer Defensive",
     "date_added": "2026-06-28",
-    "buy_zone": "$82.0～$83.0",
-    "buy_zone_lower": 82.0,
-    "buy_zone_upper": 83.0,
-    "target": "$90.0",
-    "stop_loss": "$80.5",
+    "buy_zone": "$81.5～$83.5",
+    "buy_zone_lower": 81.5,
+    "buy_zone_upper": 83.5,
+    "target": "$91",
+    "stop_loss": "$80",
     "hold_period": "10",
     "strategy": "突破策略",
     "tracked_dates": [
@@ -116,7 +116,7 @@
     "vix_value": 20.0,
     "l2_score": 92.5,
     "ai_confidence": 6,
-    "ai_strategy_reason": "Vol_Ratio=2.82顯著放量，價格突破20日高點，動能強。",
+    "ai_strategy_reason": "Vol_Ratio=2.82，dist_from_20d_high接近0，突破訊號強。",
     "current_price": 82.63
   },
   {
@@ -124,11 +124,11 @@
     "name": "Fastenal Company",
     "sector": "Industrials",
     "date_added": "2026-06-28",
-    "buy_zone": "$46.8～$47.3",
-    "buy_zone_lower": 46.8,
-    "buy_zone_upper": 47.3,
-    "target": "$51.8",
-    "stop_loss": "$46.0",
+    "buy_zone": "$46.5～$47.5",
+    "buy_zone_lower": 46.5,
+    "buy_zone_upper": 47.5,
+    "target": "$52",
+    "stop_loss": "$45.8",
     "hold_period": "10",
     "strategy": "突破策略",
     "tracked_dates": [
@@ -146,7 +146,7 @@
     "vix_value": 20.0,
     "l2_score": 92.5,
     "ai_confidence": 6,
-    "ai_strategy_reason": "Vol_Ratio=2.08顯著放量，價格接近20日高點，突破訊號。",
+    "ai_strategy_reason": "Vol_Ratio=2.08，dist_from_20d_high接近0，符合突破條件。",
     "current_price": 47.1
   }
 ]

@@ -1,1 +1,12 @@
-[]
+[
+  {
+    "date": "2026-06-28",
+    "weekday": "日",
+    "active": 5,
+    "watch": 0,
+    "invalid": 0,
+    "new": 5,
+    "reset": 0,
+    "removed": 0
+  }
+]
