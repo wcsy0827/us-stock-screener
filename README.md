@@ -11,7 +11,8 @@
 - **大盤環境感知**：每日計算市場廣度（S&P 500 中站上 50 SMA 的比例）與 VIX，自動判定四種市場環境（Regime）
 - **三層篩選漏斗**：從 500+ 支股票逐步收斂至最多 5 支精選
 - **動態策略切換**：依 Regime 自動調整 AI 主推策略（動能 / 突破 / 反轉 / 全面防禦）
-- **訊號追蹤**：自動追蹤推薦股票是否落入買入區間，追蹤 5 個交易日
+- **訊號追蹤與績效結算**：追蹤推薦股票是否落入買入區間，觸發停利/停損/到期後自動歸檔至績效資料庫
+- **歷史績效儀表板**：每日報告顯示累計勝率、平均回報率、各策略勝率
 - **每日報告**：深色主題網頁，卡片式設計，含大盤儀表板，支援手機瀏覽
 - **全自動執行**：GitHub Actions 每個交易日收盤後自動執行並發布
 
@@ -30,7 +31,7 @@ S&P 500（~503 支）
     │
     ▼  Step 2.5  market.py — 快速 Regime 判定
     │  計算市場廣度（% 股票 > 50 SMA）+ 下載 VIX
-    │  → 四象限 Regime 分類（見下方）
+    │  → 四象限 Regime 分類；回傳值供 Step 5.5 直接複用（不重算）
     │
     ▼  Step 3  fetcher.py
     │  抓取基本面：市值、產業、公司名稱（.cache/info_*.json，7 日有效）
@@ -44,11 +45,11 @@ S&P 500（~503 支）
     │  → 通常剩 30~80 支
     │
     ▼  Step 5.5  market.py — 完整大盤環境
-    │  下載 SPY + 相關產業 ETF，組裝 AI Prompt 用的市場背景
+    │  直接複用 Step 2.5 的廣度與 VIX，補抓 SPY + 相關產業 ETF 細節
     │
     ▼  Step 6  ranker.py — L3 DeepSeek AI 精選
        依 Regime 主推策略從候選池選出最多 5 支
-       每支附：買入區間、目標價、止損、持有週期、策略理由
+       每支附：買入區間、目標價、止損、持有天數（純整數）、策略理由
        BEAR_DISTRIBUTION 時直接回傳空列表，不建議任何買入
 ```
 
@@ -79,18 +80,37 @@ S&P 500（~503 支）
 
 ---
 
-## 訊號追蹤狀態
+## 訊號追蹤狀態機
 
 | 狀態 | 說明 |
 |------|------|
-| ✅ active | 股價已落入買入區間，可考慮進場 |
+| ✅ active | 股價已落入買入區間且高於止損，可考慮進場 |
 | 🟡 watch | 股價略高於買入區間，等待回落 |
-| ❌ invalid | 趨勢轉弱（跌破 EMA20）、跌破 AI 止損價，或已追高 >8% |
-| 🗑 expired | 追蹤滿 5 個交易日自動移除 |
+| ❌ invalid | 趨勢轉弱、跌破 AI 止損價、開盤跳空觸發安全攔截，或已追高 >8% |
+| 🗑 expired | 觀察滿 5 個交易日自動移除 |
+| 📦 settled | 觸發停利/停損/到期結算，歸檔至績效資料庫後移除 |
 
 **雙軌制失效判定**：
 - 動能策略 / 突破策略：跌破 EMA20 即失效
 - 反轉策略：跌破 AI 設定的止損價才失效（進場點本就在 EMA20 以下）
+
+**開盤跳空安全攔截**：`watch → active` 轉換時，除了 `price >= buy_zone_lower` 外，額外確認 `price > stop_loss`，防止 AI 誤設止損在買入區間內時污染績效資料庫。
+
+**績效結算三態**：
+- `CLOSED_PROFIT`：收盤價 ≥ 目標價
+- `CLOSED_LOSS`：收盤價 ≤ 止損價
+- `FORCE_EXPIRED`：持倉天數 ≥ AI 設定的持有天數
+
+---
+
+## 歷史績效
+
+結算後自動寫入 `data/performance_history.json`，每日報告首頁顯示：
+
+- 整體勝率、平均回報率
+- 各策略（動能/突破/反轉）累積勝率
+
+系統啟動初期（冷啟動）績效區塊自動隱藏，不顯示空資料。
 
 ---
 
@@ -203,11 +223,19 @@ us-stock-screener/
 │   ├── scorer.py           # L2 技術評分（含 PANIC_REVERSAL 強制放行）
 │   ├── market.py           # 大盤廣度、VIX、Regime 判定、產業 ETF
 │   ├── ranker.py           # L3 DeepSeek AI 精選（XML Prompt）
-│   ├── tracker.py          # 訊號追蹤（雙軌制失效、watchlist 管理）
+│   ├── tracker.py          # 訊號追蹤（狀態機、績效結算、歸檔）
 │   ├── pipeline.py         # 流程編排（Steps 1–6）
-│   └── publisher.py        # HTML 生成 & GitHub Pages 發布
+│   └── publisher.py        # HTML 生成 & GitHub Pages 發布（含績效儀表板）
+├── specs/                  # 規格文件（Spec-First 開發）
+│   ├── _template.md
+│   ├── scorer.md
+│   ├── tracker.md
+│   ├── ranker.md
+│   ├── market.md
+│   └── pipeline.md
 ├── data/
-│   └── watchlist.json      # 追蹤清單（持久化）
+│   ├── watchlist.json      # 追蹤清單（持久化）
+│   └── performance_history.json  # 歷史績效資料庫（結算後自動建立）
 ├── docs/                   # GitHub Pages 靜態檔案
 │   ├── index.html
 │   └── reports/

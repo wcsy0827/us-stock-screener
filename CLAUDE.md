@@ -11,13 +11,14 @@ S&P 500 (~503 支)
   ↓ Step 1   universe.py     爬取成份股
   ↓ Step 2   fetcher.py      下載 90 日日 K（.cache/ 快取）
   ↓ Step 2.5 market.py       快速 Regime 判定（廣度 + VIX）← 必須在 scorer 之前
+                              回傳 (regime, breadth_pct, vix_value)，供 Step 5.5 複用
   ↓ Step 3   fetcher.py      抓基本面（7 日快取）
   ↓ Step 4   filter.py       L1 硬篩
   ↓ Step 5   scorer.py       L2 技術評分（動態門檻）
-  ↓ Step 5.5 market.py       完整大盤 ETF 背景
+  ↓ Step 5.5 market.py       完整大盤 ETF 背景（直接複用 Step 2.5 的廣度與 VIX，不重算）
   ↓ Step 6   ranker.py       L3 DeepSeek AI 精選（≤5 支）
-             tracker.py      訊號追蹤（watchlist.json）
-             publisher.py    HTML 報告 → GitHub Pages
+             tracker.py      訊號追蹤（watchlist.json）→ 結算歸檔（performance_history.json）
+             publisher.py    HTML 報告 → GitHub Pages（含歷史績效儀表板）
 ```
 
 ## 模組 ↔ 規格對照表
@@ -43,13 +44,17 @@ S&P 500 (~503 支)
 - 若需求與現有規格衝突，**先更新規格**，說明為何改變，再動程式碼
 - 規格的 Design Decisions 節是已解決的設計爭議，不得在未取得用戶同意前繞過
 
-## 三個最重要的設計決策（摘要）
+## 五個最重要的設計決策（摘要）
 
-1. **EMA50 悖論（tracker.py）**：反轉策略進場點本就在 EMA50 之下，不能以跌破 EMA50 作為失效門檻。反轉股失效條件改用 AI 設定的 `stop_loss` 絕對價。→ 詳見 `specs/tracker.md`
+1. **EMA50 悖論（tracker.py DD-1）**：反轉策略進場點本就在 EMA50 之下，不能以跌破 EMA50 作為失效門檻。反轉股失效條件改用 AI 設定的 `stop_loss` 絕對價。→ 詳見 `specs/tracker.md`
 
-2. **拆股免疫（tracker.py）**：yfinance `auto_adjust=True` 在拆股後會回溯修改全部歷史收盤價，導致 watchlist 記錄的絕對止損價變成幽靈訊號。解法：記錄 `signal_date_close`，每日計算 split_factor 並平移所有門檻。→ 詳見 `specs/tracker.md`
+2. **拆股免疫（tracker.py DD-3）**：yfinance `auto_adjust=True` 在拆股後會回溯修改全部歷史收盤價，導致 watchlist 記錄的絕對止損價變成幽靈訊號。解法：記錄 `signal_date_close`，每日計算 split_factor 並平移所有門檻。→ 詳見 `specs/tracker.md`
 
-3. **Step 2.5 快速 Regime（pipeline.py）**：市場廣度 + VIX 必須在 L2 評分之前計算（供動態門檻和強制放行使用），但完整 ETF 背景資料只需在 AI 提示時使用，故分拆為 Step 2.5（輕量）與 Step 5.5（完整）。→ 詳見 `specs/pipeline.md`
+3. **Step 2.5 指標複用（pipeline.py DD-1）**：市場廣度 + VIX 在 Step 2.5 計算後直接傳給 Step 5.5，不重算、不重下載。`fetch_regime_quick` 的三個回傳值（`regime`, `breadth_pct`, `vix_value`）均須保留並傳入 `fetch_market_context`，否則兩次判定間有分鐘級時差導致 Regime 不一致。→ 詳見 `specs/pipeline.md`
+
+4. **開盤跳空安全攔截（tracker.py DD-7）**：`watch → active` 轉換時，除了 `price >= buy_zone_lower` 外，必須額外確認 `price > stop_loss`。防止 AI 誤設止損在買入區間內時，跳空進場卻已跌破止損，污染 performance_history.json。→ 詳見 `specs/tracker.md`
+
+5. **績效結算狀態機（tracker.py DD-6）**：active 部位不由時間到期控制，改由 `_check_settlement()` 的三態結算（CLOSED_PROFIT / CLOSED_LOSS / FORCE_EXPIRED）觸發，結算後寫入 `data/performance_history.json` 並移出 watchlist。publisher 讀取此檔案時必須做冷啟動保護（檔案不存在或空陣列時回傳零值，不得拋 ZeroDivisionError）。→ 詳見 `specs/tracker.md`
 
 ## 程式碼慣例
 
@@ -58,6 +63,7 @@ S&P 500 (~503 支)
 - 不新增 feature flag 或向後相容 shim，直接改程式碼
 - 錯誤處理只在系統邊界（外部 API / 使用者輸入）加；內部函式信任呼叫端
 - 常數用全大寫，放在模組頂部
+- AI 輸出欄位的型態：`hold_period` 必須解析為整數（`_parse_hold_period` 已支援 int/float/str 輸入），Prompt 應要求 AI 直接輸出整數天數
 
 ## 快取說明
 
@@ -66,3 +72,4 @@ S&P 500 (~503 支)
 | 日 K 數據 | `.cache/price_YYYYMMDD.pkl` | 當日 |
 | 基本面資訊 | `.cache/info_YYYYMMDD.json` | 7 日（取最近一份） |
 | 追蹤清單 | `data/watchlist.json` | 永久（持久化） |
+| 歷史績效 | `data/performance_history.json` | 永久（只增不刪） |
