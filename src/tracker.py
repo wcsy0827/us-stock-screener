@@ -51,11 +51,16 @@ def check_already_run_today() -> bool:
 
 # ── 工具函式 ─────────────────────────────────────────────────────────
 
-def _parse_hold_period(hold_period_str: str, default: int = _DEFAULT_HOLD_DAYS) -> int:
-    """解析 "5-10 個交易日" 或 "7 天" → 取最大數值，無法解析則回傳 default。"""
-    if not hold_period_str or hold_period_str.strip() in ("-", ""):
+def _parse_hold_period(hold_period_str, default: int = _DEFAULT_HOLD_DAYS) -> int:
+    """解析 hold_period 為整數天數。接受 int/float 直接回傳，或從字串萃取最大數值。"""
+    if isinstance(hold_period_str, int):
+        return hold_period_str
+    if isinstance(hold_period_str, float):
+        return int(hold_period_str)
+    s = str(hold_period_str) if hold_period_str is not None else ""
+    if not s or s.strip() in ("-", ""):
         return default
-    nums = re.findall(r"\d+", hold_period_str)
+    nums = re.findall(r"\d+", s)
     if not nums:
         return default
     return max(int(n) for n in nums)
@@ -211,7 +216,10 @@ def _eval_status(
     if price > upper * 1.01:
         return "watch", None       # 高於買入區間，等回落
     if price >= lower:
-        return "active", None      # 在買入區間內，視為進場
+        # 開盤跳空安全攔截：進場前確認未跌破止損（防止 AI 止損設在買入區間內的邊界案例）
+        if stop_loss_price is not None and price <= stop_loss_price:
+            return "invalid", f"開盤跳空跌破止損價 ${stop_loss_price:.2f}，拒絕進場"
+        return "active", None      # 在買入區間內且高於止損，視為進場
     # price < lower：跌穿買入區下限
     if stop_loss_price is not None and price < stop_loss_price:
         return "invalid", f"跌破止損價 ${stop_loss_price:.2f}，錯過買點"

@@ -73,8 +73,10 @@ def run(
     print("\n[pipeline] ── Step 2.5：快速判定大盤 Regime ──")
     t = time.time()
     regime_quick = ""
+    breadth_quick: float | None = None
+    vix_quick: float | None = None
     try:
-        regime_quick, _, _ = fetch_regime_quick(price_data)
+        regime_quick, breadth_quick, vix_quick = fetch_regime_quick(price_data)
         print(f"[pipeline] 完成 ({_elapsed(t)})｜Regime={regime_quick}")
     except Exception as e:
         print(f"[pipeline] 警告：Regime 快速判定失敗，L2 使用預設門檻：{e}")
@@ -134,7 +136,12 @@ def run(
             info_data.get(c["symbol"], {}).get("sector", "")
             for c in candidates
         } & set(SECTOR_ETF_MAP.keys())
-        market_context = fetch_market_context(candidate_sectors, all_stocks_data=price_data)
+        market_context = fetch_market_context(
+            candidate_sectors,
+            all_stocks_data=price_data,
+            breadth_pct=breadth_quick,
+            vix_value=vix_quick,
+        )
         print(f"[pipeline] 完成 ({_elapsed(t)})｜Regime={market_context.get('regime', 'N/A')}")
     except Exception as e:
         print(f"[pipeline] 警告：大盤數據抓取失敗，繼續執行：{e}")
