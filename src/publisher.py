@@ -263,6 +263,11 @@ a:hover { text-decoration: underline; }
 .defense-banner .defense-title { font-size: 1rem; font-weight: 700; color: var(--invalid); margin-bottom: 6px; }
 .defense-banner .defense-desc { font-size: 0.85rem; color: var(--muted); line-height: 1.7; }
 
+.tip-wrap { position: relative; display: inline-flex; align-items: center; gap: 5px; }
+.tip-icon { display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; border-radius: 50%; background: var(--border); color: var(--muted); font-size: 0.68rem; font-weight: 700; cursor: help; flex-shrink: 0; }
+.tip-box { display: none; position: absolute; right: 0; top: calc(100% + 6px); background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 0.78rem; line-height: 1.65; color: var(--text); font-weight: 400; width: 230px; z-index: 20; box-shadow: 0 4px 16px rgba(0,0,0,0.5); white-space: normal; }
+.tip-wrap:hover .tip-box { display: block; }
+
 @media (max-width: 600px) {
   .scan-bar { flex-direction: column; align-items: flex-start; gap: 2px; }
   .card-header { flex-wrap: wrap; }
@@ -270,6 +275,7 @@ a:hover { text-decoration: underline; }
   .report-entry { flex-wrap: wrap; }
   .report-chips { margin-left: 0; }
   .regime-strategy { margin-left: 0; }
+  .tip-box { right: auto; left: 0; }
 }
 """
 
@@ -308,13 +314,29 @@ def _build_market_dashboard(market_context: dict) -> str:
     else:
         spy_str = "-"
         spy_cls = ""
-    strategy_label = f"主推：{_esc(primary)}" if primary else "⛔ 全面防禦，無買入建議"
+    _REGIME_TIPS = {
+        "BULL_TREND":        "條件：市場廣度 ≥ 60% 且 VIX &lt; 20<br>選強勢領頭羊、均線多頭排列標的",
+        "CONSOLIDATION":     "條件：市場廣度 35～60%（VIX 不限）<br>只選帶量突破壓力位的個股",
+        "PANIC_REVERSAL":    "條件：市場廣度 &lt; 35% 且 VIX ≥ 25<br>找超賣底背離標的，嚴設止損",
+        "BEAR_DISTRIBUTION": "條件：市場廣度 &lt; 35% 且 VIX &lt; 25<br>全面防禦，不輸出任何買入建議",
+    }
+    tip_content = _REGIME_TIPS.get(regime, "")
+    if primary and tip_content:
+        strategy_html = (
+            f'<span class="tip-wrap">'
+            f'主推：{_esc(primary)}'
+            f'<span class="tip-icon">?</span>'
+            f'<div class="tip-box">{tip_content}</div>'
+            f'</span>'
+        )
+    else:
+        strategy_html = "⛔ 全面防禦，無買入建議"
 
     return f"""
 <div class="market-dashboard {cls}">
   <div class="regime-header">
     <span class="regime-name">{_esc(name)}</span>
-    <span class="regime-strategy">{strategy_label}</span>
+    <span class="regime-strategy">{strategy_html}</span>
   </div>
   <div class="regime-metrics">
     <div class="regime-metric">
@@ -348,19 +370,32 @@ def _tracking_row(e: dict, status_cls: str) -> str:
     sl = _esc(e.get("stop_loss", "-"))
 
     if status_cls == "active":
-        status_text = f"第 {days} 天 ── 已落入買入區間 ✅"
+        active_days = e.get("active_days", 0)
+        try:
+            hold_limit = int(str(e.get("hold_period", "10")).strip())
+        except (ValueError, TypeError):
+            hold_limit = 10
+        entry_p = e.get("active_entry_price")
+        pnl_html = ""
+        if entry_p and p:
+            pnl = (p - entry_p) / entry_p * 100
+            pnl_cls = "c-active" if pnl >= 0 else "c-invalid"
+            sign = "+" if pnl >= 0 else ""
+            pnl_html = f' ｜ <span class="{pnl_cls}" style="font-weight:700">{sign}{pnl:.2f}%</span>'
+        status_text = f"持倉 {active_days} / {hold_limit} 天 ✅{pnl_html}"
+        entry_str = f'進場 ${entry_p:.2f}｜' if entry_p else ""
+        prices_html = f'<div class="track-prices">{price_str}{entry_str}目標 {tgt}｜止損 {sl}</div>'
     elif status_cls == "watch":
         status_text = f"第 {days} 天（等待回落至買入區間）"
+        prices_html = f'<div class="track-prices">{price_str}買入區間 {bz}｜目標 {tgt}｜止損 {sl}</div>'
     elif status_cls == "invalid":
         reason = _esc(e.get("invalid_reason", ""))
         remaining = max(0, 5 - days)
         status_text = f"第 {days} 天 ── {reason}（剩 {remaining} 天自動移除）"
+        prices_html = f'<div class="track-prices">{price_str}買入區間 {bz}｜目標 {tgt}｜止損 {sl}</div>'
     else:  # expired
         status_text = f"已追蹤 {days} 天，今日移除"
-
-    prices_html = ""
-    if status_cls != "expired":
-        prices_html = f'<div class="track-prices">{price_str}買入區間 {bz}｜目標 {tgt}｜止損 {sl}</div>'
+        prices_html = ""
 
     return f"""
 <div class="track-item {status_cls}">
@@ -371,6 +406,44 @@ def _tracking_row(e: dict, status_cls: str) -> str:
   </div>
   <div class="track-status">{status_text}</div>
   {prices_html}
+</div>"""
+
+
+def _settled_row(e: dict) -> str:
+    sym = _esc(e["symbol"])
+    name = _esc(e.get("name", sym))
+    strategy = _esc(e.get("strategy", "-"))
+    exit_reason = e.get("_exit_reason", "")
+    exit_price = e.get("_exit_price")
+    entry_price = e.get("active_entry_price")
+    active_days = e.get("active_days", 0)
+
+    if exit_reason == "CLOSED_PROFIT":
+        reason_html = '<span class="c-active">🎯 達到目標價，停利出場</span>'
+    elif exit_reason == "CLOSED_LOSS":
+        reason_html = '<span class="c-invalid">🛑 觸發止損，停損出場</span>'
+    else:
+        reason_html = f'<span class="c-watch">⏰ 持倉期限（{active_days} 天）已到，強制出場</span>'
+
+    pnl_html = ""
+    if entry_price and exit_price:
+        pnl = (exit_price - entry_price) / entry_price * 100
+        sign = "+" if pnl >= 0 else ""
+        pnl_cls = "c-active" if pnl >= 0 else "c-invalid"
+        pnl_html = (
+            f'<span class="{pnl_cls}" style="font-weight:700">{sign}{pnl:.2f}%</span>'
+            f'　進場 ${entry_price:.2f} → 出場 ${exit_price:.2f}，持倉 {active_days} 天'
+        )
+
+    return f"""
+<div class="track-item" style="border-left-color:#a855f7">
+  <div class="track-header">
+    <span class="track-symbol">{sym}</span>
+    <span class="track-name">{name}</span>
+    <span class="strategy-tag">{strategy}</span>
+  </div>
+  <div class="track-status">{reason_html}</div>
+  <div class="track-prices">{pnl_html}</div>
 </div>"""
 
 
@@ -466,12 +539,13 @@ def _build_daily_report(
     l2 = stats.get("l2_count", 0)
     ai = stats.get("ai_count", 0)
 
-    active  = categories.get("active", [])
-    watch   = categories.get("watch", [])
-    invalid = categories.get("invalid", [])
-    expired = categories.get("expired", [])
-    new     = categories.get("new", [])
-    reset   = categories.get("reset", [])
+    active   = categories.get("active", [])
+    watch    = categories.get("watch", [])
+    invalid  = categories.get("invalid", [])
+    expired  = categories.get("expired", [])
+    settled  = categories.get("settled", [])
+    new      = categories.get("new", [])
+    reset    = categories.get("reset", [])
 
     regime = (market_context or {}).get("regime", "")
     dashboard_html = _build_market_dashboard(market_context or {})
@@ -494,6 +568,10 @@ def _build_daily_report(
     if expired:
         rows = [_tracking_row(e, "expired") for e in expired]
         sections += _section_html("🗑", "今日移除", rows)
+
+    if settled:
+        rows = [_settled_row(e) for e in settled]
+        sections += _section_html("📦", "今日結算", rows)
 
     # BEAR_DISTRIBUTION 且無新進標的：顯示全面防禦橫幅
     if regime == "BEAR_DISTRIBUTION" and not new and not reset:
@@ -522,6 +600,13 @@ def _build_daily_report(
     nn = len(new)
     nr = len(reset)
     ne = len(expired)
+    ns = len(settled)
+
+    settled_stat = (
+        f'<div class="stat-group"><span class="stat-num" style="color:#a855f7">{ns}</span>'
+        f'<span class="stat-lbl">支結算</span></div>'
+        if ns > 0 else ""
+    )
 
     return f"""<!DOCTYPE html>
 <html lang="zh-TW">
@@ -562,6 +647,7 @@ def _build_daily_report(
       <div class="stat-group"><span class="stat-num c-new">{nn}</span><span class="stat-lbl">支新增</span></div>
       <div class="stat-group"><span class="stat-num c-reset">{nr}</span><span class="stat-lbl">支重新入選</span></div>
       <div class="stat-group"><span class="stat-num c-removed">{ne}</span><span class="stat-lbl">支移除</span></div>
+      {settled_stat}
     </div>
   </div>
 </div>
