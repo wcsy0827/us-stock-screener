@@ -130,6 +130,30 @@ a:hover { text-decoration: underline; }
 .defense-banner .defense-title { font-size: 1rem; font-weight: 700; color: var(--invalid); margin-bottom: 6px; }
 .defense-banner .defense-desc { font-size: 0.85rem; color: var(--muted); line-height: 1.7; }
 
+/* System info (index page) */
+details { margin-bottom: 20px; }
+summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 8px; padding: 12px 16px; background: var(--card); border-radius: 9px; border: 1px solid var(--border); font-weight: 600; font-size: 0.9rem; user-select: none; }
+summary::-webkit-details-marker { display: none; }
+details summary::before { content: "▶"; font-size: 0.65rem; color: var(--muted); transition: transform 0.2s; flex-shrink: 0; }
+details[open] summary::before { transform: rotate(90deg); }
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding-top: 12px; }
+.info-card { background: var(--card); border-radius: 9px; border: 1px solid var(--border); padding: 14px 16px; }
+.info-card h3 { font-size: 0.78rem; font-weight: 700; margin-bottom: 10px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
+.info-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+.info-table th { text-align: left; padding: 4px 8px; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--border); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.info-table td { padding: 5px 8px; border-bottom: 1px solid rgba(51,65,85,0.4); line-height: 1.5; vertical-align: top; }
+.info-table tr:last-child td { border-bottom: none; }
+.pipe-flow { display: flex; flex-direction: column; gap: 3px; }
+.pipe-step { display: flex; align-items: flex-start; gap: 8px; font-size: 0.8rem; line-height: 1.5; }
+.pipe-badge { background: var(--border); color: var(--muted); border-radius: 4px; padding: 1px 7px; font-size: 0.7rem; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+.pipe-arrow { color: var(--subtle); font-size: 0.75rem; padding-left: 16px; }
+.report-section-title { font-size: 0.82rem; font-weight: 600; color: var(--muted); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 10px; }
+
+.tip-wrap { position: relative; display: inline-flex; align-items: center; gap: 5px; }
+.tip-icon { display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; border-radius: 50%; background: var(--border); color: var(--muted); font-size: 0.68rem; font-weight: 700; cursor: help; flex-shrink: 0; }
+.tip-box { display: none; position: absolute; right: 0; top: calc(100% + 6px); background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 0.78rem; line-height: 1.65; color: var(--text); font-weight: 400; width: 230px; z-index: 20; box-shadow: 0 4px 16px rgba(0,0,0,0.5); white-space: normal; text-align: left; }
+.tip-wrap:hover .tip-box { display: block; }
+
 @media (max-width: 600px) {
   .scan-bar { flex-direction: column; align-items: flex-start; gap: 2px; }
   .card-header { flex-wrap: wrap; }
@@ -137,6 +161,8 @@ a:hover { text-decoration: underline; }
   .report-entry { flex-wrap: wrap; }
   .report-chips { margin-left: 0; }
   .regime-strategy { margin-left: 0; }
+  .tip-box { right: auto; left: 0; }
+  .info-grid { grid-template-columns: 1fr; }
 }
 </style>
 </head>
@@ -146,6 +172,62 @@ a:hover { text-decoration: underline; }
     <h1>📈 美股 AI 選股系統</h1>
     <p>每日選股報告 · 訊號追蹤 · S&amp;P 500</p>
   </div>
+  
+<details open>
+<summary>📖 系統說明</summary>
+<div class="info-grid">
+
+  <div class="info-card">
+    <h3>📡 篩選流程</h3>
+    <div class="pipe-flow">
+      <div class="pipe-step"><span class="pipe-badge">L0</span>S&amp;P 500 約 503 支成份股</div>
+      <div class="pipe-arrow">↓</div>
+      <div class="pipe-step"><span class="pipe-badge">L1</span>硬條件篩選：股價 &gt; $5、30 日均量 &gt; 50 萬、市值 &gt; 3 億</div>
+      <div class="pipe-arrow">↓</div>
+      <div class="pipe-step"><span class="pipe-badge">L2</span>技術評分 100 分制，門檻 60 分（PANIC_REVERSAL 環境降至 40 分，超賣股強制放行）</div>
+      <div class="pipe-arrow">↓</div>
+      <div class="pipe-step"><span class="pipe-badge">L3</span>DeepSeek AI 依 Regime 主推策略精選，最多 5 支，BEAR_DISTRIBUTION 時不輸出任何建議</div>
+    </div>
+  </div>
+
+  <div class="info-card">
+    <h3>🌐 大盤環境（Market Regime）</h3>
+    <table class="info-table">
+      <tr><th>Regime</th><th>判斷條件</th><th>主推策略</th></tr>
+      <tr><td style="color:var(--active)">📈 牛市趨勢</td><td>廣度 ≥ 60% 且 VIX &lt; 20</td><td>動能策略</td></tr>
+      <tr><td style="color:var(--watch)">⚖️ 震盪整理</td><td>廣度 35～60%（VIX 不限）</td><td>突破策略</td></tr>
+      <tr><td style="color:#f97316">🔥 恐慌超跌</td><td>廣度 &lt; 35% 且 VIX ≥ 25</td><td>反轉策略</td></tr>
+      <tr><td style="color:var(--invalid)">🐻 陰跌熊市</td><td>廣度 &lt; 35% 且 VIX &lt; 25</td><td>⛔ 全面防禦</td></tr>
+    </table>
+  </div>
+
+  <div class="info-card">
+    <h3>📊 L2 技術評分（100 分制）</h3>
+    <table class="info-table">
+      <tr><th>指標</th><th>滿分</th><th>評分說明</th></tr>
+      <tr><td>MA 多頭排列</td><td>25</td><td>EMA5&gt;10&gt;20&gt;50，每條件 +8.33 分</td></tr>
+      <tr><td>RSI 健康區間</td><td>20</td><td>50～70 滿分；40～50 或 70～80 半分；其餘 0（含 RSI&gt;80 軟過濾）</td></tr>
+      <tr><td>MACD 柱狀體</td><td>20</td><td>正且遞增滿分；正遞減半分；負 0</td></tr>
+      <tr><td>量能放大</td><td>20</td><td>≥ 1.5x 均量滿分；≥ 1.0x 半分</td></tr>
+      <tr><td>20 日動能</td><td>15</td><td>&gt;10% 滿分；&gt;5% 半分；&gt;0% 1/4 分</td></tr>
+    </table>
+  </div>
+
+  <div class="info-card">
+    <h3>🚦 訊號追蹤狀態</h3>
+    <table class="info-table">
+      <tr><td>✅ active</td><td>已落入買入區間，顯示持倉天數與彩色浮損益</td></tr>
+      <tr><td>🟡 watch</td><td>略高於買入區間，等待股價回落至買入區間</td></tr>
+      <tr><td>❌ invalid</td><td>趨勢轉弱、跌破止損或開盤跳空安全攔截，訊號失效</td></tr>
+      <tr><td>🗑 expired</td><td>觀察滿 5 個交易日，自動移除</td></tr>
+      <tr><td>📦 settled</td><td>停利 / 停損 / 到期結算，回報歸檔至績效資料庫</td></tr>
+    </table>
+  </div>
+
+</div>
+</details>
+
+  <div class="report-section-title">📋 歷史報告</div>
   <div class="report-list">
     
 <a class="report-entry" href="reports/2026-06-28.html">
