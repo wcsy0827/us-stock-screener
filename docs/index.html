@@ -130,6 +130,11 @@ a:hover { text-decoration: underline; }
 .defense-banner .defense-title { font-size: 1rem; font-weight: 700; color: var(--invalid); margin-bottom: 6px; }
 .defense-banner .defense-desc { font-size: 0.85rem; color: var(--muted); line-height: 1.7; }
 
+.tip-wrap { position: relative; display: inline-flex; align-items: center; gap: 5px; }
+.tip-icon { display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; border-radius: 50%; background: var(--border); color: var(--muted); font-size: 0.68rem; font-weight: 700; cursor: help; flex-shrink: 0; }
+.tip-box { display: none; position: absolute; right: 0; top: calc(100% + 6px); background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 0.78rem; line-height: 1.65; color: var(--text); font-weight: 400; width: 230px; z-index: 20; box-shadow: 0 4px 16px rgba(0,0,0,0.5); white-space: normal; text-align: left; }
+.tip-wrap:hover .tip-box { display: block; }
+
 @media (max-width: 600px) {
   .scan-bar { flex-direction: column; align-items: flex-start; gap: 2px; }
   .card-header { flex-wrap: wrap; }
@@ -137,6 +142,7 @@ a:hover { text-decoration: underline; }
   .report-entry { flex-wrap: wrap; }
   .report-chips { margin-left: 0; }
   .regime-strategy { margin-left: 0; }
+  .tip-box { right: auto; left: 0; }
 }
 </style>
 </head>
