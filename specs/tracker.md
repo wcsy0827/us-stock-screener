@@ -2,7 +2,7 @@
 
 ## Purpose
 
-追蹤 L3 AI 推薦的個股是否已落入買入區間（active）、仍在等待（watch）、已失效（invalid），或已到期移除（expired）。持久化於 `data/watchlist.json`。
+追蹤 L3 AI 推薦的個股是否已落入買入區間（active）、仍在等待（watch）、已失效（invalid）、已到期移除（expired），或已觸發結算並歸檔（settled）。活躍清單持久化於 `data/watchlist.json`；歷史績效持久化於 `data/performance_history.json`。
 
 ## Behavior
 
@@ -13,10 +13,12 @@
   watch  → active   （price 落入 buy_zone）
   watch  → invalid  （失效條件觸發）
   watch  → expired  （watch_days >= MAX_WATCH_DAYS=5）
-  active → expired  （active_days >= hold_period）
-  active → invalid  （失效條件觸發）
-  invalid → expired （watch_days + active_days >= MAX_WATCH_DAYS）
+  active → settled  （CLOSED_PROFIT / CLOSED_LOSS / FORCE_EXPIRED，歸檔至 performance_history.json）
+  active → invalid  （失效條件觸發，e.g. 跌破止損但尚未達結算門檻）
+  invalid → expired （_days() >= MAX_WATCH_DAYS）
 ```
+
+**active 部位不再由 `_is_expired()` 到期**，改由 `_check_settlement()` 控制完整生命週期。
 
 - **必須**：watch 和 active 使用**分開的計數器**（`watch_days` / `active_days`），不能共用總追蹤天數
 - **不得**：active 持倉到期上限使用固定的 5 日；必須讀取 AI 指定的 `hold_period` 字串並解析
@@ -105,15 +107,71 @@ def _is_expired(entry: dict) -> bool:
 ### DD-4: active 追高保護
 
 - **選擇**：`price > upper * 1.08` 的追高失效只在 `status != "active"` 時觸發
-- **原因**：已持倉的股票大漲（>8%）是正常獲利波段，由 hold_period 到期機制接管，不應在中途強制認定失效。未持倉的 watch 股票追高才有意義。
+- **原因**：已持倉的股票大漲（>8%）是正常獲利波段，由 `_check_settlement()` 的 CLOSED_PROFIT 接管，不應在中途強制認定失效。未持倉的 watch 股票追高才有意義。
 - **捨棄**：所有狀態一律檢查追高（active 持倉大漲會被錯殺）
+
+### DD-5: active_entry_price = 首次轉 active 當日收盤（代理進場價）
+
+- **選擇**：以股票第一次 `status` 從 `watch` 轉為 `active` 當日的收盤價作為報酬率計算基準
+- **原因**：系統只知道 AI 給的買入區間（`$185~$188`），不知道用戶的實際成交價。使用「首次落入買入區間當日收盤」作為代理，比 `buy_zone_lower`（AI 下限，過於樂觀）更接近真實進場成本。
+- **捨棄**：`buy_zone_lower` 作為進場價（永遠在區間下限，系統性高估報酬）；`buy_zone_midpoint`（區間中點，仍是估算）
+
+### DD-6: active 部位生命週期改由 _check_settlement() 接管
+
+- **選擇**：`_is_expired()` 對 active 狀態一律回傳 `False`；active 的結算完全由 `_check_settlement()` 的 CLOSED_PROFIT / CLOSED_LOSS / FORCE_EXPIRED 控制
+- **原因**：`_is_expired()` 只能判斷「時間到期」，無法觸發停利/停損邏輯；讓兩套機制同時運作會有 double-exit 風險（先被 `_is_expired()` 移除，再被 `_check_settlement()` 嘗試歸檔 → KeyError）
+- **捨棄**：`_is_expired()` 同時適用 active（兩套機制競爭，造成邏輯混亂）
+
+---
+
+## performance_history.json Schema
+
+`data/performance_history.json` 為績效結算資料庫，格式如下：
+
+```json
+{
+  "history_records": [
+    {
+      "meta_data": { "ticker", "company_name", "sector" },
+      "signal_details": {
+        "signal_date",       // 加入 watchlist 日期
+        "entry_regime",      // 信號日 Regime（來自 market_context）
+        "market_breadth_pct",
+        "vix_value",
+        "l2_score",          // L2 技術評分
+        "assigned_strategy",
+        "ai_confidence",     // AI 信心分數（1-10）
+        "ai_strategy_reason"
+      },
+      "execution_plan": { "buy_zone_lower", "buy_zone_upper", "planned_target", "planned_stop_loss" },
+      "actual_outcome": {
+        "triggered_date",    // 首次進場（active）日期
+        "actual_entry_price", // 代理進場價（首次轉 active 當日收盤）
+        "exit_date",
+        "actual_exit_price",
+        "exit_reason",       // CLOSED_PROFIT / CLOSED_LOSS / FORCE_EXPIRED
+        "holding_days"
+      },
+      "performance_metrics": { "return_pct", "is_win" }
+    }
+  ]
+}
+```
+
+**原子寫入**：先寫 `.tmp` 暫存檔，再以 `rename` 替換，防止寫入中途崩潰導致 JSON 損壞。
+
+---
 
 ## Acceptance Criteria
 
 - [ ] watch 股票連跑 6 次（6 個交易日），第 6 次出現在 `expired`，不是 `watch`
-- [ ] 第 2 天轉 active（hold_period="7 個交易日"），active_days 從 1 開始計，第 7 次出現在 `expired`
+- [ ] active 部位不因 `_is_expired()` 到期：跑超過 10 次而未觸發停利/停損/FORCE_EXPIRED，不出現在 expired
+- [ ] CLOSED_PROFIT：手動將 watchlist entry 的 `target` 設為略低於 `current_price` → 觸發歸檔，從 watchlist 消失，出現在 `categories["settled"]`
+- [ ] CLOSED_LOSS：`stop_loss` 設為略高於 `current_price` → 觸發歸檔
+- [ ] FORCE_EXPIRED：手動將 `active_days` 設為等於 `hold_period` 解析值 → 觸發歸檔
+- [ ] 歸檔後 `performance_history.json` 有新紀錄，`return_pct` 計算正確，`is_win` 符號正確
+- [ ] `entry_regime` 有值（非空字串），來自 `market_context["regime"]`
+- [ ] `actual_entry_price` = 首次轉 active 當日的收盤價（非 buy_zone_lower）
 - [ ] 反轉策略股票（strategy="反轉策略"）：`price=179, stop_loss="$180"` → invalid；`price=175, ema20=176` → **仍依 stop_loss 判斷**，不依 EMA20
 - [ ] 動能策略股票：`price < ema20` → invalid，即使 `price > stop_loss`
-- [ ] active 狀態：`price = upper * 1.15` → 維持 active（不觸發追高失效）
-- [ ] watch 狀態：`price = upper * 1.15` → invalid（觸發追高失效）
-- [ ] 拆股模擬：`signal_date_close=300`，close_series 信號日顯示 100 → `split_factor≈0.333`，所有門檻等比例縮小，不觸發誤 invalid
+- [ ] 拆股模擬：`signal_date_close=300`，close_series 信號日顯示 100 → `split_factor≈0.333`，門檻等比例縮小
