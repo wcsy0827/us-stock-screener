@@ -503,6 +503,8 @@ def run_tracker(
             exit_reason, exit_price = settlement
             _archive_to_performance_history(entry, exit_reason, exit_price, today)
             entry["_settled"] = True
+            entry["_exit_reason"] = exit_reason   # 供 publisher 渲染今日結算區段
+            entry["_exit_price"]  = exit_price
             settled_entries.append(entry)
 
     # F. 分類（移除前快照）
