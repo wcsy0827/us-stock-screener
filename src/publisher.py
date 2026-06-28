@@ -265,7 +265,7 @@ a:hover { text-decoration: underline; }
 
 .tip-wrap { position: relative; display: inline-flex; align-items: center; gap: 5px; }
 .tip-icon { display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; border-radius: 50%; background: var(--border); color: var(--muted); font-size: 0.68rem; font-weight: 700; cursor: help; flex-shrink: 0; }
-.tip-box { display: none; position: absolute; right: 0; top: calc(100% + 6px); background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 0.78rem; line-height: 1.65; color: var(--text); font-weight: 400; width: 230px; z-index: 20; box-shadow: 0 4px 16px rgba(0,0,0,0.5); white-space: normal; }
+.tip-box { display: none; position: absolute; right: 0; top: calc(100% + 6px); background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 0.78rem; line-height: 1.65; color: var(--text); font-weight: 400; width: 230px; z-index: 20; box-shadow: 0 4px 16px rgba(0,0,0,0.5); white-space: normal; text-align: left; }
 .tip-wrap:hover .tip-box { display: block; }
 
 @media (max-width: 600px) {
@@ -326,7 +326,7 @@ def _build_market_dashboard(market_context: dict) -> str:
             f'<span class="tip-wrap">'
             f'主推：{_esc(primary)}'
             f'<span class="tip-icon">?</span>'
-            f'<div class="tip-box">{tip_content}</div>'
+            f'<span class="tip-box">{tip_content}</span>'
             f'</span>'
         )
     else:
