@@ -201,23 +201,25 @@ def fetch_regime_quick(all_stocks_data: dict) -> tuple[str, float, float]:
 def fetch_market_context(
     candidate_sectors: set[str] | None = None,
     all_stocks_data: dict | None = None,
+    breadth_pct: float | None = None,
+    vix_value: float | None = None,
 ) -> dict:
     """
     抓取大盤 + 相關產業 ETF 走勢，計算市場廣度並判定市場環境 Regime。
 
-    candidate_sectors: 候選股涵蓋的產業集合，只抓相關 ETF；
-                       傳 None 則抓全部 11 個產業 ETF。
-    all_stocks_data:   fetcher 已下載的全市場日 K 字典，用於計算市場廣度（50SMA）；
-                       傳 None 則略過廣度計算，不填入 regime 欄位。
+    candidate_sectors: 候選股涵蓋的產業集合，只抓相關 ETF；傳 None 則抓全部 11 個。
+    all_stocks_data:   全市場日 K 字典，僅在 breadth_pct 未提供時才重算廣度。
+    breadth_pct:       Step 2.5 已計算的廣度，有值時直接複用，不重跑 O(n) 迴圈。
+    vix_value:         Step 2.5 已下載的 VIX，有值時跳過重複下載。
     回傳結構：
       {
         "sp500": {...},
         "vix":   {"value": 18.5, "label": "正常"},
         "sectors": {"Technology": {...}, ...},
-        "market_breadth_pct": 68.5,          # 僅在 all_stocks_data 有值時存在
-        "regime": "BULL_TREND",              # 同上
-        "primary_strategy": "動能策略",       # 同上
-        "ai_prompt_hint": "...",             # 同上
+        "market_breadth_pct": 68.5,
+        "regime": "BULL_TREND",
+        "primary_strategy": "動能策略",
+        "ai_prompt_hint": "...",
       }
     """
     sectors_to_fetch = {
@@ -256,19 +258,28 @@ def fetch_market_context(
     if spy:
         context["sp500"] = spy
 
-    # VIX（同時取得數值供 Regime 判斷使用）
-    vix_value = 20.0  # 無法取得時的中性 fallback
+    # VIX（Step 2.5 已提供則直接複用，避免重複下載）
+    vix_final = vix_value if vix_value is not None else 20.0
     vix_df = _get("^VIX")
     if not vix_df.empty:
         vix_close = vix_df["Close"].dropna()
         if not vix_close.empty:
-            vix_value = float(vix_close.iloc[-1])
-            vix_5d_ago = float(vix_close.iloc[-5]) if len(vix_close) >= 5 else vix_value
+            vix_5d_ago = float(vix_close.iloc[-5]) if len(vix_close) >= 5 else float(vix_close.iloc[-1])
+            # 若 Step 2.5 未提供 VIX，才從下載資料中取值
+            if vix_value is None:
+                vix_final = float(vix_close.iloc[-1])
             context["vix"] = {
-                "value": round(vix_value, 2),
-                "change_5d": round(vix_value - vix_5d_ago, 2),
-                "label": _vix_label(vix_value),
+                "value": round(vix_final, 2),
+                "change_5d": round(vix_final - vix_5d_ago, 2),
+                "label": _vix_label(vix_final),
             }
+    elif vix_value is not None:
+        # 下載失敗但 Step 2.5 有值，仍填入 vix 區塊供 AI Prompt 使用
+        context["vix"] = {
+            "value": round(vix_final, 2),
+            "change_5d": 0.0,
+            "label": _vix_label(vix_final),
+        }
 
     # 產業 ETF
     context["sectors"] = {}
@@ -284,14 +295,18 @@ def fetch_market_context(
         f"產業ETF={ok_sectors}個"
     )
 
-    # 市場廣度計算 + Regime 判定（需要全體個股日 K）
-    if all_stocks_data:
+    # 市場廣度計算 + Regime 判定（Step 2.5 已計算則直接複用，不重跑）
+    if breadth_pct is not None or all_stocks_data:
         try:
-            breadth_pct = calculate_market_breadth(all_stocks_data)
-            regime_info = determine_market_regime(breadth_pct, vix_value)
-            context["market_breadth_pct"] = breadth_pct
+            effective_breadth = (
+                breadth_pct if breadth_pct is not None
+                else calculate_market_breadth(all_stocks_data)
+            )
+            regime_info = determine_market_regime(effective_breadth, vix_final)
+            context["market_breadth_pct"] = effective_breadth
             context.update(regime_info)
-            print(f"[market] Regime 判定：{regime_info['regime']}，主推策略：{regime_info['primary_strategy'] or '全面防禦'}")
+            source = "複用Step2.5" if breadth_pct is not None else "重新計算"
+            print(f"[market] Regime 判定（{source}）：{regime_info['regime']}，主推策略：{regime_info['primary_strategy'] or '全面防禦'}")
         except Exception as e:
             print(f"[market] 警告：市場廣度計算失敗：{e}")
 

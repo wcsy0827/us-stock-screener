@@ -39,13 +39,17 @@
 ### 狀態機下限判定順序
 
 ```
-price < stop_loss?           → invalid
-price > upper * 1.08 且非active? → invalid（追高）
-price > upper * 1.01?        → watch（等回落）
-price >= lower?              → active（進場）
-price < lower 且 >= stop_loss?  → watch（繼續觀察）
-price < lower 且 < stop_loss?   → invalid
+price < stop_loss?                           → invalid（反轉策略）
+price < ema20?                               → invalid（動能/突破策略）
+price > upper * 1.08 且非 active?            → invalid（追高）
+price > upper * 1.01?                        → watch（等回落）
+price >= lower 且 price <= stop_loss?        → invalid（開盤跳空安全攔截）
+price >= lower 且 price > stop_loss?         → active（進場）
+price < lower 且 price >= stop_loss?         → watch（繼續觀察）
+price < lower 且 price < stop_loss?          → invalid
 ```
+
+- **必須**：`watch → active` 轉換前，需額外確認 `price > stop_loss`，防止 AI 誤設止損在買入區間內時造成績效污染（DD-7）
 
 ### 拆股免疫
 
@@ -115,6 +119,12 @@ def _is_expired(entry: dict) -> bool:
 - **選擇**：以股票第一次 `status` 從 `watch` 轉為 `active` 當日的收盤價作為報酬率計算基準
 - **原因**：系統只知道 AI 給的買入區間（`$185~$188`），不知道用戶的實際成交價。使用「首次落入買入區間當日收盤」作為代理，比 `buy_zone_lower`（AI 下限，過於樂觀）更接近真實進場成本。
 - **捨棄**：`buy_zone_lower` 作為進場價（永遠在區間下限，系統性高估報酬）；`buy_zone_midpoint`（區間中點，仍是估算）
+
+### DD-7: watch → active 加入 stop_loss 進場前安全攔截
+
+- **選擇**：`price >= lower` 後額外確認 `price > stop_loss_price` 才標 active
+- **原因**：AI 偶爾誤將 stop_loss 設在買入區間下限以上（如 buy_zone $45-$50，stop_loss $47），若不攔截，股價落在 $46 時會被標為 active 但實際已在止損下方，後續結算為立即停損，污染績效資料庫。此攔截對反轉策略是雙重保護（頂部已有 `price < stop_loss → invalid`），對動能/突破策略則補上了缺失的進場前核查。
+- **捨棄**：只靠頂部失效條件攔截（動能/突破策略頂部只有 ema20 檢查，不覆蓋 stop_loss）
 
 ### DD-6: active 部位生命週期改由 _check_settlement() 接管
 

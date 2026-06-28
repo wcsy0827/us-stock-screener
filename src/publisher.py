@@ -15,6 +15,98 @@ _REPORTS_DIR = _DOCS / "reports"
 _DATA_DIR = _DOCS / "data"
 _INDEX_JSON = _DATA_DIR / "reports-index.json"
 _INDEX_HTML = _DOCS / "index.html"
+_PERF_PATH = _ROOT / "data" / "performance_history.json"
+
+
+# ── 歷史績效統計 ─────────────────────────────────────────────────────
+
+def _load_performance_stats() -> dict:
+    """讀取 performance_history.json 計算績效統計。冷啟動安全：任何異常均回傳預設零值。"""
+    default: dict = {"total": 0, "win_rate": 0.0, "avg_return": 0.0, "by_strategy": {}}
+    if not _PERF_PATH.exists():
+        return default
+    try:
+        with open(_PERF_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception:
+        return default
+
+    records = [
+        r for r in data.get("history_records", [])
+        if r.get("actual_outcome", {}).get("exit_reason") in (
+            "CLOSED_PROFIT", "CLOSED_LOSS", "FORCE_EXPIRED"
+        )
+    ]
+    if not records:
+        return default
+
+    total = len(records)
+    wins = sum(1 for r in records if r.get("performance_metrics", {}).get("is_win"))
+    returns = [
+        r["performance_metrics"]["return_pct"]
+        for r in records
+        if r.get("performance_metrics", {}).get("return_pct") is not None
+    ]
+    win_rate = round(wins / total * 100, 1) if total > 0 else 0.0
+    avg_return = round(sum(returns) / len(returns), 2) if returns else 0.0
+
+    by_strategy: dict[str, dict] = {}
+    for r in records:
+        strat = r.get("signal_details", {}).get("assigned_strategy", "其他") or "其他"
+        if strat not in by_strategy:
+            by_strategy[strat] = {"total": 0, "wins": 0}
+        by_strategy[strat]["total"] += 1
+        if r.get("performance_metrics", {}).get("is_win"):
+            by_strategy[strat]["wins"] += 1
+
+    strat_rates = {
+        k: round(v["wins"] / v["total"] * 100, 1) if v["total"] > 0 else 0.0
+        for k, v in by_strategy.items()
+    }
+    return {"total": total, "win_rate": win_rate, "avg_return": avg_return, "by_strategy": strat_rates}
+
+
+def _build_performance_section(perf: dict) -> str:
+    """生成歷史績效摘要 HTML。total == 0 時回傳空字串（冷啟動不渲染）。"""
+    if perf.get("total", 0) == 0:
+        return ""
+
+    total = perf["total"]
+    win_rate = perf["win_rate"]
+    avg_return = perf["avg_return"]
+    by_strategy = perf.get("by_strategy", {})
+
+    avg_cls = "c-active" if avg_return >= 0 else "c-invalid"
+    avg_sign = f"+{avg_return:.2f}%" if avg_return >= 0 else f"{avg_return:.2f}%"
+
+    strat_cells = ""
+    for strat, rate in by_strategy.items():
+        strat_cells += (
+            f'<div class="stat-group">'
+            f'<span class="stat-num" style="font-size:0.95rem">{rate:.1f}%</span>'
+            f'<span class="stat-lbl">{_esc(strat)}勝率</span>'
+            f"</div>"
+        )
+
+    return f"""
+<div class="summary-box" style="margin-bottom:20px;border-top-color:#a855f7">
+  <h2>📊 歷史選股績效（累計 {total} 筆結算）</h2>
+  <div class="stat-row">
+    <div class="stat-group">
+      <span class="stat-num c-new">{win_rate:.1f}%</span>
+      <span class="stat-lbl">整體勝率</span>
+    </div>
+    <div class="stat-group">
+      <span class="stat-num {avg_cls}">{_esc(avg_sign)}</span>
+      <span class="stat-lbl">平均回報</span>
+    </div>
+    <div class="stat-group">
+      <span class="stat-num" style="color:var(--muted)">{total}</span>
+      <span class="stat-lbl">筆結算</span>
+    </div>
+  </div>
+  {f'<div class="stat-row">{strat_cells}</div>' if strat_cells else ""}
+</div>"""
 
 
 # ── 工具函式 ─────────────────────────────────────────────────────────
@@ -383,6 +475,7 @@ def _build_daily_report(
 
     regime = (market_context or {}).get("regime", "")
     dashboard_html = _build_market_dashboard(market_context or {})
+    perf_html = _build_performance_section(_load_performance_stats())
 
     sections = ""
 
@@ -453,6 +546,8 @@ def _build_daily_report(
   </div>
 
   {dashboard_html}
+
+  {perf_html}
 
   {sections}
 
