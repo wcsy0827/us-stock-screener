@@ -275,6 +275,7 @@ details[open] summary::before { transform: rotate(90deg); }
 .info-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
 .info-table th { text-align: left; padding: 4px 8px; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--border); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; }
 .info-table td { padding: 5px 8px; border-bottom: 1px solid rgba(51,65,85,0.4); line-height: 1.5; vertical-align: top; }
+.info-table td:first-child { white-space: nowrap; }
 .info-table tr:last-child td { border-bottom: none; }
 .pipe-flow { display: flex; flex-direction: column; gap: 3px; }
 .pipe-step { display: flex; align-items: flex-start; gap: 8px; font-size: 0.8rem; line-height: 1.5; }
@@ -695,16 +696,17 @@ _INFO_HTML = """
       <div class="pipe-arrow">↓</div>
       <div class="pipe-step"><span class="pipe-badge">L1</span>硬條件篩選：股價 &gt; $5、30 日均量 &gt; 50 萬、市值 &gt; 3 億</div>
       <div class="pipe-arrow">↓</div>
-      <div class="pipe-step"><span class="pipe-badge">L2</span>技術評分 100 分制，門檻 60 分（PANIC_REVERSAL 環境降至 40 分，超賣股強制放行）</div>
+      <div class="pipe-step"><span class="pipe-badge">L2</span>技術評分 100 分制，門檻 60 分；恐慌超跌環境（見右側）降至 40 分，RSI &lt; 35 且 20 日跌幅 &gt; 15% 的超賣股強制放行</div>
       <div class="pipe-arrow">↓</div>
-      <div class="pipe-step"><span class="pipe-badge">L3</span>DeepSeek AI 依 Regime 主推策略精選，最多 5 支，BEAR_DISTRIBUTION 時不輸出任何建議</div>
+      <div class="pipe-step"><span class="pipe-badge">L3</span>DeepSeek AI 依當日大盤環境（Regime）的主推策略精選，最多 5 支；陰跌熊市環境下全面防禦，不輸出任何建議（詳見右側 Regime 表）</div>
     </div>
   </div>
 
   <div class="info-card">
     <h3>🌐 大盤環境（Market Regime）</h3>
+    <p style="font-size:0.72rem;color:var(--muted);margin-bottom:8px">市場廣度 = S&amp;P 500 中收盤價高於 50 日 SMA 的股票比例；VIX 為芝加哥期權交易所恐慌指數</p>
     <table class="info-table">
-      <tr><th>Regime</th><th>判斷條件</th><th>主推策略</th></tr>
+      <tr><th>環境名稱</th><th>判斷條件</th><th>主推策略</th></tr>
       <tr><td style="color:var(--active)">📈 牛市趨勢</td><td>廣度 ≥ 60% 且 VIX &lt; 20</td><td>動能策略</td></tr>
       <tr><td style="color:var(--watch)">⚖️ 震盪整理</td><td>廣度 35～60%（VIX 不限）</td><td>突破策略</td></tr>
       <tr><td style="color:#f97316">🔥 恐慌超跌</td><td>廣度 &lt; 35% 且 VIX ≥ 25</td><td>反轉策略</td></tr>
@@ -728,10 +730,10 @@ _INFO_HTML = """
     <h3>🚦 訊號追蹤狀態</h3>
     <table class="info-table">
       <tr><td>✅ active</td><td>已落入買入區間，顯示持倉天數與彩色浮損益</td></tr>
-      <tr><td>🟡 watch</td><td>略高於買入區間，等待股價回落至買入區間</td></tr>
-      <tr><td>❌ invalid</td><td>趨勢轉弱、跌破止損或開盤跳空安全攔截，訊號失效</td></tr>
+      <tr><td>🟡 watch</td><td>略高於買入區間，等待股價回落</td></tr>
+      <tr><td>❌ invalid</td><td>趨勢轉弱、跌破止損或開盤跳空攔截，訊號失效</td></tr>
       <tr><td>🗑 expired</td><td>觀察滿 5 個交易日，自動移除</td></tr>
-      <tr><td>📦 settled</td><td>停利 / 停損 / 到期結算，回報歸檔至績效資料庫</td></tr>
+      <tr><td>📦 settled</td><td>停利／停損／到期結算，歸檔績效資料庫</td></tr>
     </table>
   </div>
 
