@@ -18,7 +18,7 @@ S&P 500 (~503 支)
   ↓ Step 5.5 market.py       完整大盤 ETF 背景（直接複用 Step 2.5 的廣度與 VIX，不重算）
   ↓ Step 6   ranker.py       L3 DeepSeek AI 精選（≤5 支）
              tracker.py      訊號追蹤（watchlist.json）→ 結算歸檔（performance_history.json）
-             publisher.py    HTML 報告 → GitHub Pages（含歷史績效儀表板）
+             publisher.py    HTML 報告 → GitHub Pages（個股浮損益、今日結算區段、策略 Tooltip、歷史績效儀表板）
 ```
 
 ## 模組 ↔ 規格對照表
