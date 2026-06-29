@@ -1,6 +1,6 @@
 # 美股 AI 選股系統
 
-每日自動掃描 S&P 500，透過三層篩選找出值得追蹤的買入機會，結果發布至 GitHub Pages。
+每日自動掃描 S&P 500，透過三層篩選 + 大盤環境感知，找出符合當日市場環境的買入機會，結果發布至 GitHub Pages。
 
 **🌐 報告網址：[wcsy0827.github.io/us-stock-screener](https://wcsy0827.github.io/us-stock-screener/)**
 
@@ -8,9 +8,12 @@
 
 ## 功能
 
-- **三層篩選漏斗**：從 500+ 支股票逐步收斂至 5 支精選
-- **訊號追蹤**：自動追蹤推薦股票是否落入買入區間，追蹤 5 個交易日
-- **每日報告**：深色主題網頁，卡片式設計，支援手機瀏覽
+- **大盤環境感知**：每日計算市場廣度（S&P 500 中站上 50 SMA 的比例）與 VIX，自動判定四種市場環境（Regime）
+- **三層篩選漏斗**：從 500+ 支股票逐步收斂至最多 5 支精選
+- **動態策略切換**：依 Regime 自動調整 AI 主推策略（動能 / 突破 / 反轉 / 全面防禦）
+- **訊號追蹤與績效結算**：追蹤推薦股票是否落入買入區間，觸發停利/停損/到期後自動歸檔至績效資料庫
+- **歷史績效儀表板**：每日報告顯示累計勝率、平均回報率、各策略勝率
+- **每日報告**：深色主題網頁，卡片式設計，含大盤儀表板，支援手機瀏覽
 - **全自動執行**：GitHub Actions 每個交易日收盤後自動執行並發布
 
 ---
@@ -20,30 +23,116 @@
 ```
 S&P 500（~503 支）
     │
-    ▼ L1 硬條件篩選
-    │  股價 > $5、近 30 日均量 > 50 萬、市值 > 3 億
-    │  近 5 日至少 5 筆交易數據（排除停牌）
+    ▼  Step 1  universe.py
+    │  爬取維基百科取得成份股代號
     │
-    ▼ L2 技術指標評分（門檻預設 60 分）
-    │  MA 排列（25分）、RSI 健康度（20分）、MACD 柱狀體（20分）
-    │  量能放大（20分）、20日動能（15分）
-    │  ⚠️ RSI > 80 超買：整支股票直接 0 分排除
+    ▼  Step 2  fetcher.py
+    │  下載 90 日日 K 數據（.cache/price_YYYYMMDD.pkl 快取）
     │
-    ▼ L3 DeepSeek AI 精選
-       綜合大盤環境、產業趨勢、技術面，選出最多 5 支
-       每支附：買入區間、目標價、止損、持有週期、策略
+    ▼  Step 2.5  market.py — 快速 Regime 判定
+    │  計算市場廣度（% 股票 > 50 SMA）+ 下載 VIX
+    │  → 四象限 Regime 分類；回傳值供 Step 5.5 直接複用（不重算）
+    │
+    ▼  Step 3  fetcher.py
+    │  抓取基本面：市值、產業、公司名稱（.cache/info_*.json，7 日有效）
+    │
+    ▼  Step 4  filter.py — L1 硬條件篩選
+    │  股價 > $5、30 日均量 > 50 萬、市值 > 3 億、近 5 日有交易
+    │  → 通常剩 200~350 支
+    │
+    ▼  Step 5  scorer.py — L2 技術評分（100 分制）
+    │  門檻：60 分（PANIC_REVERSAL 環境：40 分 + 超賣股強制放行）
+    │  → 通常剩 30~80 支
+    │
+    ▼  Step 5.5  market.py — 完整大盤環境
+    │  直接複用 Step 2.5 的廣度與 VIX，補抓 SPY + 相關產業 ETF 細節
+    │
+    ▼  Step 6  ranker.py — L3 DeepSeek AI 精選
+       依 Regime 主推策略從候選池選出最多 5 支
+       每支附：買入區間、目標價、止損、持有天數（純整數）、策略理由
+       BEAR_DISTRIBUTION 時直接回傳空列表，不建議任何買入
 ```
 
 ---
 
-## 訊號追蹤狀態
+## 大盤環境（Market Regime）
+
+| Regime | 條件 | 主推策略 | 系統行為 |
+|--------|------|----------|----------|
+| **BULL_TREND** | 廣度 ≥ 60% 且 VIX < 20 | 動能策略 | 選強勢領頭羊、均線多頭排列標的 |
+| **CONSOLIDATION** | 廣度 35~60%（任意 VIX） | 突破策略 | 只選帶量突破壓力位的個股 |
+| **PANIC_REVERSAL** | 廣度 < 35% 且 VIX ≥ 25 | 反轉策略 | 找超賣底背離、嚴設止損 |
+| **BEAR_DISTRIBUTION** | 廣度 < 35% 且 VIX < 25 | 全面防禦 | 不輸出任何買入建議 |
+
+> 每日報告大盤儀表板的「主推：XXX 策略」旁有 `?` 圖示，hover 即顯示當前 Regime 的判斷條件，方便快速確認策略依據。
+
+---
+
+## L2 技術評分（100 分制）
+
+| 指標 | 滿分 | 說明 |
+|------|------|------|
+| MA 多頭排列 | 25 | EMA5 > EMA10 > EMA20 > EMA50，每條件 +8.33 分 |
+| RSI 健康區間 | 20 | 50～70 = 滿分；40～50 或 70～80 = 半分；其餘 = 0（含 RSI > 80，軟過濾） |
+| MACD 柱狀體 | 20 | 正且遞增 = 滿分；正但遞減 = 半分；負 = 0 |
+| 量能放大 | 20 | ≥ 1.5x 均量 = 滿分；≥ 1.0x = 半分 |
+| 20 日動能 | 15 | 漲幅 > 10% = 滿分；> 5% = 半分；> 0% = 1/4 分 |
+
+> PANIC_REVERSAL 環境下，RSI < 35 且 20 日跌幅 > 15% 的超賣股會**強制放行**進入 L3，不受分數門檻限制。
+
+---
+
+## 訊號追蹤狀態機
 
 | 狀態 | 說明 |
 |------|------|
-| ✅ 有效 | 股價已落入買入區間，可考慮進場 |
-| 🟡 留意 | 股價略高於買入區間，等待回落 |
-| ❌ 失效 | 股價追高（>8%）或跌破 EMA20，訊號取消 |
-| 🗑 移除 | 追蹤滿 5 天自動移除 |
+| ✅ active | 股價已落入買入區間且高於止損，報告顯示「持倉 N / 持有天數 天」及彩色浮盈浮虧（相對進場價） |
+| 🟡 watch | 股價略高於買入區間，等待回落 |
+| ❌ invalid | 趨勢轉弱、跌破 AI 止損價、開盤跳空觸發安全攔截，或已追高 >8% |
+| 🗑 expired | 觀察滿 5 個交易日自動移除 |
+| 📦 settled | 觸發停利/停損/到期結算，歸檔至績效資料庫後移除 |
+
+**雙軌制失效判定**：
+- 動能策略 / 突破策略：跌破 EMA20 即失效
+- 反轉策略：跌破 AI 設定的止損價才失效（進場點本就在 EMA20 以下）
+
+**開盤跳空安全攔截**：`watch → active` 轉換時，除了 `price >= buy_zone_lower` 外，額外確認 `price > stop_loss`，防止 AI 誤設止損在買入區間內時污染績效資料庫。
+
+**績效結算三態**：
+- `CLOSED_PROFIT`：收盤價 ≥ 目標價
+- `CLOSED_LOSS`：收盤價 ≤ 止損價
+- `FORCE_EXPIRED`：持倉天數 ≥ AI 設定的持有天數
+
+---
+
+## 歷史績效
+
+結算後自動寫入 `data/performance_history.json`，每日報告顯示：
+
+- **今日結算區段**（📦）：當日觸發停利（🎯）/ 停損（🛑）/ 到期（⏰）的個股，顯示進場價 → 出場價、持倉天數、回報百分比
+- **歷史績效摘要**：整體勝率、平均回報率、各策略（動能/突破/反轉）累積勝率
+
+系統啟動初期（冷啟動）績效區塊自動隱藏，不顯示空資料。
+
+---
+
+## 開發流程（Spec-First）
+
+本專案採用規格驅動開發（SDD）工作流：
+
+```
+需求 → 更新 specs/<module>.md → 實作 → PR 引用規格節次 → 合併
+```
+
+| 模組 | 規格文件 |
+|------|----------|
+| `src/scorer.py` | [`specs/scorer.md`](specs/scorer.md) |
+| `src/tracker.py` | [`specs/tracker.md`](specs/tracker.md) |
+| `src/ranker.py` | [`specs/ranker.md`](specs/ranker.md) |
+| `src/market.py` | [`specs/market.md`](specs/market.md) |
+| `src/pipeline.py` | [`specs/pipeline.md`](specs/pipeline.md) |
+
+新功能請複製 [`specs/_template.md`](specs/_template.md) 建立規格文件，並在實作前完成 Behavior 與 Design Decisions 節。
 
 ---
 
@@ -65,8 +154,6 @@ pip install -r requirements.txt
 ```
 
 ### 設定 `.env`
-
-複製範本並填入 API key：
 
 ```powershell
 copy .env.example .env
@@ -100,9 +187,9 @@ python main.py --dry-run --no-cache
 python main.py --dry-run --top 10 --min-score 65
 
 # 正式執行（生成 HTML 並 push）
-python main.py
+$env:PYTHONUTF8=1; python main.py
 
-# Windows 包裝腳本（自動設定 UTF-8）
+# Windows 包裝腳本
 .\run.ps1 --dry-run
 .\run.ps1 --top 10
 ```
@@ -137,19 +224,27 @@ python main.py
 
 ```
 us-stock-screener/
-├── main.py                 # 主程式入口
+├── main.py                 # 主程式入口（含 CLI 參數）
 ├── src/
-│   ├── universe.py         # S&P 500 股票池
-│   ├── fetcher.py          # 批次下載股價（含快取）
+│   ├── universe.py         # 爬取 S&P 500 成份股
+│   ├── fetcher.py          # 批次下載日 K 與基本面（含快取）
 │   ├── filter.py           # L1 硬條件篩選
-│   ├── scorer.py           # L2 技術指標評分
-│   ├── market.py           # 大盤 & 產業 ETF 背景數據
-│   ├── ranker.py           # L3 DeepSeek AI 精選
-│   ├── tracker.py          # 訊號追蹤（watchlist 管理）
-│   ├── pipeline.py         # 流程編排
-│   └── publisher.py        # HTML 生成 & GitHub Pages 發布
+│   ├── scorer.py           # L2 技術評分（含 PANIC_REVERSAL 強制放行）
+│   ├── market.py           # 大盤廣度、VIX、Regime 判定、產業 ETF
+│   ├── ranker.py           # L3 DeepSeek AI 精選（XML Prompt）
+│   ├── tracker.py          # 訊號追蹤（狀態機、績效結算、歸檔）
+│   ├── pipeline.py         # 流程編排（Steps 1–6）
+│   └── publisher.py        # HTML 生成 & GitHub Pages 發布（含績效儀表板）
+├── specs/                  # 規格文件（Spec-First 開發）
+│   ├── _template.md
+│   ├── scorer.md
+│   ├── tracker.md
+│   ├── ranker.md
+│   ├── market.md
+│   └── pipeline.md
 ├── data/
-│   └── watchlist.json      # 追蹤清單（持久化）
+│   ├── watchlist.json      # 追蹤清單（持久化）
+│   └── performance_history.json  # 歷史績效資料庫（結算後自動建立）
 ├── docs/                   # GitHub Pages 靜態檔案
 │   ├── index.html
 │   └── reports/

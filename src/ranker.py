@@ -46,12 +46,14 @@ def compute_indicators(sym: str, df: pd.DataFrame) -> dict:
     close = df["Close"].dropna()
     volume = df["Volume"].dropna()
 
-    price_now = float(close.iloc[-1])
-    price_prev = float(close.iloc[-2]) if len(close) >= 2 else price_now
-    price_20d = float(close.iloc[-20]) if len(close) >= 20 else price_now
+    price_now  = float(close.iloc[-1])
+    price_prev = float(close.iloc[-2])  if len(close) >= 2  else price_now
+    price_5d   = float(close.iloc[-5])  if len(close) >= 5  else price_now
+    price_20d  = float(close.iloc[-20]) if len(close) >= 20 else price_now
 
-    change_1d = (price_now - price_prev) / price_prev * 100 if price_prev else 0.0
-    change_20d = (price_now - price_20d) / price_20d * 100 if price_20d else 0.0
+    change_1d  = (price_now - price_prev) / price_prev * 100 if price_prev else 0.0
+    change_5d  = (price_now - price_5d)   / price_5d   * 100 if price_5d   else 0.0
+    change_20d = (price_now - price_20d)  / price_20d  * 100 if price_20d  else 0.0
 
     avg_vol_30 = float(volume.tail(30).mean()) if len(volume) >= 30 else float(volume.mean())
     today_vol = float(volume.iloc[-1])
@@ -82,7 +84,8 @@ def compute_indicators(sym: str, df: pd.DataFrame) -> dict:
     return {
         "symbol": sym,
         "price": round(price_now, 2),
-        "change_1d_pct": round(change_1d, 2),
+        "change_1d_pct":  round(change_1d, 2),
+        "change_5d_pct":  round(change_5d, 2),
         "change_20d_pct": round(change_20d, 2),
         "avg_volume_30d": int(avg_vol_30),
         "volume_ratio": round(vol_ratio, 2),
@@ -103,15 +106,126 @@ def compute_indicators(sym: str, df: pd.DataFrame) -> dict:
     }
 
 
+# ── Markdown 表格輔助函數 ────────────────────────────────────────
+
+def _ma_trend_tag(ema5, ema10, ema20, ema50) -> str:
+    """均線排列狀態編碼：BULL_1 完美多頭，BULL_2 標準多頭，MIXED 混合，BEAR 空頭。"""
+    vals = [ema5, ema10, ema20, ema50]
+    if any(v is None or (isinstance(v, float) and v != v) for v in vals):
+        return "N/A"
+    if ema5 > ema10 > ema20 > ema50:
+        return "BULL_1"
+    if ema5 > ema20 > ema50:
+        return "BULL_2"
+    if ema20 < ema50:
+        return "BEAR"
+    return "MIXED"
+
+
+def _macd_hist_tag(close: pd.Series) -> str:
+    """MACD 直方圖狀態編碼：POS_INC / POS_DEC / NEG_INC / NEG_DEC / N/A。"""
+    if len(close) < 36:
+        return "N/A"
+    ema12 = close.ewm(span=12, adjust=False).mean()
+    ema26 = close.ewm(span=26, adjust=False).mean()
+    macd = ema12 - ema26
+    signal = macd.ewm(span=9, adjust=False).mean()
+    hist = (macd - signal).dropna()
+    if len(hist) < 2:
+        return "N/A"
+    cur, prev = float(hist.iloc[-1]), float(hist.iloc[-2])
+    if cur >= 0:
+        return "POS_INC" if cur > prev else "POS_DEC"
+    return "NEG_INC" if cur > prev else "NEG_DEC"
+
+
+def _strategy_tag(indic: dict) -> str:
+    """根據技術指標推薦最可能適用的策略標籤（MOMENTUM / BREAKOUT / REVERSAL / NEUTRAL）。"""
+    rsi     = indic.get("rsi") or 0.0
+    vol     = indic.get("volume_ratio") or 0.0
+    stoch   = indic.get("stoch_k") or 50.0
+    dist_20d = indic.get("dist_from_20d_high_pct") or -99.0
+    rsi_prev = indic.get("rsi_5d_ago")
+    ema5, ema20, ema50 = indic.get("ema5"), indic.get("ema20"), indic.get("ema50")
+
+    if stoch < 25 and rsi_prev is not None and rsi > rsi_prev:
+        return "REVERSAL"
+    if vol >= 2.0 and -2.0 <= dist_20d <= 2.0:
+        return "BREAKOUT"
+    if ema5 and ema20 and ema50 and ema5 > ema20 > ema50 and 50 <= rsi <= 75 and vol >= 1.5:
+        return "MOMENTUM"
+    return "NEUTRAL"
+
+
+def _generate_candidates_markdown_table(
+    candidates: list[dict],
+    price_data: dict[str, pd.DataFrame],
+    info_data: dict[str, dict],
+) -> str:
+    """
+    將 L2 候選股清單轉換為高密度 Markdown 表格，節省 Token 並便於 AI 橫縱向對比推理。
+
+    各欄位均為預處理後的標籤或數值：
+      MA_Trend      — 均線排列編碼（BULL_1/BULL_2/MIXED/BEAR）
+      MACD_Hist     — 直方圖狀態編碼（POS_INC/POS_DEC/NEG_INC/NEG_DEC）
+      Vol_Ratio     — 當日成交量 ÷ 30 日均量
+      Price_20D_Pct — 近 20 日價格漲跌幅
+      52W_High_Dist — 距 52 週最高點百分比
+    """
+    _SECTOR_ABBR = {
+        " Services": "", " Cyclical": "", " Defensive": "",
+    }
+
+    header = (
+        "| Ticker | Close_Price | Sector | L2_Score | Strategy_Tag | MA_Trend"
+        " | RSI | MACD_Hist | Vol_Ratio | Price_5D_Pct | Price_20D_Pct | 52W_High_Dist |"
+    )
+    sep = (
+        "|--------|-------------|--------|----------|--------------|----------"
+        "|-----|-----------|-----------|--------------|---------------|---------------|"
+    )
+    rows = [header, sep]
+
+    for c in candidates[:MAX_CANDIDATES_TO_AI]:
+        sym = c["symbol"]
+        df  = price_data.get(sym)
+        if df is None:
+            continue
+
+        indic = compute_indicators(sym, df)
+        info  = info_data.get(sym, {})
+        close = df["Close"].dropna()
+
+        ma_trend  = _ma_trend_tag(indic.get("ema5"), indic.get("ema10"), indic.get("ema20"), indic.get("ema50"))
+        macd_tag  = _macd_hist_tag(close)
+        strategy  = _strategy_tag(indic)
+        price_str = f"${indic['price']:.2f}"
+
+        rsi_val = indic.get("rsi")
+        rsi_str = f"{rsi_val:.1f}" if rsi_val is not None else "N/A"
+
+        vol_ratio = indic.get("volume_ratio", 0.0)
+        p5d_str   = f"{indic.get('change_5d_pct', 0.0):+.1f}%"
+        p20d_str  = f"{indic.get('change_20d_pct', 0.0):+.1f}%"
+
+        fw_high  = info.get("fifty_two_week_high")
+        dist_52w = round((indic["price"] - fw_high) / fw_high * 100, 1) if fw_high else None
+        dist_str = f"{dist_52w:+.1f}%" if dist_52w is not None else "N/A"
+
+        sector = info.get("sector", "Unknown")
+        for k, v in _SECTOR_ABBR.items():
+            sector = sector.replace(k, v)
+
+        rows.append(
+            f"| {sym} | {price_str} | {sector} | {c['total_score']:.0f} | {strategy}"
+            f" | {ma_trend} | {rsi_str} | {macd_tag} | {vol_ratio:.2f}"
+            f" | {p5d_str} | {p20d_str} | {dist_str} |"
+        )
+
+    return "\n".join(rows)
+
+
 # ── Prompt 建構 ──────────────────────────────────────────────────
-
-def _format_market_context(market_context: dict) -> str:
-    """將 market_context 格式化為易讀的 JSON 字串附加在 prompt 中。"""
-    if not market_context:
-        return ""
-    import json
-    return "\n【市場背景數據】\n" + json.dumps(market_context, ensure_ascii=False, indent=2)
-
 
 def _build_prompt(
     candidates: list[dict],
@@ -119,58 +233,76 @@ def _build_prompt(
     info_data: dict[str, dict],
     market_context: dict | None = None,
 ) -> str:
-    """整合 L2 評分 + 原始指標 + 基本面，組成結構化 prompt 內容。"""
-    rows = []
-    for c in candidates[:MAX_CANDIDATES_TO_AI]:
-        sym = c["symbol"]
-        df = price_data.get(sym)
-        if df is None:
-            continue
-        indic = compute_indicators(sym, df)
-        info = info_data.get(sym, {})
-        fw_high = info.get("fifty_two_week_high")
-        fw_low  = info.get("fifty_two_week_low")
-        dist_52w = round((indic["price"] - fw_high) / fw_high * 100, 2) if fw_high else None
-        rows.append({
-            "ticker": sym,
-            "name": info.get("name", sym),
-            "sector": info.get("sector", "Unknown"),
-            "price": indic["price"],
-            "change_1d_pct": indic["change_1d_pct"],
-            "change_20d_pct": indic["change_20d_pct"],
-            "avg_volume_30d": indic["avg_volume_30d"],
-            "volume_ratio": indic["volume_ratio"],
-            "ema5": indic["ema5"],
-            "ema10": indic["ema10"],
-            "ema20": indic["ema20"],
-            "ema50": indic["ema50"],
-            "rsi": indic["rsi"],
-            "macd_hist": indic["macd_hist"],
-            "l2_score": c["total_score"],
-            "l2_detail": {
-                "ma": c["ma_score"],
-                "rsi": c["rsi_score"],
-                "macd": c["macd_score"],
-                "volume": c["volume_score"],
-                "momentum": c["momentum_score"],
-            },
-            # 動能策略補足
-            "fifty_two_week_high":   fw_high,
-            "fifty_two_week_low":    fw_low,
-            "dist_from_52w_high_pct": dist_52w,
-            # 突破策略補足
-            "high_20d":              indic["high_20d"],
-            "low_20d":               indic["low_20d"],
-            "dist_from_20d_high_pct": indic["dist_from_20d_high_pct"],
-            # 反轉策略補足
-            "rsi_5d_ago":            indic["rsi_5d_ago"],
-            "stoch_k":               indic["stoch_k"],
-            "dist_from_ema50_pct":   indic["dist_from_ema50_pct"],
-        })
+    """以 XML 標籤包裹三大區塊，組裝結構化 Prompt 送給 DeepSeek。"""
+    mc = market_context or {}
 
-    candidate_json = json.dumps(rows, ensure_ascii=False, indent=2)
-    market_section = _format_market_context(market_context or {})
-    return f"{market_section}\n\n【候選股數據】\n{candidate_json}"
+    # ── <Market_Regime> ───────────────────────────────────────────
+    regime_hint = mc.get("ai_prompt_hint", "")
+    primary     = mc.get("primary_strategy", "")
+    breadth     = mc.get("market_breadth_pct")
+    vix_info    = mc.get("vix", {})
+    spy_info    = mc.get("sp500", {})
+    sectors     = mc.get("sectors", {})
+
+    regime_lines = []
+    if regime_hint:
+        regime_lines.append(regime_hint)
+
+    stats = []
+    if breadth is not None:
+        stats.append(f"市場廣度={breadth:.1f}%")
+    vix_val = vix_info.get("value")
+    if vix_val is not None:
+        stats.append(f"VIX={vix_val:.1f}({vix_info.get('label', '')})")
+    above_ema20 = spy_info.get("above_ema20")
+    if above_ema20 is not None:
+        stats.append(f"SPY={'EMA20之上' if above_ema20 else 'EMA20之下'}")
+    if stats:
+        regime_lines.append("大盤數據：" + "｜".join(stats))
+
+    if sectors:
+        etf_parts = [
+            f"{sec}({d.get('etf', '')}) 5日={d.get('change_5d_pct', 0):+.1f}% 20日={d.get('change_20d_pct', 0):+.1f}%"
+            f"{'↑' if d.get('above_ema20') else '↓'}"
+            for sec, d in sectors.items()
+        ]
+        regime_lines.append("產業ETF（5日/20日漲跌）：" + "  ".join(etf_parts))
+
+    regime_block = "\n".join(regime_lines)
+
+    # ── <Candidate_Pool> ──────────────────────────────────────────
+    table = _generate_candidates_markdown_table(candidates, price_data, info_data)
+    field_defs = (
+        "欄位定義：\n"
+        "- MA_Trend: BULL_1=EMA5>EMA10>EMA20>EMA50完美多頭｜BULL_2=EMA5>EMA20>EMA50標準多頭｜MIXED=混合｜BEAR=空頭\n"
+        "- MACD_Hist: POS_INC=正且遞增(最強)｜POS_DEC=正但遞減｜NEG_INC=負但回升｜NEG_DEC=負且下降(最弱)\n"
+        "- Vol_Ratio: 當日量÷30日均量（>=1.5放量，>=2.0顯著放量）\n"
+        "- Price_5D_Pct: 近5日漲跌幅（短線爆發力）\n"
+        "- Price_20D_Pct: 近20日漲跌幅（中線趨勢）\n"
+        "- 52W_High_Dist: 距52週高點（-2%=接近高點，-30%=遠離高點）\n"
+        "- Strategy_Tag: 系統預判策略（MOMENTUM/BREAKOUT/REVERSAL/NEUTRAL），僅供參考"
+    )
+    pool_block = f"{table}\n\n{field_defs}"
+
+    # ── <Output_Constraint> ───────────────────────────────────────
+    strategy_line = (
+        f"本日主推策略【{primary}】，只選符合此策略邏輯的個股。"
+        if primary else "全面防禦模式，不建議建立新倉位。"
+    )
+    constraint_block = (
+        f"必須無條件服從 <Market_Regime> 的策略方向。\n"
+        f"{strategy_line}\n"
+        f"從 <Candidate_Pool> 中篩選最多 5 支最佳標的。\n"
+        f"【型態限制】hold_period 必須輸出純整數（Integer），代表預期持有的美股交易日天數，"
+        f"嚴禁輸出任何非數字字元（禁止如 '5 days'、'2 weeks'、'5~7' 等字串格式）。\n"
+        f'以 JSON 格式輸出，不附加任何說明文字：{{"selections": [{{...}}, ...]}}'
+    )
+
+    return (
+        f"<Market_Regime>\n{regime_block}\n</Market_Regime>\n\n"
+        f"<Candidate_Pool>\n{pool_block}\n</Candidate_Pool>\n\n"
+        f"<Output_Constraint>\n{constraint_block}\n</Output_Constraint>"
+    )
 
 
 SYSTEM_PROMPT = """你是一位經驗豐富的美股量化分析師，擅長技術面與動能選股。
@@ -238,7 +370,7 @@ SYSTEM_PROMPT = """你是一位經驗豐富的美股量化分析師，擅長技�
 - buy_zone: 建議買入價格區間，格式如 "$185～$188"
 - target: 目標價，格式如 "$210"
 - stop_loss: 止損價，格式如 "$180"
-- hold_period: 建議持有週期，如 "1～2週"
+- hold_period: 預期持有的美股交易日天數，純整數（例如 10），不得含任何非數字字元
 - strategy: 套用的選股策略，只能是「動能策略」、「突破策略」、「反轉策略」三者之一
 - strategy_reason: 繁體中文，說明選擇此策略的具體依據，需引用指標數值（例如：RSI=62、EMA5>EMA10>EMA20）（50字以內）
 - confidence_reason: 繁體中文，說明信心分數給分原因，需具體說明加分或扣分的主因（例如：成交量放大、大盤偏弱）（50字以內）"""
@@ -256,7 +388,7 @@ def _call_deepseek(user_content: str) -> list[dict]:
                 model=DEEPSEEK_MODEL,
                 messages=[
                     {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": f"以下是候選股數據，請從中選出值得買進的標的（最多 5 支）：\n\n{user_content}"},
+                    {"role": "user", "content": user_content},
                 ],
                 response_format={"type": "json_object"},
                 temperature=0.3,
@@ -348,6 +480,12 @@ def rank_candidates(
         return _enrich_fallback(candidates[:top_n], info_data, price_data)
 
     market_context = market_context or {}
+
+    # BEAR_DISTRIBUTION 防禦機制：直接回傳空列表，不呼叫 AI，不 fallback
+    regime = market_context.get("regime", "")
+    if regime == "BEAR_DISTRIBUTION":
+        print("[ranker] 大盤進入【陰跌熊市 BEAR_DISTRIBUTION】，系統全面防禦，不輸出買入標的")
+        return []
 
     print(f"[ranker] 送出 {min(len(candidates), MAX_CANDIDATES_TO_AI)} 支候選股給 DeepSeek AI...")
     prompt_content = _build_prompt(candidates, price_data, info_data, market_context)

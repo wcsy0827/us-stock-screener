@@ -87,7 +87,8 @@ if __name__ == "__main__":
         sys.exit(1)
 
     ranked = summary.get("ranked", [])
-    _, categories = run_tracker(ranked)
+    market_context = summary.get("market_context", {})
+    _, categories = run_tracker(ranked, market_context=market_context)
 
     stats = {
         "total":    summary.get("total", 0),
@@ -96,4 +97,4 @@ if __name__ == "__main__":
         "ai_count": len(ranked),
         "date":     datetime.now(),
     }
-    publish(categories, stats, dry_run=args.dry_run)
+    publish(categories, stats, dry_run=args.dry_run, market_context=market_context)

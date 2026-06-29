@@ -15,6 +15,98 @@ _REPORTS_DIR = _DOCS / "reports"
 _DATA_DIR = _DOCS / "data"
 _INDEX_JSON = _DATA_DIR / "reports-index.json"
 _INDEX_HTML = _DOCS / "index.html"
+_PERF_PATH = _ROOT / "data" / "performance_history.json"
+
+
+# ── 歷史績效統計 ─────────────────────────────────────────────────────
+
+def _load_performance_stats() -> dict:
+    """讀取 performance_history.json 計算績效統計。冷啟動安全：任何異常均回傳預設零值。"""
+    default: dict = {"total": 0, "win_rate": 0.0, "avg_return": 0.0, "by_strategy": {}}
+    if not _PERF_PATH.exists():
+        return default
+    try:
+        with open(_PERF_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception:
+        return default
+
+    records = [
+        r for r in data.get("history_records", [])
+        if r.get("actual_outcome", {}).get("exit_reason") in (
+            "CLOSED_PROFIT", "CLOSED_LOSS", "FORCE_EXPIRED"
+        )
+    ]
+    if not records:
+        return default
+
+    total = len(records)
+    wins = sum(1 for r in records if r.get("performance_metrics", {}).get("is_win"))
+    returns = [
+        r["performance_metrics"]["return_pct"]
+        for r in records
+        if r.get("performance_metrics", {}).get("return_pct") is not None
+    ]
+    win_rate = round(wins / total * 100, 1) if total > 0 else 0.0
+    avg_return = round(sum(returns) / len(returns), 2) if returns else 0.0
+
+    by_strategy: dict[str, dict] = {}
+    for r in records:
+        strat = r.get("signal_details", {}).get("assigned_strategy", "其他") or "其他"
+        if strat not in by_strategy:
+            by_strategy[strat] = {"total": 0, "wins": 0}
+        by_strategy[strat]["total"] += 1
+        if r.get("performance_metrics", {}).get("is_win"):
+            by_strategy[strat]["wins"] += 1
+
+    strat_rates = {
+        k: round(v["wins"] / v["total"] * 100, 1) if v["total"] > 0 else 0.0
+        for k, v in by_strategy.items()
+    }
+    return {"total": total, "win_rate": win_rate, "avg_return": avg_return, "by_strategy": strat_rates}
+
+
+def _build_performance_section(perf: dict) -> str:
+    """生成歷史績效摘要 HTML。total == 0 時回傳空字串（冷啟動不渲染）。"""
+    if perf.get("total", 0) == 0:
+        return ""
+
+    total = perf["total"]
+    win_rate = perf["win_rate"]
+    avg_return = perf["avg_return"]
+    by_strategy = perf.get("by_strategy", {})
+
+    avg_cls = "c-active" if avg_return >= 0 else "c-invalid"
+    avg_sign = f"+{avg_return:.2f}%" if avg_return >= 0 else f"{avg_return:.2f}%"
+
+    strat_cells = ""
+    for strat, rate in by_strategy.items():
+        strat_cells += (
+            f'<div class="stat-group">'
+            f'<span class="stat-num" style="font-size:0.95rem">{rate:.1f}%</span>'
+            f'<span class="stat-lbl">{_esc(strat)}勝率</span>'
+            f"</div>"
+        )
+
+    return f"""
+<div class="summary-box" style="margin-bottom:20px;border-top-color:#a855f7">
+  <h2>📊 歷史選股績效（累計 {total} 筆結算）</h2>
+  <div class="stat-row">
+    <div class="stat-group">
+      <span class="stat-num c-new">{win_rate:.1f}%</span>
+      <span class="stat-lbl">整體勝率</span>
+    </div>
+    <div class="stat-group">
+      <span class="stat-num {avg_cls}">{_esc(avg_sign)}</span>
+      <span class="stat-lbl">平均回報</span>
+    </div>
+    <div class="stat-group">
+      <span class="stat-num" style="color:var(--muted)">{total}</span>
+      <span class="stat-lbl">筆結算</span>
+    </div>
+  </div>
+  {f'<div class="stat-row">{strat_cells}</div>' if strat_cells else ""}
+</div>"""
 
 
 # ── 工具函式 ─────────────────────────────────────────────────────────
@@ -151,14 +243,138 @@ a:hover { text-decoration: underline; }
 .arrow-icon { color: var(--border); font-size: 1rem; }
 .empty-state { text-align: center; padding: 48px; color: var(--muted); }
 
+/* Market Regime Dashboard */
+.market-dashboard { border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; border: 1px solid var(--border); }
+.market-dashboard.bull          { border-left: 4px solid var(--active);  background: rgba(34,197,94,0.07); }
+.market-dashboard.consolidation { border-left: 4px solid var(--watch);   background: rgba(234,179,8,0.07); }
+.market-dashboard.panic         { border-left: 4px solid #f97316;        background: rgba(249,115,22,0.07); }
+.market-dashboard.bear          { border-left: 4px solid var(--invalid); background: rgba(239,68,68,0.1); }
+.regime-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+.regime-name { font-size: 1rem; font-weight: 700; }
+.regime-strategy { font-size: 0.82rem; color: var(--muted); margin-left: auto; }
+.regime-metrics { display: flex; gap: 20px; flex-wrap: wrap; }
+.regime-metric { min-width: 80px; }
+.regime-metric-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 2px; }
+.regime-metric-val { font-size: 1rem; font-weight: 700; }
+.regime-metric-sub { font-size: 0.72rem; color: var(--muted); margin-top: 1px; }
+.spy-above { color: var(--active); }
+.spy-below { color: var(--invalid); }
+.defense-banner { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.3); border-radius: 10px; padding: 20px 24px; text-align: center; margin-bottom: 16px; }
+.defense-banner .defense-title { font-size: 1rem; font-weight: 700; color: var(--invalid); margin-bottom: 6px; }
+.defense-banner .defense-desc { font-size: 0.85rem; color: var(--muted); line-height: 1.7; }
+
+/* System info (index page) */
+details { margin-bottom: 20px; }
+summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 8px; padding: 12px 16px; background: var(--card); border-radius: 9px; border: 1px solid var(--border); font-weight: 600; font-size: 0.9rem; user-select: none; }
+summary::-webkit-details-marker { display: none; }
+details summary::before { content: "▶"; font-size: 0.65rem; color: var(--muted); transition: transform 0.2s; flex-shrink: 0; }
+details[open] summary::before { transform: rotate(90deg); }
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding-top: 12px; }
+.info-card { background: var(--card); border-radius: 9px; border: 1px solid var(--border); padding: 14px 16px; }
+.info-card h3 { font-size: 0.78rem; font-weight: 700; margin-bottom: 10px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
+.info-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+.info-table th { text-align: left; padding: 4px 8px; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--border); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.info-table td { padding: 5px 8px; border-bottom: 1px solid rgba(51,65,85,0.4); line-height: 1.5; vertical-align: top; }
+.info-table td:first-child { white-space: nowrap; }
+.info-table tr:last-child td { border-bottom: none; }
+.pipe-flow { display: flex; flex-direction: column; gap: 3px; }
+.pipe-step { display: flex; align-items: flex-start; gap: 8px; font-size: 0.8rem; line-height: 1.5; }
+.pipe-badge { background: var(--border); color: var(--muted); border-radius: 4px; padding: 1px 7px; font-size: 0.7rem; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+.pipe-arrow { color: var(--subtle); font-size: 0.75rem; padding-left: 16px; }
+.report-section-title { font-size: 0.82rem; font-weight: 600; color: var(--muted); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 10px; }
+
+.tip-wrap { position: relative; display: inline-flex; align-items: center; gap: 5px; }
+.tip-icon { display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; border-radius: 50%; background: var(--border); color: var(--muted); font-size: 0.68rem; font-weight: 700; cursor: help; flex-shrink: 0; }
+.tip-box { display: none; position: absolute; right: 0; top: calc(100% + 6px); background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 0.78rem; line-height: 1.65; color: var(--text); font-weight: 400; width: 230px; z-index: 20; box-shadow: 0 4px 16px rgba(0,0,0,0.5); white-space: normal; text-align: left; }
+.tip-wrap:hover .tip-box { display: block; }
+
 @media (max-width: 600px) {
   .scan-bar { flex-direction: column; align-items: flex-start; gap: 2px; }
   .card-header { flex-wrap: wrap; }
   .card-price { text-align: left; }
   .report-entry { flex-wrap: wrap; }
   .report-chips { margin-left: 0; }
+  .regime-strategy { margin-left: 0; }
+  .tip-box { right: auto; left: 0; }
+  .info-grid { grid-template-columns: 1fr; }
 }
 """
+
+
+# ── HTML 生成：大盤儀表板 ────────────────────────────────────────────
+
+def _build_market_dashboard(market_context: dict) -> str:
+    """生成大盤儀表板 HTML 區塊，顯示市場廣度、Regime 與主推策略。"""
+    if not market_context or "regime" not in market_context:
+        return ""
+
+    regime = market_context.get("regime", "")
+    breadth = market_context.get("market_breadth_pct")
+    primary = market_context.get("primary_strategy", "")
+    vix_val = market_context.get("vix", {}).get("value")
+    vix_label = market_context.get("vix", {}).get("label", "")
+    spy_above_ema20 = market_context.get("sp500", {}).get("above_ema20")
+
+    _REGIME_CONFIG = {
+        "BULL_TREND":        ("bull",          "📈 強勢牛市"),
+        "CONSOLIDATION":     ("consolidation", "⚖️ 震盪整理"),
+        "PANIC_REVERSAL":    ("panic",         "🔥 恐慌超跌"),
+        "BEAR_DISTRIBUTION": ("bear",          "🐻 陰跌熊市"),
+    }
+    cls, name = _REGIME_CONFIG.get(regime, ("", _esc(regime)))
+
+    breadth_str = f"{breadth:.1f}%" if breadth is not None else "-"
+    vix_str = f"{vix_val:.1f}" if vix_val is not None else "-"
+    vix_sublabel = f'<div class="regime-metric-sub">{_esc(vix_label)}</div>' if vix_label else ""
+    if spy_above_ema20 is True:
+        spy_str = "✅ EMA20 之上"
+        spy_cls = "spy-above"
+    elif spy_above_ema20 is False:
+        spy_str = "⚠️ EMA20 之下"
+        spy_cls = "spy-below"
+    else:
+        spy_str = "-"
+        spy_cls = ""
+    _REGIME_TIPS = {
+        "BULL_TREND":        "條件：市場廣度 ≥ 60% 且 VIX &lt; 20<br>選強勢領頭羊、均線多頭排列標的",
+        "CONSOLIDATION":     "條件：市場廣度 35～60%（VIX 不限）<br>只選帶量突破壓力位的個股",
+        "PANIC_REVERSAL":    "條件：市場廣度 &lt; 35% 且 VIX ≥ 25<br>找超賣底背離標的，嚴設止損",
+        "BEAR_DISTRIBUTION": "條件：市場廣度 &lt; 35% 且 VIX &lt; 25<br>全面防禦，不輸出任何買入建議",
+    }
+    tip_content = _REGIME_TIPS.get(regime, "")
+    if primary and tip_content:
+        strategy_html = (
+            f'<span class="tip-wrap">'
+            f'主推：{_esc(primary)}'
+            f'<span class="tip-icon">?</span>'
+            f'<span class="tip-box">{tip_content}</span>'
+            f'</span>'
+        )
+    else:
+        strategy_html = "⛔ 全面防禦，無買入建議"
+
+    return f"""
+<div class="market-dashboard {cls}">
+  <div class="regime-header">
+    <span class="regime-name">{_esc(name)}</span>
+    <span class="regime-strategy">{strategy_html}</span>
+  </div>
+  <div class="regime-metrics">
+    <div class="regime-metric">
+      <div class="regime-metric-label">市場廣度</div>
+      <div class="regime-metric-val">{_esc(breadth_str)}</div>
+    </div>
+    <div class="regime-metric">
+      <div class="regime-metric-label">VIX</div>
+      <div class="regime-metric-val">{_esc(vix_str)}</div>
+      {vix_sublabel}
+    </div>
+    <div class="regime-metric">
+      <div class="regime-metric-label">SPY 位置</div>
+      <div class="regime-metric-val {spy_cls}">{_esc(spy_str)}</div>
+    </div>
+  </div>
+</div>"""
 
 
 # ── HTML 生成：每日報告 ───────────────────────────────────────────────
@@ -175,19 +391,32 @@ def _tracking_row(e: dict, status_cls: str) -> str:
     sl = _esc(e.get("stop_loss", "-"))
 
     if status_cls == "active":
-        status_text = f"第 {days} 天 ── 已落入買入區間 ✅"
+        active_days = e.get("active_days", 0)
+        try:
+            hold_limit = int(str(e.get("hold_period", "10")).strip())
+        except (ValueError, TypeError):
+            hold_limit = 10
+        entry_p = e.get("active_entry_price")
+        pnl_html = ""
+        if entry_p and p:
+            pnl = (p - entry_p) / entry_p * 100
+            pnl_cls = "c-active" if pnl >= 0 else "c-invalid"
+            sign = "+" if pnl >= 0 else ""
+            pnl_html = f' ｜ <span class="{pnl_cls}" style="font-weight:700">{sign}{pnl:.2f}%</span>'
+        status_text = f"持倉 {active_days} / {hold_limit} 天 ✅{pnl_html}"
+        entry_str = f'進場 ${entry_p:.2f}｜' if entry_p else ""
+        prices_html = f'<div class="track-prices">{price_str}{entry_str}目標 {tgt}｜止損 {sl}</div>'
     elif status_cls == "watch":
         status_text = f"第 {days} 天（等待回落至買入區間）"
+        prices_html = f'<div class="track-prices">{price_str}買入區間 {bz}｜目標 {tgt}｜止損 {sl}</div>'
     elif status_cls == "invalid":
         reason = _esc(e.get("invalid_reason", ""))
         remaining = max(0, 5 - days)
         status_text = f"第 {days} 天 ── {reason}（剩 {remaining} 天自動移除）"
+        prices_html = f'<div class="track-prices">{price_str}買入區間 {bz}｜目標 {tgt}｜止損 {sl}</div>'
     else:  # expired
         status_text = f"已追蹤 {days} 天，今日移除"
-
-    prices_html = ""
-    if status_cls != "expired":
-        prices_html = f'<div class="track-prices">{price_str}買入區間 {bz}｜目標 {tgt}｜止損 {sl}</div>'
+        prices_html = ""
 
     return f"""
 <div class="track-item {status_cls}">
@@ -198,6 +427,44 @@ def _tracking_row(e: dict, status_cls: str) -> str:
   </div>
   <div class="track-status">{status_text}</div>
   {prices_html}
+</div>"""
+
+
+def _settled_row(e: dict) -> str:
+    sym = _esc(e["symbol"])
+    name = _esc(e.get("name", sym))
+    strategy = _esc(e.get("strategy", "-"))
+    exit_reason = e.get("_exit_reason", "")
+    exit_price = e.get("_exit_price")
+    entry_price = e.get("active_entry_price")
+    active_days = e.get("active_days", 0)
+
+    if exit_reason == "CLOSED_PROFIT":
+        reason_html = '<span class="c-active">🎯 達到目標價，停利出場</span>'
+    elif exit_reason == "CLOSED_LOSS":
+        reason_html = '<span class="c-invalid">🛑 觸發止損，停損出場</span>'
+    else:
+        reason_html = f'<span class="c-watch">⏰ 持倉期限（{active_days} 天）已到，強制出場</span>'
+
+    pnl_html = ""
+    if entry_price and exit_price:
+        pnl = (exit_price - entry_price) / entry_price * 100
+        sign = "+" if pnl >= 0 else ""
+        pnl_cls = "c-active" if pnl >= 0 else "c-invalid"
+        pnl_html = (
+            f'<span class="{pnl_cls}" style="font-weight:700">{sign}{pnl:.2f}%</span>'
+            f'　進場 ${entry_price:.2f} → 出場 ${exit_price:.2f}，持倉 {active_days} 天'
+        )
+
+    return f"""
+<div class="track-item" style="border-left-color:#a855f7">
+  <div class="track-header">
+    <span class="track-symbol">{sym}</span>
+    <span class="track-name">{name}</span>
+    <span class="strategy-tag">{strategy}</span>
+  </div>
+  <div class="track-status">{reason_html}</div>
+  <div class="track-prices">{pnl_html}</div>
 </div>"""
 
 
@@ -281,18 +548,29 @@ def _section_html(emoji: str, title: str, items: list[str], note: str = "") -> s
 </div>"""
 
 
-def _build_daily_report(categories: dict, stats: dict, date_str: str, weekday: str) -> str:
+def _build_daily_report(
+    categories: dict,
+    stats: dict,
+    date_str: str,
+    weekday: str,
+    market_context: dict | None = None,
+) -> str:
     total = stats.get("total", 0)
     l1 = stats.get("l1_count", 0)
     l2 = stats.get("l2_count", 0)
     ai = stats.get("ai_count", 0)
 
-    active  = categories.get("active", [])
-    watch   = categories.get("watch", [])
-    invalid = categories.get("invalid", [])
-    expired = categories.get("expired", [])
-    new     = categories.get("new", [])
-    reset   = categories.get("reset", [])
+    active   = categories.get("active", [])
+    watch    = categories.get("watch", [])
+    invalid  = categories.get("invalid", [])
+    expired  = categories.get("expired", [])
+    settled  = categories.get("settled", [])
+    new      = categories.get("new", [])
+    reset    = categories.get("reset", [])
+
+    regime = (market_context or {}).get("regime", "")
+    dashboard_html = _build_market_dashboard(market_context or {})
+    perf_html = _build_performance_section(_load_performance_stats())
 
     sections = ""
 
@@ -312,13 +590,27 @@ def _build_daily_report(categories: dict, stats: dict, date_str: str, weekday: s
         rows = [_tracking_row(e, "expired") for e in expired]
         sections += _section_html("🗑", "今日移除", rows)
 
-    if new:
-        cards = [_stock_card(i + 1, rec) for i, rec in enumerate(new)]
-        sections += _section_html("🆕", "今日新進觀察名單", cards)
+    if settled:
+        rows = [_settled_row(e) for e in settled]
+        sections += _section_html("📦", "今日結算", rows)
 
-    if reset:
-        cards = [_stock_card(i + 1, rec, "reset-card") for i, rec in enumerate(reset)]
-        sections += _section_html("🔄", "重新入選，重置追蹤", cards)
+    # BEAR_DISTRIBUTION 且無新進標的：顯示全面防禦橫幅
+    if regime == "BEAR_DISTRIBUTION" and not new and not reset:
+        breadth = (market_context or {}).get("market_breadth_pct")
+        breadth_str = _esc(f"{breadth:.1f}%") if breadth is not None else "偏低"
+        sections += f"""
+<div class="defense-banner">
+  <div class="defense-title">🛡️ 今日大盤風險過高，系統啟動全面防禦</div>
+  <div class="defense-desc">市場廣度：{breadth_str}，恐慌情緒蔓延，無新進標的建議。<br>請靜待市場企穩訊號，保留現金為宜。</div>
+</div>"""
+    else:
+        if new:
+            cards = [_stock_card(i + 1, rec) for i, rec in enumerate(new)]
+            sections += _section_html("🆕", "今日新進觀察名單", cards)
+
+        if reset:
+            cards = [_stock_card(i + 1, rec, "reset-card") for i, rec in enumerate(reset)]
+            sections += _section_html("🔄", "重新入選，重置追蹤", cards)
 
     if not sections:
         sections = '<p style="color:var(--muted);padding:24px 0;">今日無資料</p>'
@@ -329,6 +621,13 @@ def _build_daily_report(categories: dict, stats: dict, date_str: str, weekday: s
     nn = len(new)
     nr = len(reset)
     ne = len(expired)
+    ns = len(settled)
+
+    settled_stat = (
+        f'<div class="stat-group"><span class="stat-num" style="color:#a855f7">{ns}</span>'
+        f'<span class="stat-lbl">支結算</span></div>'
+        if ns > 0 else ""
+    )
 
     return f"""<!DOCTYPE html>
 <html lang="zh-TW">
@@ -352,6 +651,10 @@ def _build_daily_report(categories: dict, stats: dict, date_str: str, weekday: s
     <a class="back-link" href="../index.html">← 返回首頁</a>
   </div>
 
+  {dashboard_html}
+
+  {perf_html}
+
   {sections}
 
   <div class="summary-box">
@@ -365,6 +668,7 @@ def _build_daily_report(categories: dict, stats: dict, date_str: str, weekday: s
       <div class="stat-group"><span class="stat-num c-new">{nn}</span><span class="stat-lbl">支新增</span></div>
       <div class="stat-group"><span class="stat-num c-reset">{nr}</span><span class="stat-lbl">支重新入選</span></div>
       <div class="stat-group"><span class="stat-num c-removed">{ne}</span><span class="stat-lbl">支移除</span></div>
+      {settled_stat}
     </div>
   </div>
 </div>
@@ -378,6 +682,64 @@ def _chip(count: int, label: str, cls: str) -> str:
     if count == 0:
         return ""
     return f'<span class="chip {cls}">{count} {label}</span>'
+
+
+_INFO_HTML = """
+<details open>
+<summary>📖 系統說明</summary>
+<div class="info-grid">
+
+  <div class="info-card">
+    <h3>📡 篩選流程</h3>
+    <div class="pipe-flow">
+      <div class="pipe-step"><span class="pipe-badge">L0</span>S&amp;P 500 約 503 支成份股</div>
+      <div class="pipe-arrow">↓</div>
+      <div class="pipe-step"><span class="pipe-badge">L1</span>硬條件篩選：股價 &gt; $5、30 日均量 &gt; 50 萬、市值 &gt; 3 億</div>
+      <div class="pipe-arrow">↓</div>
+      <div class="pipe-step"><span class="pipe-badge">L2</span>技術評分 100 分制，門檻 60 分；恐慌超跌環境（見右側）降至 40 分，RSI &lt; 35 且 20 日跌幅 &gt; 15% 的超賣股強制放行</div>
+      <div class="pipe-arrow">↓</div>
+      <div class="pipe-step"><span class="pipe-badge">L3</span>DeepSeek AI 依當日大盤環境（Regime）的主推策略精選，最多 5 支；陰跌熊市環境下全面防禦，不輸出任何建議（詳見右側 Regime 表）</div>
+    </div>
+  </div>
+
+  <div class="info-card">
+    <h3>🌐 大盤環境（Market Regime）</h3>
+    <p style="font-size:0.72rem;color:var(--muted);margin-bottom:8px">市場廣度 = S&amp;P 500 中收盤價高於 50 日 SMA 的股票比例；VIX 為芝加哥期權交易所恐慌指數</p>
+    <table class="info-table">
+      <tr><th>環境名稱</th><th>判斷條件</th><th>主推策略</th></tr>
+      <tr><td style="color:var(--active)">📈 牛市趨勢</td><td>廣度 ≥ 60% 且 VIX &lt; 20</td><td>動能策略</td></tr>
+      <tr><td style="color:var(--watch)">⚖️ 震盪整理</td><td>廣度 35～60%（VIX 不限）</td><td>突破策略</td></tr>
+      <tr><td style="color:#f97316">🔥 恐慌超跌</td><td>廣度 &lt; 35% 且 VIX ≥ 25</td><td>反轉策略</td></tr>
+      <tr><td style="color:var(--invalid)">🐻 陰跌熊市</td><td>廣度 &lt; 35% 且 VIX &lt; 25</td><td>⛔ 全面防禦</td></tr>
+    </table>
+  </div>
+
+  <div class="info-card">
+    <h3>📊 L2 技術評分（100 分制）</h3>
+    <table class="info-table">
+      <tr><th>指標</th><th>滿分</th><th>評分說明</th></tr>
+      <tr><td>MA 多頭排列</td><td>25</td><td>EMA5&gt;10&gt;20&gt;50，每條件 +8.33 分</td></tr>
+      <tr><td>RSI 健康區間</td><td>20</td><td>50～70 滿分；40～50 或 70～80 半分；其餘 0（含 RSI&gt;80 軟過濾）</td></tr>
+      <tr><td>MACD 柱狀體</td><td>20</td><td>正且遞增滿分；正遞減半分；負 0</td></tr>
+      <tr><td>量能放大</td><td>20</td><td>≥ 1.5x 均量滿分；≥ 1.0x 半分</td></tr>
+      <tr><td>20 日動能</td><td>15</td><td>&gt;10% 滿分；&gt;5% 半分；&gt;0% 1/4 分</td></tr>
+    </table>
+  </div>
+
+  <div class="info-card">
+    <h3>🚦 訊號追蹤狀態</h3>
+    <table class="info-table">
+      <tr><td>✅ active</td><td>已落入買入區間，顯示持倉天數與彩色浮損益</td></tr>
+      <tr><td>🟡 watch</td><td>略高於買入區間，等待股價回落</td></tr>
+      <tr><td>❌ invalid</td><td>趨勢轉弱、跌破止損或開盤跳空攔截，訊號失效</td></tr>
+      <tr><td>🗑 expired</td><td>觀察滿 5 個交易日，自動移除</td></tr>
+      <tr><td>📦 settled</td><td>停利／停損／到期結算，歸檔績效資料庫</td></tr>
+    </table>
+  </div>
+
+</div>
+</details>
+"""
 
 
 def _build_index(report_index: list[dict]) -> str:
@@ -421,6 +783,8 @@ def _build_index(report_index: list[dict]) -> str:
     <h1>📈 美股 AI 選股系統</h1>
     <p>每日選股報告 · 訊號追蹤 · S&amp;P 500</p>
   </div>
+  {_INFO_HTML}
+  <div class="report-section-title">📋 歷史報告</div>
   <div class="report-list">
     {entries_html}
   </div>
@@ -475,7 +839,12 @@ def _check_git_remote() -> bool:
 
 # ── 主函式 ──────────────────────────────────────────────────────────
 
-def publish(categories: dict, stats: dict, dry_run: bool = False) -> None:
+def publish(
+    categories: dict,
+    stats: dict,
+    dry_run: bool = False,
+    market_context: dict | None = None,
+) -> None:
     """
     生成每日 HTML 報告 + 更新首頁索引，並 git push（dry_run 時略過 push）。
     """
@@ -487,7 +856,7 @@ def publish(categories: dict, stats: dict, dry_run: bool = False) -> None:
     _REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
     # 生成每日報告
-    report_html = _build_daily_report(categories, stats, date_str, weekday)
+    report_html = _build_daily_report(categories, stats, date_str, weekday, market_context=market_context)
     report_path = _REPORTS_DIR / f"{date_str}.html"
     report_path.write_text(report_html, encoding="utf-8")
     print(f"[publisher] 報告已生成：{report_path}")

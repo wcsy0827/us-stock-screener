@@ -7,7 +7,7 @@ import time
 import traceback
 
 from universe import fetch_sp500
-from market import fetch_market_context, SECTOR_ETF_MAP
+from market import fetch_market_context, fetch_regime_quick, SECTOR_ETF_MAP
 from fetcher import (
     fetch_batch, fetch_info,
     load_price_cache, save_price_cache,
@@ -53,7 +53,7 @@ def run(
         return summary
 
     # ── Step 2: 批次下載日 K 數據 ───────────────────────────────
-    print("\n[pipeline] ── Step 2/6：下載 60 天日 K 數據 ──")
+    print("\n[pipeline] ── Step 2/6：下載 90 天日 K 數據 ──")
     t = time.time()
     try:
         price_data = (use_cache and load_price_cache()) or None
@@ -68,6 +68,18 @@ def run(
         print(f"[pipeline] 錯誤：{summary['error']}")
         traceback.print_exc()
         return summary
+
+    # ── Step 2.5: 快速判定大盤 Regime（供 L2 動態門檻使用）──────
+    print("\n[pipeline] ── Step 2.5：快速判定大盤 Regime ──")
+    t = time.time()
+    regime_quick = ""
+    breadth_quick: float | None = None
+    vix_quick: float | None = None
+    try:
+        regime_quick, breadth_quick, vix_quick = fetch_regime_quick(price_data)
+        print(f"[pipeline] 完成 ({_elapsed(t)})｜Regime={regime_quick}")
+    except Exception as e:
+        print(f"[pipeline] 警告：Regime 快速判定失敗，L2 使用預設門檻：{e}")
 
     # ── Step 3: 抓取基本面資訊 ──────────────────────────────────
     print("\n[pipeline] ── Step 3/6：抓取基本面資訊（市值、產業、公司名稱）──")
@@ -100,13 +112,14 @@ def run(
     print("\n[pipeline] ── Step 5/6：L2 技術指標評分 ──")
     t = time.time()
     try:
-        candidates = score_all(l1_passed, price_data, min_score=min_score)
+        candidates = score_all(l1_passed, price_data, min_score=min_score, regime=regime_quick)
         summary["l2_count"] = len(candidates)
         print(f"[pipeline] 完成 ({_elapsed(t)})｜{len(candidates)} 支 >= {min_score:.0f} 分")
 
         if not candidates:
             print("[pipeline] 無候選股，流程結束")
             summary["ranked"] = []
+            summary["market_context"] = {}
             summary["success"] = True
             return summary
     except Exception as e:
@@ -115,19 +128,25 @@ def run(
         traceback.print_exc()
         return summary
 
-    # ── Step 5.5: 抓大盤 & 產業 ETF 背景數據 ────────────────────
-    print("\n[pipeline] ── Step 5.5：抓大盤與產業 ETF 數據 ──")
+    # ── Step 5.5: 抓大盤 & 產業 ETF 背景數據 + 計算市場廣度 ──────
+    print("\n[pipeline] ── Step 5.5：抓大盤與產業 ETF 數據、計算市場廣度 ──")
     t = time.time()
     try:
         candidate_sectors = {
             info_data.get(c["symbol"], {}).get("sector", "")
             for c in candidates
         } & set(SECTOR_ETF_MAP.keys())
-        market_context = fetch_market_context(candidate_sectors)
-        print(f"[pipeline] 完成 ({_elapsed(t)})")
+        market_context = fetch_market_context(
+            candidate_sectors,
+            all_stocks_data=price_data,
+            breadth_pct=breadth_quick,
+            vix_value=vix_quick,
+        )
+        print(f"[pipeline] 完成 ({_elapsed(t)})｜Regime={market_context.get('regime', 'N/A')}")
     except Exception as e:
         print(f"[pipeline] 警告：大盤數據抓取失敗，繼續執行：{e}")
         market_context = {}
+    summary["market_context"] = market_context
 
     # ── Step 6: L3 AI 排序 ──────────────────────────────────────
     print("\n[pipeline] ── Step 6/6：L3 AI 排序 ──")

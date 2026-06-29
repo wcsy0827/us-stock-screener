@@ -1,4 +1,4 @@
-"""抓取大盤狀態（S&P 500、VIX）與產業龍頭 ETF 走勢，提供給 AI 做市場背景判斷。"""
+"""抓取大盤狀態（S&P 500、VIX）與產業龍頭 ETF 走勢，計算市場廣度並判定市場環境 Regime。"""
 
 from __future__ import annotations
 
@@ -89,20 +89,139 @@ def _analyze(df: pd.DataFrame) -> dict:
     return result
 
 
-def fetch_market_context(candidate_sectors: set[str] | None = None) -> dict:
-    """
-    抓取大盤 + 相關產業 ETF 走勢。
+# ── 市場廣度計算 ─────────────────────────────────────────────────────
 
-    candidate_sectors: 候選股涵蓋的產業集合，只抓相關 ETF；
-                       傳 None 則抓全部 11 個產業 ETF。
+def calculate_market_breadth(all_stocks_data: dict) -> float:
+    """
+    計算市場廣度：收盤價高於 50 SMA 的股票比例（%）。
+    排除歷史 K 線不足 50 根的股票，確保 50 SMA 計算精準。
+    回傳 0~100 的百分比值。
+    """
+    above = 0
+    total = 0
+    for sym, df in all_stocks_data.items():
+        close = df["Close"].dropna()
+        if len(close) < 50:
+            continue
+        sma50 = float(close.tail(50).mean())
+        total += 1
+        if float(close.iloc[-1]) > sma50:
+            above += 1
+    if total == 0:
+        return 50.0  # 無法計算時回傳中性值
+    pct = round(above / total * 100, 1)
+    print(f"[market] 市場廣度：{above}/{total} 支股票站上50SMA = {pct}%")
+    return pct
+
+
+# ── 市場環境狀態機 ───────────────────────────────────────────────────
+
+def determine_market_regime(breadth_pct: float, vix_value: float) -> dict:
+    """
+    根據市場廣度與 VIX 判定市場環境模式（Regime）。
+    回傳含 regime、primary_strategy、ai_prompt_hint 的字典。
+
+    分類矩陣：
+      breadth >= 60% + VIX < 20  → BULL_TREND       → 動能策略
+      breadth 35~60%（任何 VIX） → CONSOLIDATION    → 突破策略
+      breadth < 35% + VIX >= 25  → PANIC_REVERSAL   → 反轉策略
+      breadth < 35% + VIX < 25   → BEAR_DISTRIBUTION → 全面防禦
+    """
+    if breadth_pct >= 60 and vix_value < 20:
+        return {
+            "regime": "BULL_TREND",
+            "primary_strategy": "動能策略",
+            "ai_prompt_hint": (
+                f"目前大盤環境為【強勢牛市】，市場廣度極佳（{breadth_pct}% 股票站上50SMA），"
+                f"整體結構健康。請嚴格執行【動能策略】，優先選擇板塊領頭羊與均線多頭排列之強勢標的，"
+                f"忽略左側反轉訊號。"
+            ),
+        }
+    elif breadth_pct >= 35:
+        return {
+            "regime": "CONSOLIDATION",
+            "primary_strategy": "突破策略",
+            "ai_prompt_hint": (
+                f"目前大盤環境為【震盪整理】，市場廣度中性（{breadth_pct}% 股票站上50SMA），"
+                f"走勢不明確。請嚴格執行【突破策略】，只選帶量突破關鍵壓力位的個股，"
+                f"嚴防假突破，等確認訊號再進場。"
+            ),
+        }
+    elif vix_value >= 25:
+        return {
+            "regime": "PANIC_REVERSAL",
+            "primary_strategy": "反轉策略",
+            "ai_prompt_hint": (
+                f"目前大盤環境為【恐慌超跌】，市場廣度偏低（{breadth_pct}% 股票站上50SMA），"
+                f"VIX={vix_value:.1f} 恐慌情緒高。請執行【反轉策略】，尋找非理性殺低、"
+                f"靠近長期支撐且出現底背離訊號的個股，嚴設止損，控制倉位。"
+            ),
+        }
+    else:
+        return {
+            "regime": "BEAR_DISTRIBUTION",
+            "primary_strategy": "",
+            "ai_prompt_hint": (
+                f"目前大盤環境為【陰跌熊市】，市場廣度極低（{breadth_pct}% 股票站上50SMA），"
+                f"VIX={vix_value:.1f}。風險極高，系統啟動全面防禦，"
+                f"禁止建立新倉位，請勿輸出任何買入建議，直接回傳空的 selections 陣列。"
+            ),
+        }
+
+
+# ── 輕量 Regime 快速判定（L2 評分前使用）────────────────────────────
+
+def fetch_regime_quick(all_stocks_data: dict) -> tuple[str, float, float]:
+    """
+    快速判定大盤 Regime，只下載 VIX，搭配已有 price_data 計算廣度。
+    回傳 (regime, breadth_pct, vix_value)。
+    在 pipeline Step 2.5 呼叫，比 fetch_market_context 早執行，
+    讓 scorer 能根據 regime 動態調整 L2 門檻。
+    """
+    breadth_pct = calculate_market_breadth(all_stocks_data)
+    vix_value = 20.0  # 下載失敗時使用中性值
+    try:
+        raw = yf.download(
+            "^VIX", period="5d", interval="1d",
+            auto_adjust=True, progress=False,
+        )
+        close = raw["Close"].dropna() if "Close" in raw.columns else pd.Series(dtype=float)
+        if not close.empty:
+            vix_value = float(close.iloc[-1])
+    except Exception as e:
+        print(f"[market] fetch_regime_quick VIX 下載失敗，使用預設值 20.0：{e}")
+    regime_dict = determine_market_regime(breadth_pct, vix_value)
+    regime = regime_dict["regime"]
+    print(f"[market] 快速 Regime：{regime}（廣度={breadth_pct}%，VIX={vix_value:.1f}）")
+    return regime, breadth_pct, vix_value
+
+
+# ── 主函式 ───────────────────────────────────────────────────────────
+
+def fetch_market_context(
+    candidate_sectors: set[str] | None = None,
+    all_stocks_data: dict | None = None,
+    breadth_pct: float | None = None,
+    vix_value: float | None = None,
+) -> dict:
+    """
+    抓取大盤 + 相關產業 ETF 走勢，計算市場廣度並判定市場環境 Regime。
+
+    candidate_sectors: 候選股涵蓋的產業集合，只抓相關 ETF；傳 None 則抓全部 11 個。
+    all_stocks_data:   全市場日 K 字典，僅在 breadth_pct 未提供時才重算廣度。
+    breadth_pct:       Step 2.5 已計算的廣度，有值時直接複用，不重跑 O(n) 迴圈。
+    vix_value:         Step 2.5 已下載的 VIX，有值時跳過重複下載。
     回傳結構：
       {
         "sp500": {...},
         "vix":   {"value": 18.5, "label": "正常"},
         "sectors": {"Technology": {...}, ...},
+        "market_breadth_pct": 68.5,
+        "regime": "BULL_TREND",
+        "primary_strategy": "動能策略",
+        "ai_prompt_hint": "...",
       }
     """
-    # 決定要抓哪些 sector ETF
     sectors_to_fetch = {
         sector: etf
         for sector, etf in SECTOR_ETF_MAP.items()
@@ -139,18 +258,28 @@ def fetch_market_context(candidate_sectors: set[str] | None = None) -> dict:
     if spy:
         context["sp500"] = spy
 
-    # VIX
+    # VIX（Step 2.5 已提供則直接複用，避免重複下載）
+    vix_final = vix_value if vix_value is not None else 20.0
     vix_df = _get("^VIX")
     if not vix_df.empty:
         vix_close = vix_df["Close"].dropna()
         if not vix_close.empty:
-            v = float(vix_close.iloc[-1])
-            vix_5d_ago = float(vix_close.iloc[-5]) if len(vix_close) >= 5 else v
+            vix_5d_ago = float(vix_close.iloc[-5]) if len(vix_close) >= 5 else float(vix_close.iloc[-1])
+            # 若 Step 2.5 未提供 VIX，才從下載資料中取值
+            if vix_value is None:
+                vix_final = float(vix_close.iloc[-1])
             context["vix"] = {
-                "value": round(v, 2),
-                "change_5d": round(v - vix_5d_ago, 2),
-                "label": _vix_label(v),
+                "value": round(vix_final, 2),
+                "change_5d": round(vix_final - vix_5d_ago, 2),
+                "label": _vix_label(vix_final),
             }
+    elif vix_value is not None:
+        # 下載失敗但 Step 2.5 有值，仍填入 vix 區塊供 AI Prompt 使用
+        context["vix"] = {
+            "value": round(vix_final, 2),
+            "change_5d": 0.0,
+            "label": _vix_label(vix_final),
+        }
 
     # 產業 ETF
     context["sectors"] = {}
@@ -165,4 +294,20 @@ def fetch_market_context(candidate_sectors: set[str] | None = None) -> dict:
         f"VIX={'ok' if 'vix' in context else 'fail'}，"
         f"產業ETF={ok_sectors}個"
     )
+
+    # 市場廣度計算 + Regime 判定（Step 2.5 已計算則直接複用，不重跑）
+    if breadth_pct is not None or all_stocks_data:
+        try:
+            effective_breadth = (
+                breadth_pct if breadth_pct is not None
+                else calculate_market_breadth(all_stocks_data)
+            )
+            regime_info = determine_market_regime(effective_breadth, vix_final)
+            context["market_breadth_pct"] = effective_breadth
+            context.update(regime_info)
+            source = "複用Step2.5" if breadth_pct is not None else "重新計算"
+            print(f"[market] Regime 判定（{source}）：{regime_info['regime']}，主推策略：{regime_info['primary_strategy'] or '全面防禦'}")
+        except Exception as e:
+            print(f"[market] 警告：市場廣度計算失敗：{e}")
+
     return context

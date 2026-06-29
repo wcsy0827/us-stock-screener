@@ -1,23 +1,18 @@
-# CLAUDE.md — 美股 AI 選股系統
+# 美股 AI 選股系統 — Claude Code 工作指南
 
-## 環境
+## 專案概述
 
-- Python 3.12+，虛擬環境位於 `.venv/`
-- 必需 `.env` 文件，至少含 `DEEPSEEK_API_KEY`
-- Windows 下 main.py 會自動設定 stdout UTF-8；`run.ps1` 也會處理，直接用即可
-
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-copy .env.example .env   # 填入 DEEPSEEK_API_KEY
-```
-
----
+每日自動掃描 S&P 500，透過三層篩選 + 大盤 Regime 感知，找出符合當日市場環境的買入機會。結果發布至 GitHub Pages。
 
 ## 執行命令
 
 ```powershell
+# 安裝
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+copy .env.example .env   # 填入 DEEPSEEK_API_KEY
+
 # 本機測試（完整流程，不 push）
 python main.py --dry-run
 
@@ -28,52 +23,73 @@ python main.py --dry-run --yes
 python main.py --dry-run --no-cache
 
 # 正式執行（生成並 push 至 GitHub Pages）
-python main.py
+$env:PYTHONUTF8=1; python main.py
 
 # Windows 包裝腳本
 .\run.ps1 --dry-run
 .\run.ps1 --top 10
 ```
 
----
-
-## 架構（6 層管道）
+## 架構速覽
 
 ```
-pipeline.py 協調：
-  universe → fetcher → filter(L1) → scorer(L2) → market → ranker(L3) → tracker → publisher
+S&P 500 (~503 支)
+  ↓ Step 1   universe.py     爬取成份股
+  ↓ Step 2   fetcher.py      下載 90 日日 K（.cache/ 快取）
+  ↓ Step 2.5 market.py       快速 Regime 判定（廣度 + VIX）← 必須在 scorer 之前
+                              回傳 (regime, breadth_pct, vix_value)，供 Step 5.5 複用
+  ↓ Step 3   fetcher.py      抓基本面（7 日快取）
+  ↓ Step 4   filter.py       L1 硬篩
+  ↓ Step 5   scorer.py       L2 技術評分（動態門檻）
+  ↓ Step 5.5 market.py       完整大盤 ETF 背景（直接複用 Step 2.5 的廣度與 VIX，不重算）
+  ↓ Step 6   ranker.py       L3 DeepSeek AI 精選（≤5 支）
+             tracker.py      訊號追蹤（watchlist.json）→ 結算歸檔（performance_history.json）
+             publisher.py    HTML 報告 → GitHub Pages（個股浮損益、今日結算區段、策略 Tooltip、歷史績效儀表板）
 ```
 
-- 各模組**獨立**，不跨層呼叫（scorer 不依賴 ranker，ranker 不依賴 publisher）
-- **L1**（`filter.py`）：只做流動性/規模硬條件（股價、均量、市值、交易天數）
-- **L2**（`scorer.py`）：技術指標評分，RSI 是獨立評分維度，不是 L1 條件
-- **L3**（`ranker.py`）：DeepSeek AI，若 API 失敗自動 fallback 到 L2 排名
+## 模組 ↔ 規格對照表
 
----
+修改任何模組**前**，先讀對應規格文件：
 
-## L2 評分權重
+| 模組 | 規格文件 |
+|------|----------|
+| `src/scorer.py` | `specs/scorer.md` |
+| `src/tracker.py` | `specs/tracker.md` |
+| `src/ranker.py` | `specs/ranker.md` |
+| `src/market.py` | `specs/market.md` |
+| `src/pipeline.py` | `specs/pipeline.md` |
+| `src/fetcher.py` | `specs/pipeline.md`（快取節） |
+| `src/filter.py` | `specs/pipeline.md`（L1 節） |
 
-| 指標 | 計算方式 | 滿分 |
-|------|----------|------|
-| MA 均線排列 | EMA5 > EMA10 > EMA20 > EMA50 | 25 |
-| RSI 健康度 | 50–70 滿分；40–50 或 70–80 半分 | 20 |
-| MACD 柱狀體 | 正且遞增滿分；僅正半分 | 20 |
-| 量能放大 | > 均量 ×1.5 滿分；> 均量半分 | 20 |
-| 20 日動能 | 漲 >10% 滿分；>5% 半分；>0% 1/4 分 | 15 |
+## Spec-First 工作流
 
-**硬條件**：RSI > 80（超買）→ 整支股票直接 0 分，排除出 L3。
+```
+需求 → 更新/新增 specs/<module>.md → 實作 → PR 引用規格節次
+```
 
-門檻：程式預設 60 分，可透過 `.env` 的 `MIN_SCORE` 或 `--min-score` 覆蓋。
+- 若需求與現有規格衝突，**先更新規格**，說明為何改變，再動程式碼
+- 規格的 Design Decisions 節是已解決的設計爭議，不得在未取得用戶同意前繞過
 
----
+## 五個最重要的設計決策（摘要）
 
-## AI 整合（L3 ranker）
+1. **EMA50 悖論（tracker.py DD-1）**：反轉策略進場點本就在 EMA50 之下，不能以跌破 EMA50 作為失效門檻。反轉股失效條件改用 AI 設定的 `stop_loss` 絕對價。→ 詳見 `specs/tracker.md`
 
-- DeepSeek 透過 OpenAI SDK + `base_url` 接入，模型 `deepseek-chat`
-- AI 輸出欄位：`rank`, `reason`, `risk`, `confidence`, `buy_zone`, `target`, `stop_loss`, `hold_period`, `strategy`, `strategy_reason`, `confidence_reason`
-- API 失敗 → 自動 fallback 到 L2 評分降序排名，不中斷流程
+2. **拆股免疫（tracker.py DD-3）**：yfinance `auto_adjust=True` 在拆股後會回溯修改全部歷史收盤價，導致 watchlist 記錄的絕對止損價變成幽靈訊號。解法：記錄 `signal_date_close`，每日計算 split_factor 並平移所有門檻。→ 詳見 `specs/tracker.md`
 
----
+3. **Step 2.5 指標複用（pipeline.py DD-1）**：市場廣度 + VIX 在 Step 2.5 計算後直接傳給 Step 5.5，不重算、不重下載。`fetch_regime_quick` 的三個回傳值（`regime`, `breadth_pct`, `vix_value`）均須保留並傳入 `fetch_market_context`，否則兩次判定間有分鐘級時差導致 Regime 不一致。→ 詳見 `specs/pipeline.md`
+
+4. **開盤跳空安全攔截（tracker.py DD-7）**：`watch → active` 轉換時，除了 `price >= buy_zone_lower` 外，必須額外確認 `price > stop_loss`。防止 AI 誤設止損在買入區間內時，跳空進場卻已跌破止損，污染 performance_history.json。→ 詳見 `specs/tracker.md`
+
+5. **績效結算狀態機（tracker.py DD-6）**：active 部位不由時間到期控制，改由 `_check_settlement()` 的三態結算（CLOSED_PROFIT / CLOSED_LOSS / FORCE_EXPIRED）觸發，結算後寫入 `data/performance_history.json` 並移出 watchlist。publisher 讀取此檔案時必須做冷啟動保護（檔案不存在或空陣列時回傳零值，不得拋 ZeroDivisionError）。→ 詳見 `specs/tracker.md`
+
+## 程式碼慣例
+
+- `print()` 訊息用繁體中文，格式 `[module] 說明`
+- 不寫無謂注釋；只在 WHY 非顯而易見時加一行注釋
+- 不新增 feature flag 或向後相容 shim，直接改程式碼
+- 錯誤處理只在系統邊界（外部 API / 使用者輸入）加；內部函式信任呼叫端
+- 常數用全大寫，放在模組頂部
+- AI 輸出欄位的型態：`hold_period` 必須解析為整數（`_parse_hold_period` 已支援 int/float/str 輸入），Prompt 應要求 AI 直接輸出整數天數
 
 ## 禁止事項
 
@@ -81,24 +97,16 @@ pipeline.py 協調：
 - **不要 commit** `.env`、`.cache/`、`.venv/`（`.gitignore` 已排除）
 - **不要在 CI workflow 移除 `--dry-run`**（workflow 已設計成執行後自己 git push）
 - **不要同時修改 `tracker.py` 和 `scorer.py`**（難以隔離問題，分次修改）
+- **不要繞過規格的 Design Decisions**（DD 是已解決的設計爭議，見上方五大決策）
 
----
+## 快取說明
 
-## 快取
-
-- 價格數據：`.cache/price_YYYYMMDD.pkl`（pickle，7 天後自動清除）
-- Fundamentals：`.cache/info_YYYYMMDD.json`（JSON，7 天後自動清除）
-- 強制重新下載：加 `--no-cache` 參數
-
----
-
-## 驗證方式
-
-1. `python main.py --dry-run --yes`（確認流程不中斷）
-2. 開啟 `docs/reports/YYYY-MM-DD.html` 確認報告正常顯示
-3. 同日重跑應**替換**而非累積 watchlist 項目（tracker.py 核心規則）
-
----
+| 快取類型 | 路徑 | 有效期 |
+|----------|------|--------|
+| 日 K 數據 | `.cache/price_YYYYMMDD.pkl` | 當日 |
+| 基本面資訊 | `.cache/info_YYYYMMDD.json` | 7 日（取最近一份） |
+| 追蹤清單 | `data/watchlist.json` | 永久（持久化） |
+| 歷史績效 | `data/performance_history.json` | 永久（只增不刪） |
 
 ## GitHub Actions
 
