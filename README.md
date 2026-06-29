@@ -275,4 +275,4 @@ us-stock-screener/
 | 報告發布 | GitHub Pages（純 HTML/CSS） |
 | 自動化 | GitHub Actions |
 
-> **注意**：`pandas-ta` 使用舊版 numpy C API，`requirements.txt` 已鎖定 `numpy<2.0.0`，升級 numpy 至 2.x 會造成 Segmentation Fault。
+> **注意**：`pandas-ta` 鎖定 `==0.3.14b0`（0.4.x 會拉入 numba，造成 pip 解析失敗）；`numpy` 鎖定 `>=1.26.0,<2.0.0`（1.26 是第一個有 Python 3.12 wheel 的版本，2.x 會導致 Segmentation Fault）。
