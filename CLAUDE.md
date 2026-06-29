@@ -86,6 +86,8 @@ S&P 500 (~503 支)
 
 5. **績效結算狀態機（tracker.py DD-6）**：active 部位不由時間到期控制，改由 `_check_settlement()` 的三態結算（CLOSED_PROFIT / CLOSED_LOSS / FORCE_EXPIRED）觸發，結算後寫入 `data/performance_history.json` 並移出 watchlist。publisher 讀取此檔案時必須做冷啟動保護（檔案不存在或空陣列時回傳零值，不得拋 ZeroDivisionError）。→ 詳見 `specs/tracker.md`
 
+6. **持倉天數用交易日（tracker.py DD-8）**：`_archive_to_performance_history` 的 `holding_days` 以 `active_days` 計數器（每個交易日 +1）為主，不得使用 `exit_date - active_start_date` 的日曆天差（包含週末，語意錯誤）。`_count_trading_days` 僅作為計數器缺失時的備援。→ 詳見 `specs/tracker.md`
+
 ## 程式碼慣例
 
 - `print()` 訊息用繁體中文，格式 `[module] 說明`

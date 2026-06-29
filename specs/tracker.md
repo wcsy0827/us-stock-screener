@@ -126,6 +126,12 @@ def _is_expired(entry: dict) -> bool:
 - **原因**：AI 偶爾誤將 stop_loss 設在買入區間下限以上（如 buy_zone $45-$50，stop_loss $47），若不攔截，股價落在 $46 時會被標為 active 但實際已在止損下方，後續結算為立即停損，污染績效資料庫。此攔截對反轉策略是雙重保護（頂部已有 `price < stop_loss → invalid`），對動能/突破策略則補上了缺失的進場前核查。
 - **捨棄**：只靠頂部失效條件攔截（動能/突破策略頂部只有 ema20 檢查，不覆蓋 stop_loss）
 
+### DD-8: holding_days 使用交易日計算（active_days 計數器優先）
+
+- **選擇**：`_archive_to_performance_history` 的 `holding_days` 以 `active_days` 計數器為主；計數器為 0 或缺失時才以 `_count_trading_days(start, end)` 補算（僅計週一至週五）
+- **原因**：`active_days` 計數器每次 CI 執行（週一至週五）遞增一次，天然等同交易日數；舊做法使用 `exit_date - active_start_date` 的日曆天差，週五進場、次週五出場會記成 7 天而非 5 個交易日，與 publisher 顯示不一致。
+- **捨棄**：日曆天差（`(exit_date - active_start).days`）作為 primary（包含週末，語意不符「持倉幾個交易日」）
+
 ### DD-6: active 部位生命週期改由 _check_settlement() 接管
 
 - **選擇**：`_is_expired()` 對 active 狀態一律回傳 `False`；active 的結算完全由 `_check_settlement()` 的 CLOSED_PROFIT / CLOSED_LOSS / FORCE_EXPIRED 控制

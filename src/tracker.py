@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import re
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 import pandas as pd
@@ -64,6 +64,12 @@ def _parse_hold_period(hold_period_str, default: int = _DEFAULT_HOLD_DAYS) -> in
     if not nums:
         return default
     return max(int(n) for n in nums)
+
+
+def _count_trading_days(start: str, end: str) -> int:
+    """計算兩日期間的交易日數（僅計週一至週五，不排除法定假日）。"""
+    d0, d1 = date.fromisoformat(start), date.fromisoformat(end)
+    return sum(1 for i in range((d1 - d0).days) if (d0 + timedelta(days=i)).weekday() < 5)
 
 
 def _parse_stop_loss(stop_loss_str: str) -> float | None:
@@ -260,13 +266,9 @@ def _archive_to_performance_history(
         return_pct = None
 
     active_start = entry.get("active_start_date") or entry.get("date_added", "")
-    try:
-        holding_days = (
-            (date.fromisoformat(exit_date) - date.fromisoformat(active_start)).days
-            if active_start and exit_date else entry.get("active_days", 0)
-        )
-    except Exception:
-        holding_days = entry.get("active_days", 0)
+    holding_days = entry.get("active_days") or (
+        _count_trading_days(active_start, exit_date) if active_start and exit_date else 0
+    )
 
     record = {
         "meta_data": {
