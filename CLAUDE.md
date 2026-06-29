@@ -122,8 +122,6 @@ S&P 500 (~503 支)
 - Secrets：`DEEPSEEK_API_KEY` 設在 repo Settings → Secrets and variables → Actions
 - 手動觸發：Actions 頁 → Daily Stock Screener → Run workflow
 
-## 依賴版本限制
+## CI 注意事項
 
-- **`pandas<3.0.0`**：pandas-ta 0.4.x 尚未驗證與 pandas 3.x 相容，鎖定 2.x 以避免 API 不相容。
-- **`pandas-ta>=0.4.67b0`**：PyPI 僅有 0.4.67b0 與 0.4.71b0，0.4.x 使用 numba JIT 取代舊版 C extension，解決 Segmentation Fault 問題。
-- **`numpy>=1.26.0,<2.0.0`**：1.26.0 是第一個有 Python 3.12 預編譯 wheel 的版本；上限 <2.0.0 作為保險（numba 0.61.2 已支援 <2.2，但 pandas-ta 尚未明確標示）。**兩端限制均不得移除**。
+- **`PANDAS_TA_JIT=0`（workflow env）**：pandas-ta 0.4.x 的 `ta.atr()` 在 GitHub Actions Linux 環境首次 numba JIT 編譯時會觸發 Segmentation Fault（exit 139）。workflow 已設定此環境變數停用 numba JIT，改用純 Python 實作，**不得移除**。

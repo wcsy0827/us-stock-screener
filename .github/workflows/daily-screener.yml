@@ -46,6 +46,7 @@ jobs:
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           PYTHONUTF8: '1'
+          PANDAS_TA_JIT: '0'
         # --dry-run: 只生成 HTML，不在 Python 內做 git push
         # --yes: 跳過重複執行確認（CI 環境無法互動）
         run: python main.py --dry-run --yes
