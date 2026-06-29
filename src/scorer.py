@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pandas as pd
-import pandas_ta as ta
 
 
 # ── 各項最高分 ──────────────────────────────────────────────────
@@ -14,28 +13,55 @@ WEIGHT_VOLUME = 20   # 量能放大
 WEIGHT_MOMENTUM = 15 # 價格動能（20日漲幅）
 
 
+# ── 純 pandas 指標計算（不依賴 pandas-ta / numba）──────────────
+
+def _ema(series: pd.Series, span: int) -> float:
+    return float(series.ewm(span=span, adjust=False).mean().iloc[-1])
+
+
+def _calc_rsi(close: pd.Series, length: int = 14) -> float:
+    """Wilder 平滑 RSI，回傳原始數值供評分與硬條件判斷共用。"""
+    if len(close) < length:
+        return float("nan")
+    delta = close.diff()
+    gain = delta.clip(lower=0).ewm(alpha=1 / length, adjust=False).mean()
+    loss = (-delta.clip(upper=0)).ewm(alpha=1 / length, adjust=False).mean()
+    rs = gain / loss.replace(0, float("nan"))
+    rsi = (100 - 100 / (1 + rs)).dropna()
+    return float(rsi.iloc[-1]) if not rsi.empty else float("nan")
+
+
+def _macd_histogram(close: pd.Series, fast: int = 12, slow: int = 26, signal: int = 9) -> pd.Series:
+    ema_fast = close.ewm(span=fast, adjust=False).mean()
+    ema_slow = close.ewm(span=slow, adjust=False).mean()
+    macd_line = ema_fast - ema_slow
+    signal_line = macd_line.ewm(span=signal, adjust=False).mean()
+    return (macd_line - signal_line).dropna()
+
+
+def _atr(high: pd.Series, low: pd.Series, close: pd.Series, length: int = 14) -> float:
+    """Wilder 平滑 ATR（Average True Range）。"""
+    prev_close = close.shift(1)
+    tr = pd.concat([
+        high - low,
+        (high - prev_close).abs(),
+        (low - prev_close).abs(),
+    ], axis=1).max(axis=1)
+    atr_series = tr.ewm(alpha=1 / length, adjust=False).mean().dropna()
+    return float(atr_series.iloc[-1]) if not atr_series.empty else float("nan")
+
+
+# ── 各項評分函式 ────────────────────────────────────────────────
+
 def _score_ma(close: pd.Series) -> float:
     """均線多頭排列 EMA5 > EMA10 > EMA20 > EMA50，完全符合得 25 分，部分符合比例給分。"""
     if len(close) < 50:
         return 0.0
-    e5 = float(ta.ema(close, length=5).iloc[-1])
-    e10 = float(ta.ema(close, length=10).iloc[-1])
-    e20 = float(ta.ema(close, length=20).iloc[-1])
-    e50 = float(ta.ema(close, length=50).iloc[-1])
+    e5, e10, e20, e50 = _ema(close, 5), _ema(close, 10), _ema(close, 20), _ema(close, 50)
     if any(pd.isna(v) for v in [e5, e10, e20, e50]):
         return 0.0
     conditions = [e5 > e10, e10 > e20, e20 > e50]
     return round(WEIGHT_MA * sum(conditions) / len(conditions), 2)
-
-
-def _calc_rsi(close: pd.Series) -> float:
-    """回傳 RSI 原始數值，供評分與硬條件判斷共用。"""
-    if len(close) < 14:
-        return float("nan")
-    rsi_s = ta.rsi(close, length=14)
-    if rsi_s is None or rsi_s.dropna().empty:
-        return float("nan")
-    return float(rsi_s.dropna().iloc[-1])
 
 
 def _score_rsi(rsi: float) -> float:
@@ -53,13 +79,7 @@ def _score_macd(close: pd.Series) -> float:
     """MACD histogram 為正且遞增得滿分；僅為正得一半；其餘 0 分。"""
     if len(close) < 35:
         return 0.0
-    macd_df = ta.macd(close, fast=12, slow=26, signal=9)
-    if macd_df is None or macd_df.empty:
-        return 0.0
-    hist_col = [c for c in macd_df.columns if "h" in c.lower()]
-    if not hist_col:
-        return 0.0
-    hist = macd_df[hist_col[0]].dropna()
+    hist = _macd_histogram(close)
     if len(hist) < 2:
         return 0.0
     last, prev = float(hist.iloc[-1]), float(hist.iloc[-2])
@@ -107,11 +127,8 @@ def _score_momentum(df: pd.DataFrame) -> float:
     p0, p1 = float(close.iloc[-20]), float(close.iloc[-1])
     if p0 == 0:
         return 0.0
-    atr_series = ta.atr(high, low, close, length=14)
-    if atr_series is None or atr_series.dropna().empty:
-        return 0.0
-    atr14 = float(atr_series.dropna().iloc[-1])
-    if atr14 <= 0:
+    atr14 = _atr(high, low, close, length=14)
+    if pd.isna(atr14) or atr14 <= 0:
         return 0.0
     momentum_atr = (p1 - p0) / atr14
     if momentum_atr >= 2.0:

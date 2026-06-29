@@ -124,8 +124,5 @@ S&P 500 (~503 支)
 
 ## CI 注意事項
 
-- **`yfinance<1.0.0` + `curl_cffi<0.15.0`**：`curl_cffi 0.15.0` 在 GitHub Actions Ubuntu 環境中與 Python toolchain 的 `LD_LIBRARY_PATH` 衝突，導致 Segmentation Fault（exit 139）。
-  - `yfinance 1.x` 要求 `curl_cffi>=0.15`，故需同時鎖定 `yfinance<1.0.0`（最新為 0.2.66）。
-  - yfinance 0.2.66 只要求 `curl_cffi>=0.7`，pip 會安裝 0.14.0（最後的安全版本）。
-  - yfinance 0.2.66 API 完全相容現有程式碼：`download(group_by="ticker")` 、`ticker.info`、`ticker.calendar`（回傳 dict）均支援。
-  - **不得移除這兩個上限，也不得升級 yfinance 到 1.x，除非 curl_cffi 確認修復。**
+- **pandas-ta 已從專案移除**：pandas-ta 0.4.x 依賴 numba/llvmlite，numba 的 LLVM 初始化在 GitHub Actions Ubuntu 環境觸發 Segmentation Fault（exit 139）。`scorer.py` 已改用純 pandas 實作所有指標（EMA、RSI、MACD、ATR），**不得重新引入 pandas-ta**。
+- **`yfinance<1.0.0` + `curl_cffi<0.15.0`**：`curl_cffi 0.15.0` 在 GitHub Actions Ubuntu 環境中與 Python toolchain 的 `LD_LIBRARY_PATH` 衝突，導致 Segmentation Fault。`yfinance 1.x` 要求 `curl_cffi>=0.15`，故鎖定 `yfinance<1.0.0`（0.2.66）。yfinance 0.2.66 API 完全相容（`download(group_by="ticker")`、`ticker.info`、`ticker.calendar`）。**不得移除這兩個上限**。
