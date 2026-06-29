@@ -21,11 +21,13 @@
 S&P 500（~503 支）
     │
     ▼ L1 硬條件篩選
-    │  股價 > $5、日均量 > 50萬、市值 > 3億
-    │  RSI 介於 40–75、位於 52 週高點 80% 以上
+    │  股價 > $5、近 30 日均量 > 50 萬、市值 > 3 億
+    │  近 5 日至少 5 筆交易數據（排除停牌）
     │
-    ▼ L2 技術指標評分（門檻 70 分）
-    │  動能、趨勢、成交量、波動度、相對強度
+    ▼ L2 技術指標評分（門檻預設 60 分）
+    │  MA 排列（25分）、RSI 健康度（20分）、MACD 柱狀體（20分）
+    │  量能放大（20分）、20日動能（15分）
+    │  ⚠️ RSI > 80 超買：整支股票直接 0 分排除
     │
     ▼ L3 DeepSeek AI 精選
        綜合大盤環境、產業趨勢、技術面，選出最多 5 支
@@ -73,11 +75,11 @@ copy .env.example .env
 ```env
 DEEPSEEK_API_KEY=your_deepseek_api_key_here
 
-MAX_OUTPUT=5
-MIN_SCORE=70
-MIN_PRICE=5
-MIN_VOLUME=500000
-MIN_MARKET_CAP=300000000
+MAX_OUTPUT=5           # 最多輸出幾支（預設 5）
+MIN_SCORE=60           # L2 最低評分門檻（程式預設 60，可自行調高）
+MIN_PRICE=5            # 最低股價
+MIN_VOLUME=500000      # 近 30 日最低均量
+MIN_MARKET_CAP=300000000  # 最低市值（3 億美元）
 ```
 
 > DeepSeek API key 申請：[platform.deepseek.com](https://platform.deepseek.com)
@@ -86,10 +88,23 @@ MIN_MARKET_CAP=300000000
 
 ```powershell
 # 測試（只生成 HTML，不 push 至 GitHub）
-$env:PYTHONUTF8=1; python main.py --dry-run
+python main.py --dry-run
+
+# CI 模式（跳過今日重複執行確認）
+python main.py --dry-run --yes
+
+# 強制忽略快取，重新下載所有數據
+python main.py --dry-run --no-cache
+
+# 自訂輸出數量與最低評分
+python main.py --dry-run --top 10 --min-score 65
 
 # 正式執行（生成 HTML 並 push）
-$env:PYTHONUTF8=1; python main.py
+python main.py
+
+# Windows 包裝腳本（自動設定 UTF-8）
+.\run.ps1 --dry-run
+.\run.ps1 --top 10
 ```
 
 生成的報告位於 `docs/reports/YYYY-MM-DD.html`。
