@@ -94,6 +94,7 @@ S&P 500 (~503 支)
 ## 禁止事項
 
 - **不要直接修改 `docs/` 下的 HTML**（由 `publisher.py` 生成，手動改會被下次執行覆蓋）
+- **修改 `publisher.py` 的靜態文字（如 `_INFO_HTML`）後，必須同步手動更新 `docs/index.html`**：pipeline 只在執行時才重新生成 HTML，修改 `publisher.py` 不會自動更新已存在的 `docs/` 檔案，GitHub Pages 畫面不會立即反映。例外：若能馬上執行 `python main.py --dry-run --yes` 並將產出的 `docs/` 一起 commit，則不需要手動改。
 - **不要 commit** `.env`、`.cache/`、`.venv/`（`.gitignore` 已排除）
 - **不要在 CI workflow 移除 `--dry-run`**（workflow 已設計成執行後自己 git push）
 - **不要同時修改 `tracker.py` 和 `scorer.py`**（難以隔離問題，分次修改）
