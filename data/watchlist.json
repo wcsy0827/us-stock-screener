@@ -26,7 +26,7 @@
     "vix_value": 20.0,
     "l2_score": 100.0,
     "ai_confidence": 8,
-    "ai_strategy_reason": "量比2.00，股價距20日高點接近，RSI=69.4，MACD正向遞增。",
+    "ai_strategy_reason": "股價距52週高點-0.9%，量比2.00，RSI=69.4，MACD正增，突破訊號明確。",
     "current_price": 216.63
   },
   {
@@ -34,11 +34,11 @@
     "name": "Sherwin-Williams Company (The)",
     "sector": "Basic Materials",
     "date_added": "2026-06-28",
-    "buy_zone": "$341～$347",
-    "buy_zone_lower": 341.0,
-    "buy_zone_upper": 347.0,
+    "buy_zone": "$340～$348",
+    "buy_zone_lower": 340.0,
+    "buy_zone_upper": 348.0,
     "target": "$378",
-    "stop_loss": "$334",
+    "stop_loss": "$335",
     "hold_period": "10",
     "strategy": "突破策略",
     "tracked_dates": [
@@ -56,7 +56,7 @@
     "vix_value": 20.0,
     "l2_score": 100.0,
     "ai_confidence": 7,
-    "ai_strategy_reason": "量比2.26，股價距20日高點-9.4%，RSI=68.2，MACD正向遞增。",
+    "ai_strategy_reason": "量比2.26，RSI=68.2，MACD正增，突破20日高點，符合突破條件。",
     "current_price": 344.3
   },
   {
@@ -78,7 +78,7 @@
     "status": "active",
     "invalid_reason": null,
     "watch_days": 0,
-    "active_days": 3,
+    "active_days": 4,
     "signal_date_close": 109.37,
     "active_entry_price": 109.37,
     "active_start_date": "2026-06-28",
@@ -99,7 +99,7 @@
     "buy_zone_lower": 44.6,
     "buy_zone_upper": 45.5,
     "target": "$49.5",
-    "stop_loss": "$43.6",
+    "stop_loss": "$43.5",
     "hold_period": "10",
     "strategy": "突破策略",
     "tracked_dates": [
@@ -116,8 +116,8 @@
     "market_breadth_pct": 64.3,
     "vix_value": 20.0,
     "l2_score": 100.0,
-    "ai_confidence": 8,
-    "ai_strategy_reason": "量比2.30顯著放量，股價距20日高點-0.1%接近突破，RSI=68.9健康。",
+    "ai_confidence": 9,
+    "ai_strategy_reason": "股價距52週高點-0.1%，量比2.30，RSI=68.9，MACD正增，符合突破條件。",
     "current_price": 44.79
   },
   {
@@ -128,7 +128,7 @@
     "buy_zone": "$81.8～$83.5",
     "buy_zone_lower": 81.8,
     "buy_zone_upper": 83.5,
-    "target": "$90.9",
+    "target": "$90.0",
     "stop_loss": "$80.0",
     "hold_period": "10",
     "strategy": "突破策略",
@@ -146,8 +146,8 @@
     "market_breadth_pct": 64.3,
     "vix_value": 20.0,
     "l2_score": 100.0,
-    "ai_confidence": 7,
-    "ai_strategy_reason": "量比2.82，股價距20日高點-1.7%，RSI=62.1，MACD正向遞增。",
+    "ai_confidence": 8,
+    "ai_strategy_reason": "量比2.82顯著放量，RSI=62.1，MACD正增，距52週高點-1.7%，突破壓力。",
     "current_price": 82.65
   },
   {
@@ -159,7 +159,7 @@
     "buy_zone_lower": 103.5,
     "buy_zone_upper": 105.5,
     "target": "$115",
-    "stop_loss": "$101.5",
+    "stop_loss": "$101",
     "hold_period": "10",
     "strategy": "突破策略",
     "tracked_dates": [
@@ -176,8 +176,8 @@
     "market_breadth_pct": 64.3,
     "vix_value": 20.0,
     "l2_score": 100.0,
-    "ai_confidence": 6,
-    "ai_strategy_reason": "量比2.12，股價距20日高點-3.9%，RSI=61.2，MACD正向遞增。",
+    "ai_confidence": 7,
+    "ai_strategy_reason": "量比2.12，RSI=61.2，MACD正增，距52週高點-3.9%，突破訊號。",
     "current_price": 104.06
   }
 ]
