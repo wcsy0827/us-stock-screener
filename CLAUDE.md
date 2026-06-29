@@ -98,6 +98,7 @@ S&P 500 (~503 支)
 ## 禁止事項
 
 - **不要直接修改 `docs/` 下的 HTML**（由 `publisher.py` 生成，手動改會被下次執行覆蓋）
+- **修改篩選流程、評分邏輯或策略定義後，必須判斷是否需要更新 `publisher.py` 的 `_INFO_HTML`**：前端系統說明卡片（篩選流程、L2 評分表、Regime 表、訊號追蹤狀態）是靜態字串，不會自動反映程式碼改動。凡是影響「L1/L2/L3 定義、評分條件、Regime 邊界、狀態機轉換規則」的修改，都須同步更新 `_INFO_HTML`，並手動同步 `docs/index.html`（同一 commit）。
 - **修改 `publisher.py` 的靜態文字（如 `_INFO_HTML`）後，必須同步手動更新 `docs/index.html`**：pipeline 只在執行時才重新生成 HTML，修改 `publisher.py` 不會自動更新已存在的 `docs/` 檔案，GitHub Pages 畫面不會立即反映。例外：若能馬上執行 `python main.py --dry-run --yes` 並將產出的 `docs/` 一起 commit，則不需要手動改。
 - **每次修改程式碼或規格後，必須同步更新 `CLAUDE.md` 與 `README.md`**：架構速覽、模組對照表、快取說明、L2 評分表、專案結構等章節若有變動，須在同一個 commit 內一併更新，不得遺留過時描述。
 - **不要 commit** `.env`、`.cache/`、`.venv/`（`.gitignore` 已排除）
