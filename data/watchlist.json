@@ -4,15 +4,15 @@
     "name": "Biogen Inc.",
     "sector": "Healthcare",
     "date_added": "2026-06-28",
-    "buy_zone": "$214～$218",
-    "buy_zone_lower": 214.0,
+    "buy_zone": "$215～$218",
+    "buy_zone_lower": 215.0,
     "buy_zone_upper": 218.0,
     "target": "$238",
     "stop_loss": "$210",
     "hold_period": "10",
     "strategy": "突破策略",
     "tracked_dates": [
-      "2026-06-28"
+      "2026-06-29"
     ],
     "status": "active",
     "invalid_reason": null,
@@ -20,13 +20,13 @@
     "active_days": 1,
     "signal_date_close": 216.03,
     "active_entry_price": 216.03,
-    "active_start_date": "2026-06-28",
+    "active_start_date": "2026-06-29",
     "entry_regime": "CONSOLIDATION",
     "market_breadth_pct": 64.3,
     "vix_value": 20.0,
     "l2_score": 100.0,
     "ai_confidence": 8,
-    "ai_strategy_reason": "Vol_Ratio=2.0，股價接近20日高點，RSI=69.4，MACD正增，符合突破條件。",
+    "ai_strategy_reason": "Vol_Ratio=2.0顯著放量，dist_from_20d_high_pct接近0，符合突破條件。",
     "current_price": 216.03
   },
   {
@@ -38,11 +38,11 @@
     "buy_zone_lower": 340.0,
     "buy_zone_upper": 348.0,
     "target": "$378",
-    "stop_loss": "$334",
+    "stop_loss": "$333",
     "hold_period": "10",
     "strategy": "突破策略",
     "tracked_dates": [
-      "2026-06-28"
+      "2026-06-29"
     ],
     "status": "active",
     "invalid_reason": null,
@@ -50,13 +50,13 @@
     "active_days": 1,
     "signal_date_close": 344.07,
     "active_entry_price": 344.07,
-    "active_start_date": "2026-06-28",
+    "active_start_date": "2026-06-29",
     "entry_regime": "CONSOLIDATION",
     "market_breadth_pct": 64.3,
     "vix_value": 20.0,
     "l2_score": 100.0,
-    "ai_confidence": 7,
-    "ai_strategy_reason": "Vol_Ratio=2.26，股價接近20日高點，RSI=68.2，MACD正增，突破訊號明確。",
+    "ai_confidence": 6,
+    "ai_strategy_reason": "Vol_Ratio=2.26顯著放量，dist_from_20d_high_pct接近0，突破訊號。",
     "current_price": 344.07
   },
   {
@@ -72,12 +72,13 @@
     "hold_period": "10",
     "strategy": "突破策略",
     "tracked_dates": [
-      "2026-06-28"
+      "2026-06-28",
+      "2026-06-29"
     ],
     "status": "active",
     "invalid_reason": null,
     "watch_days": 0,
-    "active_days": 1,
+    "active_days": 2,
     "signal_date_close": 109.37,
     "active_entry_price": 109.37,
     "active_start_date": "2026-06-28",
@@ -102,7 +103,7 @@
     "hold_period": "10",
     "strategy": "突破策略",
     "tracked_dates": [
-      "2026-06-28"
+      "2026-06-29"
     ],
     "status": "active",
     "invalid_reason": null,
@@ -110,13 +111,13 @@
     "active_days": 1,
     "signal_date_close": 45.04,
     "active_entry_price": 45.04,
-    "active_start_date": "2026-06-28",
+    "active_start_date": "2026-06-29",
     "entry_regime": "CONSOLIDATION",
     "market_breadth_pct": 64.3,
     "vix_value": 20.0,
-    "l2_score": 92.5,
-    "ai_confidence": 6,
-    "ai_strategy_reason": "Vol_Ratio=2.30，股價接近20日高點，RSI=68.9，MACD正增，突破訊號。",
+    "l2_score": 100.0,
+    "ai_confidence": 7,
+    "ai_strategy_reason": "Vol_Ratio=2.3顯著放量，dist_from_20d_high_pct接近0，突破訊號明確。",
     "current_price": 45.04
   },
   {
@@ -124,15 +125,15 @@
     "name": "Coca-Cola Company (The)",
     "sector": "Consumer Defensive",
     "date_added": "2026-06-28",
-    "buy_zone": "$82～$83.5",
+    "buy_zone": "$82～$83",
     "buy_zone_lower": 82.0,
-    "buy_zone_upper": 83.5,
+    "buy_zone_upper": 83.0,
     "target": "$91",
-    "stop_loss": "$80.5",
+    "stop_loss": "$80",
     "hold_period": "10",
     "strategy": "突破策略",
     "tracked_dates": [
-      "2026-06-28"
+      "2026-06-29"
     ],
     "status": "active",
     "invalid_reason": null,
@@ -140,13 +141,43 @@
     "active_days": 1,
     "signal_date_close": 82.63,
     "active_entry_price": 82.63,
-    "active_start_date": "2026-06-28",
+    "active_start_date": "2026-06-29",
     "entry_regime": "CONSOLIDATION",
     "market_breadth_pct": 64.3,
     "vix_value": 20.0,
-    "l2_score": 92.5,
-    "ai_confidence": 6,
-    "ai_strategy_reason": "Vol_Ratio=2.82，RSI=62.1，MACD正增，符合突破策略條件。",
+    "l2_score": 100.0,
+    "ai_confidence": 7,
+    "ai_strategy_reason": "Vol_Ratio=2.82顯著放量，dist_from_20d_high_pct接近0，突破確認。",
     "current_price": 82.63
+  },
+  {
+    "symbol": "SBUX",
+    "name": "Starbucks Corporation",
+    "sector": "Consumer Cyclical",
+    "date_added": "2026-06-29",
+    "buy_zone": "$103.5～$105.5",
+    "buy_zone_lower": 103.5,
+    "buy_zone_upper": 105.5,
+    "target": "$115",
+    "stop_loss": "$101",
+    "hold_period": "10",
+    "strategy": "突破策略",
+    "tracked_dates": [
+      "2026-06-29"
+    ],
+    "status": "active",
+    "invalid_reason": null,
+    "watch_days": 0,
+    "active_days": 1,
+    "signal_date_close": 104.6,
+    "active_entry_price": 104.6,
+    "active_start_date": "2026-06-29",
+    "entry_regime": "CONSOLIDATION",
+    "market_breadth_pct": 64.3,
+    "vix_value": 20.0,
+    "l2_score": 100.0,
+    "ai_confidence": 5,
+    "ai_strategy_reason": "Vol_Ratio=2.12顯著放量，dist_from_20d_high_pct接近0，突破條件。",
+    "current_price": 104.6
   }
 ]

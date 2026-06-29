@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>美股 AI 選股系統</title>
+<title>美股 AI 選股 2026-06-29</title>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
@@ -169,85 +169,303 @@ details[open] summary::before { transform: rotate(90deg); }
 </head>
 <body>
 <div class="container">
-  <div class="index-hero">
-    <h1>📈 美股 AI 選股系統</h1>
-    <p>每日選股報告 · 訊號追蹤 · S&amp;P 500</p>
+  <div class="page-header">
+    <h1>📊 美股 AI 選股報告</h1>
+    <div class="date-line">📅 2026-06-29（一）</div>
+    <div class="scan-bar">
+      掃描 <strong>S&amp;P500 503支</strong>
+      <span class="arrow">→</span> L1 <strong>483支</strong>
+      <span class="arrow">→</span> L2 <strong>259支</strong>
+      <span class="arrow">→</span> AI精選 <strong>5支</strong>
+    </div>
+    <a class="back-link" href="../index.html">← 返回首頁</a>
   </div>
-  
-<details open>
-<summary>📖 系統說明</summary>
-<div class="info-grid">
 
-  <div class="info-card">
-    <h3>📡 篩選流程</h3>
-    <div class="pipe-flow">
-      <div class="pipe-step"><span class="pipe-badge">L0</span>S&amp;P 500 約 503 支成份股</div>
-      <div class="pipe-arrow">↓</div>
-      <div class="pipe-step"><span class="pipe-badge">L1</span>硬條件篩選：股價 &gt; $5、30 日均量 &gt; 50 萬、市值 &gt; 3 億；財報防禦牆：排除 3 天內有財報的個股</div>
-      <div class="pipe-arrow">↓</div>
-      <div class="pipe-step"><span class="pipe-badge">L2</span>技術評分 100 分制，門檻 60 分；恐慌超跌環境（見右側）降至 40 分，RSI &lt; 35 且 20 日跌幅 &gt; 15% 的超賣股強制放行</div>
-      <div class="pipe-arrow">↓</div>
-      <div class="pipe-step"><span class="pipe-badge">L3</span>DeepSeek AI 依當日大盤環境（Regime）的主推策略精選，最多 5 支；陰跌熊市環境下全面防禦，不輸出任何建議（詳見右側 Regime 表）</div>
+  
+<div class="market-dashboard consolidation">
+  <div class="regime-header">
+    <span class="regime-name">⚖️ 震盪整理</span>
+    <span class="regime-strategy"><span class="tip-wrap">主推：突破策略<span class="tip-icon">?</span><span class="tip-box">條件：市場廣度 35～60%（VIX 不限）<br>只選帶量突破壓力位的個股</span></span></span>
+  </div>
+  <div class="regime-metrics">
+    <div class="regime-metric">
+      <div class="regime-metric-label">市場廣度</div>
+      <div class="regime-metric-val">64.3%</div>
+    </div>
+    <div class="regime-metric">
+      <div class="regime-metric-label">VIX</div>
+      <div class="regime-metric-val">20.0</div>
+      <div class="regime-metric-sub">輕微恐慌</div>
+    </div>
+    <div class="regime-metric">
+      <div class="regime-metric-label">SPY 位置</div>
+      <div class="regime-metric-val spy-below">⚠️ EMA20 之下</div>
     </div>
   </div>
-
-  <div class="info-card">
-    <h3>🌐 大盤環境（Market Regime）</h3>
-    <p style="font-size:0.72rem;color:var(--muted);margin-bottom:8px">市場廣度 = S&amp;P 500 中收盤價高於 50 日 SMA 的股票比例；VIX 為芝加哥期權交易所恐慌指數</p>
-    <table class="info-table">
-      <tr><th>環境名稱</th><th>判斷條件</th><th>主推策略</th></tr>
-      <tr><td style="color:var(--active)">📈 牛市趨勢</td><td>廣度 ≥ 60% 且 VIX &lt; 20</td><td>動能策略</td></tr>
-      <tr><td style="color:var(--watch)">⚖️ 震盪整理</td><td>廣度 35～60%（VIX 不限）</td><td>突破策略</td></tr>
-      <tr><td style="color:#f97316">🔥 恐慌超跌</td><td>廣度 &lt; 35% 且 VIX ≥ 25</td><td>反轉策略</td></tr>
-      <tr><td style="color:var(--invalid)">🐻 陰跌熊市</td><td>廣度 &lt; 35% 且 VIX &lt; 25</td><td>⛔ 全面防禦</td></tr>
-    </table>
-  </div>
-
-  <div class="info-card">
-    <h3>📊 L2 技術評分（100 分制）</h3>
-    <table class="info-table">
-      <tr><th>指標</th><th>滿分</th><th>評分說明</th></tr>
-      <tr><td>MA 多頭排列</td><td>25</td><td>EMA5&gt;10&gt;20&gt;50，每條件 +8.33 分</td></tr>
-      <tr><td>RSI 健康區間</td><td>20</td><td>50～70 滿分；40～50 或 70～80 半分；其餘 0；RSI&gt;80 超買直接排除（全維度歸零）</td></tr>
-      <tr><td>MACD 柱狀體</td><td>20</td><td>正且遞增滿分；正遞減半分；負 0</td></tr>
-      <tr><td>量能放大</td><td>20</td><td>≥ 1.5x 均量且收盤位於振幅上 60% 以上（多頭推進量）滿分；≥ 1.0x 半分；出貨型爆量（收盤偏低）歸零</td></tr>
-      <tr><td>20 日動能</td><td>15</td><td>ATR 倍數法：≥ 2.0 ATR 滿分；≥ 1.0 ATR 半分；&gt;0 為 1/4 分（跨行業公平評比）</td></tr>
-    </table>
-  </div>
-
-  <div class="info-card">
-    <h3>🚦 訊號追蹤狀態</h3>
-    <table class="info-table">
-      <tr><td>✅ active</td><td>已落入買入區間，顯示持倉天數與彩色浮損益</td></tr>
-      <tr><td>🟡 watch</td><td>略高於買入區間等待回落，或低於下限但尚未跌破止損（繼續觀察）</td></tr>
-      <tr><td>❌ invalid</td><td>趨勢轉弱、跌破止損或開盤跳空攔截，訊號失效</td></tr>
-      <tr><td>🗑 expired</td><td>觀察滿 5 個交易日，自動移除</td></tr>
-      <tr><td>📦 settled</td><td>停利／停損／到期結算，歸檔績效資料庫</td></tr>
-    </table>
-  </div>
-
 </div>
-</details>
 
-  <div class="report-section-title">📋 歷史報告</div>
-  <div class="report-list">
-    
-<a class="report-entry" href="reports/2026-06-29.html">
-  <div>
-    <div class="report-date">2026-06-29</div>
-    <div class="report-weekday">（一）</div>
+  
+
+  
+<div class="section">
+  <div class="section-title">
+    ✅ 有效追蹤清單<span class="section-count">（2支）</span>
   </div>
-  <div class="report-chips"><span class="chip active">2 有效</span><span class="chip new">1 新增</span><span class="chip reset">4 重置</span></div>
-  <span class="arrow-icon">›</span>
-</a>
-<a class="report-entry" href="reports/2026-06-28.html">
-  <div>
-    <div class="report-date">2026-06-28</div>
-    <div class="report-weekday">（日）</div>
+  
+<div class="track-item active">
+  <div class="track-header">
+    <span class="track-symbol">KMB</span>
+    <span class="track-name">Kimberly-Clark Corporation</span>
+    <span class="strategy-tag">突破策略</span>
   </div>
-  <div class="report-chips"><span class="chip active">5 有效</span><span class="chip new">5 新增</span></div>
-  <span class="arrow-icon">›</span>
-</a>
+  <div class="track-status">持倉 2 / 10 天 ✅ ｜ <span class="c-active" style="font-weight:700">+0.00%</span></div>
+  <div class="track-prices"><span class="cur-price">$109.37</span>｜進場 $109.37｜目標 $120｜止損 $106</div>
+</div>
+
+<div class="track-item active">
+  <div class="track-header">
+    <span class="track-symbol">SBUX</span>
+    <span class="track-name">Starbucks Corporation</span>
+    <span class="strategy-tag">突破策略</span>
+  </div>
+  <div class="track-status">持倉 1 / 10 天 ✅ ｜ <span class="c-active" style="font-weight:700">+0.00%</span></div>
+  <div class="track-prices"><span class="cur-price">$104.60</span>｜進場 $104.60｜目標 $115｜止損 $101</div>
+</div>
+</div>
+<div class="section">
+  <div class="section-title">
+    🆕 今日新進觀察名單<span class="section-count">（1支）</span>
+  </div>
+  
+<div class="stock-card ">
+  <div class="card-header">
+    <div class="card-rank">1</div>
+    <div class="card-title">
+      <div class="card-symbol">SBUX</div>
+      <div class="card-company">Starbucks Corporation</div>
+    </div>
+    <div class="card-price">
+      <span class="price-val">$104.60</span>
+      <span class="price-chg up">▲1.40%</span>
+    </div>
+  </div>
+  <div class="card-badges">
+    <span class="badge">📊 評分 100</span>
+    <span class="badge">信心 5/10</span>
+    <span class="badge">🏭 Consumer Cyclical</span>
+    <span class="badge">📋 突破策略</span>
+  </div>
+  <div class="reason-box">🤖 帶量突破20日高點，Vol_Ratio=2.12，Consumer Cyclical ETF近5日-0.5%偏弱。</div>
+  <div class="detail-box">📋 策略依據：Vol_Ratio=2.12顯著放量，dist_from_20d_high_pct接近0，突破條件。</div>
+  <div class="trade-grid">
+    <div class="trade-cell">
+      <div class="trade-label">買入區間</div>
+      <div class="trade-val buy">$103.5～$105.5</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">目標價</div>
+      <div class="trade-val tgt">$115</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">止損</div>
+      <div class="trade-val stop">$101</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">持有週期</div>
+      <div class="trade-val">10</div>
+    </div>
+  </div>
+  <div class="risk-box">⚠️ 產業ETF偏弱，可能拖累個股。</div>
+  <div class="detail-box">💡 信心評分依據：量能放大但產業ETF偏弱且大盤不穩，信心較低。</div>
+</div>
+</div>
+<div class="section">
+  <div class="section-title">
+    🔄 重新入選，重置追蹤<span class="section-count">（4支）</span>
+  </div>
+  
+<div class="stock-card reset-card">
+  <div class="card-header">
+    <div class="card-rank">1</div>
+    <div class="card-title">
+      <div class="card-symbol">BIIB</div>
+      <div class="card-company">Biogen Inc.</div>
+    </div>
+    <div class="card-price">
+      <span class="price-val">$216.03</span>
+      <span class="price-chg up">▲6.97%</span>
+    </div>
+  </div>
+  <div class="card-badges">
+    <span class="badge">📊 評分 100</span>
+    <span class="badge">信心 8/10</span>
+    <span class="badge">🏭 Healthcare</span>
+    <span class="badge">📋 突破策略</span>
+  </div>
+  <div class="reason-box">🤖 帶量突破近20日高點，RSI=69.4健康，MACD正值增加，Healthcare產業ETF強勢。</div>
+  <div class="detail-box">📋 策略依據：Vol_Ratio=2.0顯著放量，dist_from_20d_high_pct接近0，符合突破條件。</div>
+  <div class="trade-grid">
+    <div class="trade-cell">
+      <div class="trade-label">買入區間</div>
+      <div class="trade-val buy">$215～$218</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">目標價</div>
+      <div class="trade-val tgt">$238</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">止損</div>
+      <div class="trade-val stop">$210</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">持有週期</div>
+      <div class="trade-val">10</div>
+    </div>
+  </div>
+  <div class="risk-box">⚠️ 大盤震盪，若突破失敗可能回測支撐。</div>
+  <div class="detail-box">💡 信心評分依據：量能放大且產業ETF強勢，但大盤偏弱扣分。</div>
+</div>
+
+<div class="stock-card reset-card">
+  <div class="card-header">
+    <div class="card-rank">2</div>
+    <div class="card-title">
+      <div class="card-symbol">CNP</div>
+      <div class="card-company">CenterPoint Energy, Inc (Holdin</div>
+    </div>
+    <div class="card-price">
+      <span class="price-val">$45.04</span>
+      <span class="price-chg up">▲1.85%</span>
+    </div>
+  </div>
+  <div class="card-badges">
+    <span class="badge">📊 評分 100</span>
+    <span class="badge">信心 7/10</span>
+    <span class="badge">🏭 Utilities</span>
+    <span class="badge">📋 突破策略</span>
+  </div>
+  <div class="reason-box">🤖 帶量突破20日高點，Vol_Ratio=2.3，Utilities ETF近5日+3.3%強勢。</div>
+  <div class="detail-box">📋 策略依據：Vol_Ratio=2.3顯著放量，dist_from_20d_high_pct接近0，突破訊號明確。</div>
+  <div class="trade-grid">
+    <div class="trade-cell">
+      <div class="trade-label">買入區間</div>
+      <div class="trade-val buy">$44.5～$45.5</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">目標價</div>
+      <div class="trade-val tgt">$49.5</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">止損</div>
+      <div class="trade-val stop">$43.5</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">持有週期</div>
+      <div class="trade-val">10</div>
+    </div>
+  </div>
+  <div class="risk-box">⚠️ 股價接近52週高點，獲利了結壓力。</div>
+  <div class="detail-box">💡 信心評分依據：量能強勁且產業ETF強勢，但大盤環境不穩扣分。</div>
+</div>
+
+<div class="stock-card reset-card">
+  <div class="card-header">
+    <div class="card-rank">3</div>
+    <div class="card-title">
+      <div class="card-symbol">KO</div>
+      <div class="card-company">Coca-Cola Company (The)</div>
+    </div>
+    <div class="card-price">
+      <span class="price-val">$82.63</span>
+      <span class="price-chg up">▲2.75%</span>
+    </div>
+  </div>
+  <div class="card-badges">
+    <span class="badge">📊 評分 100</span>
+    <span class="badge">信心 7/10</span>
+    <span class="badge">🏭 Consumer Defensive</span>
+    <span class="badge">📋 突破策略</span>
+  </div>
+  <div class="reason-box">🤖 帶量突破20日高點，Vol_Ratio=2.82，Consumer Defensive ETF近5日+3.1%強勢。</div>
+  <div class="detail-box">📋 策略依據：Vol_Ratio=2.82顯著放量，dist_from_20d_high_pct接近0，突破確認。</div>
+  <div class="trade-grid">
+    <div class="trade-cell">
+      <div class="trade-label">買入區間</div>
+      <div class="trade-val buy">$82～$83</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">目標價</div>
+      <div class="trade-val tgt">$91</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">止損</div>
+      <div class="trade-val stop">$80</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">持有週期</div>
+      <div class="trade-val">10</div>
+    </div>
+  </div>
+  <div class="risk-box">⚠️ 股價接近52週高點，可能面臨壓力。</div>
+  <div class="detail-box">💡 信心評分依據：量能極大且產業ETF強勢，但大盤偏弱扣分。</div>
+</div>
+
+<div class="stock-card reset-card">
+  <div class="card-header">
+    <div class="card-rank">4</div>
+    <div class="card-title">
+      <div class="card-symbol">SHW</div>
+      <div class="card-company">Sherwin-Williams Company (The)</div>
+    </div>
+    <div class="card-price">
+      <span class="price-val">$344.07</span>
+      <span class="price-chg up">▲1.47%</span>
+    </div>
+  </div>
+  <div class="card-badges">
+    <span class="badge">📊 評分 100</span>
+    <span class="badge">信心 6/10</span>
+    <span class="badge">🏭 Basic Materials</span>
+    <span class="badge">📋 突破策略</span>
+  </div>
+  <div class="reason-box">🤖 帶量突破20日高點，Vol_Ratio=2.26，Basic Materials ETF近5日持平。</div>
+  <div class="detail-box">📋 策略依據：Vol_Ratio=2.26顯著放量，dist_from_20d_high_pct接近0，突破訊號。</div>
+  <div class="trade-grid">
+    <div class="trade-cell">
+      <div class="trade-label">買入區間</div>
+      <div class="trade-val buy">$340～$348</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">目標價</div>
+      <div class="trade-val tgt">$378</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">止損</div>
+      <div class="trade-val stop">$333</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">持有週期</div>
+      <div class="trade-val">10</div>
+    </div>
+  </div>
+  <div class="risk-box">⚠️ 股價距52週高點-9.4%，仍有空間但產業ETF動能不足。</div>
+  <div class="detail-box">💡 信心評分依據：量能放大但產業ETF無明顯支撐，大盤偏弱。</div>
+</div>
+</div>
+
+  <div class="summary-box">
+    <h2>📈 今日統計</h2>
+    <div class="stat-row">
+      <div class="stat-group"><span class="stat-num c-active">2</span><span class="stat-lbl">支有效</span></div>
+      <div class="stat-group"><span class="stat-num c-watch">0</span><span class="stat-lbl">支留意</span></div>
+      <div class="stat-group"><span class="stat-num c-invalid">0</span><span class="stat-lbl">支失效</span></div>
+    </div>
+    <div class="stat-row">
+      <div class="stat-group"><span class="stat-num c-new">1</span><span class="stat-lbl">支新增</span></div>
+      <div class="stat-group"><span class="stat-num c-reset">4</span><span class="stat-lbl">支重新入選</span></div>
+      <div class="stat-group"><span class="stat-num c-removed">0</span><span class="stat-lbl">支移除</span></div>
+      
+    </div>
   </div>
 </div>
 </body>
