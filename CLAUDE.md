@@ -124,4 +124,8 @@ S&P 500 (~503 支)
 
 ## CI 注意事項
 
-- **`PANDAS_TA_JIT=0`（workflow env）**：pandas-ta 0.4.x 的 `ta.atr()` 在 GitHub Actions Linux 環境首次 numba JIT 編譯時會觸發 Segmentation Fault（exit 139）。workflow 已設定此環境變數停用 numba JIT，改用純 Python 實作，**不得移除**。
+- **`yfinance<1.0.0` + `curl_cffi<0.15.0`**：`curl_cffi 0.15.0` 在 GitHub Actions Ubuntu 環境中與 Python toolchain 的 `LD_LIBRARY_PATH` 衝突，導致 Segmentation Fault（exit 139）。
+  - `yfinance 1.x` 要求 `curl_cffi>=0.15`，故需同時鎖定 `yfinance<1.0.0`（最新為 0.2.66）。
+  - yfinance 0.2.66 只要求 `curl_cffi>=0.7`，pip 會安裝 0.14.0（最後的安全版本）。
+  - yfinance 0.2.66 API 完全相容現有程式碼：`download(group_by="ticker")` 、`ticker.info`、`ticker.calendar`（回傳 dict）均支援。
+  - **不得移除這兩個上限，也不得升級 yfinance 到 1.x，除非 curl_cffi 確認修復。**

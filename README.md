@@ -269,7 +269,7 @@ us-stock-screener/
 
 | 用途 | 工具 |
 |------|------|
-| 股價資料 | yfinance |
+| 股價資料 | yfinance 0.2.x |
 | 技術指標 | pandas-ta |
 | AI 精選 | DeepSeek（openai 相容介面） |
 | 報告發布 | GitHub Pages（純 HTML/CSS） |
