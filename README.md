@@ -35,10 +35,18 @@ S&P 500（~503 支）
     │
     ▼  Step 3  fetcher.py
     │  抓取基本面：市值、產業、公司名稱（.cache/info_*.json，7 日有效）
+    │  順帶提取 earningsDate 欄位供財報防禦牆使用
     │
-    ▼  Step 4  filter.py — L1 硬條件篩選
+    ▼  Step 3.5  earnings.py — 財報日查詢（Tier 1+2）
+    │  讀本地 earnings_registry.json（30 日快取）或從基本面數據提取
+    │
+    ▼  Step 4  filter.py — L1 流動性篩選
     │  股價 > $5、30 日均量 > 50 萬、市值 > 3 億、近 5 日有交易
     │  → 通常剩 200~350 支
+    │
+    ▼  Step 4.5  earnings.py + filter.py — 財報防禦牆
+    │  Tier 3 精準補抓（ticker.calendar，僅對流動性篩選後倖存股）
+    │  排除未來 3 天內有財報的個股（0 即時 I/O，registry 30 日快取）
     │
     ▼  Step 5  scorer.py — L2 技術評分（100 分制）
     │  門檻：60 分（PANIC_REVERSAL 環境：40 分 + 超賣股強制放行）
@@ -75,8 +83,8 @@ S&P 500（~503 支）
 | MA 多頭排列 | 25 | EMA5 > EMA10 > EMA20 > EMA50，每條件 +8.33 分 |
 | RSI 健康區間 | 20 | 50～70 = 滿分；40～50 或 70～80 = 半分；其餘 = 0（含 RSI > 80，軟過濾） |
 | MACD 柱狀體 | 20 | 正且遞增 = 滿分；正但遞減 = 半分；負 = 0 |
-| 量能放大 | 20 | ≥ 1.5x 均量 = 滿分；≥ 1.0x = 半分 |
-| 20 日動能 | 15 | 漲幅 > 10% = 滿分；> 5% = 半分；> 0% = 1/4 分 |
+| 量能放大 | 20 | ≥ 1.5x 均量 **且** K_pos ≥ 0.6 = 滿分；≥ 1.0x 且 K_pos ≥ 0.6 = 半分；爆量但 K_pos < 0.6（出貨型）= 0 |
+| 20 日動能 | 15 | ATR 倍數法：≥ 2.0 ATR = 滿分；≥ 1.0 ATR = 半分；> 0 = 1/4 分（跨行業公平評比） |
 
 > PANIC_REVERSAL 環境下，RSI < 35 且 20 日跌幅 > 15% 的超賣股會**強制放行**進入 L3，不受分數門檻限制。
 
@@ -227,16 +235,18 @@ us-stock-screener/
 ├── main.py                 # 主程式入口（含 CLI 參數）
 ├── src/
 │   ├── universe.py         # 爬取 S&P 500 成份股
-│   ├── fetcher.py          # 批次下載日 K 與基本面（含快取）
-│   ├── filter.py           # L1 硬條件篩選
-│   ├── scorer.py           # L2 技術評分（含 PANIC_REVERSAL 強制放行）
+│   ├── fetcher.py          # 批次下載日 K 與基本面（含快取、earningsDate）
+│   ├── earnings.py         # 財報日三層快取查詢（registry 30 日 TTL）
+│   ├── filter.py           # L1 流動性篩選 + 財報防禦牆
+│   ├── scorer.py           # L2 技術評分（K_pos 量能綁定、ATR 動能、PANIC_REVERSAL 強制放行）
 │   ├── market.py           # 大盤廣度、VIX、Regime 判定、產業 ETF
 │   ├── ranker.py           # L3 DeepSeek AI 精選（XML Prompt）
 │   ├── tracker.py          # 訊號追蹤（狀態機、績效結算、歸檔）
-│   ├── pipeline.py         # 流程編排（Steps 1–6）
+│   ├── pipeline.py         # 流程編排（Steps 1–6，含 3.5 / 4.5）
 │   └── publisher.py        # HTML 生成 & GitHub Pages 發布（含績效儀表板）
 ├── specs/                  # 規格文件（Spec-First 開發）
 │   ├── _template.md
+│   ├── earnings.md
 │   ├── scorer.md
 │   ├── tracker.md
 │   ├── ranker.md

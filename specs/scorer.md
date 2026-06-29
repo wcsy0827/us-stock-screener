@@ -13,8 +13,8 @@
 | MA 多頭排列 | 25 | EMA5>EMA10>EMA20>EMA50，每條件 +8.33 分（3 條件） |
 | RSI 健康區間 | 20 | 50~70=滿；40~50 或 70~80=半分；其他=0 |
 | MACD 柱狀體 | 20 | 正且遞增=滿；正但遞減=半分；負=0 |
-| 量能放大 | 20 | ≥1.5x 均量=滿；≥1.0x=半分 |
-| 20 日動能 | 15 | >10%=滿；>5%=半分；>0%=1/4 分 |
+| 量能放大 | 20 | ≥1.5x 均量 **且** K_pos≥0.6=滿；≥1.0x 且 K_pos≥0.6=半分；K_pos<0.6 爆量=0（出貨訊號） |
+| 20 日動能 | 15 | ATR 倍數法：≥2.0 ATR=滿；≥1.0 ATR=半分；>0 ATR=1/4 分 |
 
 - **RSI > 80**：軟過濾，RSI 分數 = 0，但股票**不驅逐**（仍可憑其他項目過門檻）
 - **不得**：以 RSI > 80 作為硬條件把股票完全排除（見 DD-1）
@@ -77,6 +77,21 @@ def _is_oversold_reversal_candidate(sym: str, df: pd.DataFrame) -> bool:
 - **原因**：PANIC 環境下，「輕度超跌但尚未崩潰」的股票（得分 40-60 分）也有價值，應讓 AI 判斷。60 分門檻在 PANIC 時過於嚴苛，讓 AI 看不到這些候選。
 - **捨棄**：PANIC 時維持 60 分（AI 候選池過窄）
 
+## Design Decisions（續）
+
+### DD-4: 量能 K_pos 條件阻斷型
+
+- **選擇**：`K_pos = (Close - Low) / (High - Low)`，爆量但 K_pos < 0.6 時量能分項直接歸零
+- **原因**：爆量黑 K 或長上影線（K_pos 低）是主力高檔出貨的典型特徵。原純量能比邏輯會誤將出貨訊號給滿分 20 分。K_pos 閾值 0.6 意指「收盤在當日振幅上 60% 以上才認定為多頭推進量」
+- **捨棄**：連續型 VTF（`raw_score × K_pos`），過渡更平滑但可觀察性低，留作第二版優化
+
+### DD-5: ATR 倍數法取代絕對 % 動能
+
+- **選擇**：`momentum_atr = (Close[-1] - Close[-20]) / ATR14`，門檻 ≥2.0 ATR = 滿分
+- **原因**：高 Beta 科技股（ATR% ≈ 3-4%）與低 Beta 防禦股（ATR% ≈ 0.5-1%）在同一百分比門檻下競爭不公平。ATR 倍數讓各股在自身波動率基準下競爭
+- **ATR 計算**：`pandas_ta.atr(high, low, close, length=14)`，已在 df 中包含所需 OHLCV 欄位
+- **捨棄**：絕對百分比（≥10%=滿）會讓科技股天然霸榜，低 Beta 強勢股被活埋
+
 ## Acceptance Criteria
 
 - [ ] 正常環境：RSI=85 的股票，RSI 分項=0，但若其他項目合計 >= 60，仍出現在候選池
@@ -85,3 +100,9 @@ def _is_oversold_reversal_candidate(sym: str, df: pd.DataFrame) -> bool:
 - [ ] PANIC_REVERSAL：RSI=50、總分=45 → 出現在候選池（40分門檻）
 - [ ] PANIC_REVERSAL：RSI=50、總分=35 → 不出現在候選池（未達 40 分且非強制放行）
 - [ ] 非 PANIC_REVERSAL：RSI=32、20日跌22% → 若總分 < 60，不出現在候選池（強制放行僅 PANIC 啟用）
+- [ ] 量能 K_pos：High=110, Low=100, Close=101（K_pos=0.1）且量≥1.5x → volume_score = 0（出貨阻斷）
+- [ ] 量能 K_pos：High=110, Low=100, Close=108（K_pos=0.8）且量≥1.5x → volume_score = 20
+- [ ] 量能 K_pos：High=110, Low=100, Close=108（K_pos=0.8）且量 1.0x-1.5x → volume_score = 10
+- [ ] ATR 動能：20 日上漲 = 2.5 ATR → momentum_score = 15（滿分）
+- [ ] ATR 動能：20 日上漲 = 1.2 ATR → momentum_score = 7.5（半分）
+- [ ] ATR 動能：20 日下跌 → momentum_score = 0

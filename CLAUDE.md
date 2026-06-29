@@ -38,9 +38,12 @@ S&P 500 (~503 支)
   ↓ Step 2   fetcher.py      下載 90 日日 K（.cache/ 快取）
   ↓ Step 2.5 market.py       快速 Regime 判定（廣度 + VIX）← 必須在 scorer 之前
                               回傳 (regime, breadth_pct, vix_value)，供 Step 5.5 複用
-  ↓ Step 3   fetcher.py      抓基本面（7 日快取）
-  ↓ Step 4   filter.py       L1 硬篩
-  ↓ Step 5   scorer.py       L2 技術評分（動態門檻）
+  ↓ Step 3   fetcher.py      抓基本面（7 日快取），順帶提取 earningsDate 欄位
+  ↓ Step 3.5 earnings.py     財報日查詢（Tier 1+2）→ earnings_registry.json（30 日快取）
+  ↓ Step 4   filter.py       L1 流動性硬篩（股價/均量/市值/交易天數）
+  ↓ Step 4.5 earnings.py     Tier 3 精準補抓（僅對流動性篩選後倖存個股）
+             filter.py       財報防禦牆（排除 3 天內有財報的個股）
+  ↓ Step 5   scorer.py       L2 技術評分（動態門檻；量能 K_pos 綁定；ATR 倍數動能）
   ↓ Step 5.5 market.py       完整大盤 ETF 背景（直接複用 Step 2.5 的廣度與 VIX，不重算）
   ↓ Step 6   ranker.py       L3 DeepSeek AI 精選（≤5 支）
              tracker.py      訊號追蹤（watchlist.json）→ 結算歸檔（performance_history.json）
@@ -59,7 +62,8 @@ S&P 500 (~503 支)
 | `src/market.py` | `specs/market.md` |
 | `src/pipeline.py` | `specs/pipeline.md` |
 | `src/fetcher.py` | `specs/pipeline.md`（快取節） |
-| `src/filter.py` | `specs/pipeline.md`（L1 節） |
+| `src/filter.py` | `specs/pipeline.md`（L1 節）、`specs/earnings.md`（財報防禦牆） |
+| `src/earnings.py` | `specs/earnings.md` |
 
 ## Spec-First 工作流
 
@@ -95,6 +99,7 @@ S&P 500 (~503 支)
 
 - **不要直接修改 `docs/` 下的 HTML**（由 `publisher.py` 生成，手動改會被下次執行覆蓋）
 - **修改 `publisher.py` 的靜態文字（如 `_INFO_HTML`）後，必須同步手動更新 `docs/index.html`**：pipeline 只在執行時才重新生成 HTML，修改 `publisher.py` 不會自動更新已存在的 `docs/` 檔案，GitHub Pages 畫面不會立即反映。例外：若能馬上執行 `python main.py --dry-run --yes` 並將產出的 `docs/` 一起 commit，則不需要手動改。
+- **每次修改程式碼或規格後，必須同步更新 `CLAUDE.md` 與 `README.md`**：架構速覽、模組對照表、快取說明、L2 評分表、專案結構等章節若有變動，須在同一個 commit 內一併更新，不得遺留過時描述。
 - **不要 commit** `.env`、`.cache/`、`.venv/`（`.gitignore` 已排除）
 - **不要在 CI workflow 移除 `--dry-run`**（workflow 已設計成執行後自己 git push）
 - **不要同時修改 `tracker.py` 和 `scorer.py`**（難以隔離問題，分次修改）
@@ -106,6 +111,7 @@ S&P 500 (~503 支)
 |----------|------|--------|
 | 日 K 數據 | `.cache/price_YYYYMMDD.pkl` | 當日 |
 | 基本面資訊 | `.cache/info_YYYYMMDD.json` | 7 日（取最近一份） |
+| 財報日期 | `.cache/earnings_registry.json` | 30 日（per-symbol TTL，獨立管理） |
 | 追蹤清單 | `data/watchlist.json` | 永久（持久化） |
 | 歷史績效 | `data/performance_history.json` | 永久（只增不刪） |
 

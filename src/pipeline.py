@@ -14,7 +14,8 @@ from fetcher import (
     load_info_cache, save_info_cache,
     clear_old_cache,
 )
-from filter import apply_filters
+from earnings import fetch_earnings_dates
+from filter import apply_filters, apply_earnings_filter
 from scorer import score_all
 from ranker import rank_candidates
 
@@ -95,18 +96,44 @@ def run(
         print(f"[pipeline] 警告：基本面抓取部分失敗，繼續執行：{e}")
         info_data = {}
 
-    # ── Step 4: L1 硬條件篩選 ───────────────────────────────────
-    print("\n[pipeline] ── Step 4/6：L1 硬條件篩選 ──")
+    # ── Step 3.5: 財報日三層查詢（Tier 1+2，不觸發 Tier 3）────────
+    print("\n[pipeline] ── Step 3.5：財報日查詢（Tier 1+2）──")
+    t = time.time()
+    earnings_data: dict = {}
+    try:
+        earnings_data = fetch_earnings_dates(
+            list(price_data.keys()), info_data, post_l1_symbols=None
+        )
+        print(f"[pipeline] 完成 ({_elapsed(t)})｜查詢 {len(earnings_data)} 支")
+    except Exception as e:
+        print(f"[pipeline] 警告：財報日 Tier 1+2 查詢失敗，將跳過財報防禦牆：{e}")
+
+    # ── Step 4: L1 流動性硬條件篩選 ─────────────────────────────
+    print("\n[pipeline] ── Step 4/6：L1 流動性篩選 ──")
     t = time.time()
     try:
-        l1_passed = apply_filters(price_data, info_data)
-        summary["l1_count"] = len(l1_passed)
-        print(f"[pipeline] 完成 ({_elapsed(t)})｜通過 {len(l1_passed)} 支")
+        liq_filtered = apply_filters(price_data, info_data)
+        print(f"[pipeline] 完成 ({_elapsed(t)})｜通過 {len(liq_filtered)} 支")
     except Exception as e:
         summary["error"] = f"Step4 filter 失敗：{e}"
         print(f"[pipeline] 錯誤：{summary['error']}")
         traceback.print_exc()
         return summary
+
+    # ── Step 4.5: Tier 3 精準補抓 + 財報防禦牆 ──────────────────
+    print("\n[pipeline] ── Step 4.5：財報防禦牆（Tier 3 補抓 + 過濾）──")
+    t = time.time()
+    try:
+        earnings_data = fetch_earnings_dates(
+            list(price_data.keys()), info_data, post_l1_symbols=liq_filtered
+        )
+        l1_passed = apply_earnings_filter(liq_filtered, earnings_data)
+        summary["l1_count"] = len(l1_passed)
+        print(f"[pipeline] 完成 ({_elapsed(t)})｜財報過濾後 {len(l1_passed)} 支")
+    except Exception as e:
+        print(f"[pipeline] 警告：財報防禦牆失敗，使用流動性篩選結果：{e}")
+        l1_passed = liq_filtered
+        summary["l1_count"] = len(l1_passed)
 
     # ── Step 5: L2 技術指標評分 ─────────────────────────────────
     print("\n[pipeline] ── Step 5/6：L2 技術指標評分 ──")
