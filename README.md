@@ -275,4 +275,4 @@ us-stock-screener/
 | 報告發布 | GitHub Pages（純 HTML/CSS） |
 | 自動化 | GitHub Actions |
 
-> **注意**：`pandas-ta` 鎖定 `==0.3.14b0`（0.4.x 會拉入 numba，造成 pip 解析失敗）；`numpy` 鎖定 `>=1.26.0,<2.0.0`（1.26 是第一個有 Python 3.12 wheel 的版本，2.x 會導致 Segmentation Fault）。
+> **注意**：`pandas` 鎖定 `<3.0.0`（pandas-ta 0.4.x 尚未驗證與 pandas 3.x 相容）；`numpy` 鎖定 `>=1.26.0,<2.0.0`（1.26 是第一個有 Python 3.12 wheel 的版本）。

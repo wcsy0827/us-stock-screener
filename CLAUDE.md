@@ -124,5 +124,6 @@ S&P 500 (~503 支)
 
 ## 依賴版本限制
 
-- **`pandas-ta==0.3.14b0`**：鎖定舊版，避免 0.4.x 拉入 `numba` 依賴，造成 pip 回溯嘗試編譯 numpy 舊版 sdist 失敗。**不得放寬為 `>=`**。
-- **`numpy>=1.26.0,<2.0.0`**：1.26.0 是第一個有 Python 3.12 預編譯 wheel 的版本；上限 <2.0.0 因 `pandas-ta` 使用舊版 C API，numpy 2.x 會導致 Segmentation Fault（exit code 139）。**兩端限制均不得移除**。
+- **`pandas<3.0.0`**：pandas-ta 0.4.x 尚未驗證與 pandas 3.x 相容，鎖定 2.x 以避免 API 不相容。
+- **`pandas-ta>=0.4.67b0`**：PyPI 僅有 0.4.67b0 與 0.4.71b0，0.4.x 使用 numba JIT 取代舊版 C extension，解決 Segmentation Fault 問題。
+- **`numpy>=1.26.0,<2.0.0`**：1.26.0 是第一個有 Python 3.12 預編譯 wheel 的版本；上限 <2.0.0 作為保險（numba 0.61.2 已支援 <2.2，但 pandas-ta 尚未明確標示）。**兩端限制均不得移除**。
