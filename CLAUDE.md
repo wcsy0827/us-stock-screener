@@ -121,3 +121,7 @@ S&P 500 (~503 支)
 - 排程：週一至五 UTC 21:30（台灣時間隔日 05:30）
 - Secrets：`DEEPSEEK_API_KEY` 設在 repo Settings → Secrets and variables → Actions
 - 手動觸發：Actions 頁 → Daily Stock Screener → Run workflow
+
+## 依賴版本限制
+
+- **`numpy<2.0.0`**：`pandas-ta` 使用舊版 numpy C API，numpy 2.x 會導致 Segmentation Fault（exit code 139）。`requirements.txt` 已鎖定 `numpy>=1.24.0,<2.0.0`，**不得移除此上限**。

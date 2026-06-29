@@ -274,3 +274,5 @@ us-stock-screener/
 | AI 精選 | DeepSeek（openai 相容介面） |
 | 報告發布 | GitHub Pages（純 HTML/CSS） |
 | 自動化 | GitHub Actions |
+
+> **注意**：`pandas-ta` 使用舊版 numpy C API，`requirements.txt` 已鎖定 `numpy<2.0.0`，升級 numpy 至 2.x 會造成 Segmentation Fault。
