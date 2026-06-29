@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import os
+from datetime import date, timedelta
+
 import pandas as pd
 
 
@@ -10,6 +12,7 @@ MIN_PRICE = float(os.getenv("MIN_PRICE", "5"))
 MIN_VOLUME = float(os.getenv("MIN_VOLUME", "500000"))
 MIN_MARKET_CAP = float(os.getenv("MIN_MARKET_CAP", "300000000"))
 MIN_TRADING_DAYS = 5   # 近5日至少有5筆數據（排除停牌）
+EARNINGS_BLACKOUT_DAYS = 3
 
 
 def apply_filters(
@@ -63,5 +66,30 @@ def apply_filters(
 
         passed.append(sym)
 
-    print(f"[filter] L1 篩選：{len(price_data)} → {len(passed)} 支通過")
+    print(f"[filter] L1 流動性篩選：{len(price_data)} → {len(passed)} 支通過")
+    return passed
+
+
+def apply_earnings_filter(
+    symbols: list[str],
+    earnings_data: dict[str, date | None],
+    days_ahead: int = EARNINGS_BLACKOUT_DAYS,
+) -> list[str]:
+    """
+    排除未來 days_ahead 天內有已知財報的個股。
+    earnings_data[sym] is None 視為無已知財報，通過過濾。
+    """
+    today = date.today()
+    cutoff = today + timedelta(days=days_ahead)
+    passed: list[str] = []
+    excluded = 0
+    for sym in symbols:
+        ed = earnings_data.get(sym)
+        if ed is not None and today <= ed <= cutoff:
+            excluded += 1
+            continue
+        passed.append(sym)
+    if excluded:
+        print(f"[filter] 財報防禦牆：排除 {excluded} 支（未來 {days_ahead} 天內有財報）")
+    print(f"[filter] L1 財報過濾：{len(symbols)} → {len(passed)} 支通過")
     return passed

@@ -183,7 +183,7 @@ details[open] summary::before { transform: rotate(90deg); }
     <div class="pipe-flow">
       <div class="pipe-step"><span class="pipe-badge">L0</span>S&amp;P 500 約 503 支成份股</div>
       <div class="pipe-arrow">↓</div>
-      <div class="pipe-step"><span class="pipe-badge">L1</span>硬條件篩選：股價 &gt; $5、30 日均量 &gt; 50 萬、市值 &gt; 3 億</div>
+      <div class="pipe-step"><span class="pipe-badge">L1</span>硬條件篩選：股價 &gt; $5、30 日均量 &gt; 50 萬、市值 &gt; 3 億；財報防禦牆：排除 3 天內有財報的個股</div>
       <div class="pipe-arrow">↓</div>
       <div class="pipe-step"><span class="pipe-badge">L2</span>技術評分 100 分制，門檻 60 分；恐慌超跌環境（見右側）降至 40 分，RSI &lt; 35 且 20 日跌幅 &gt; 15% 的超賣股強制放行</div>
       <div class="pipe-arrow">↓</div>
@@ -210,8 +210,8 @@ details[open] summary::before { transform: rotate(90deg); }
       <tr><td>MA 多頭排列</td><td>25</td><td>EMA5&gt;10&gt;20&gt;50，每條件 +8.33 分</td></tr>
       <tr><td>RSI 健康區間</td><td>20</td><td>50～70 滿分；40～50 或 70～80 半分；其餘 0；RSI&gt;80 超買直接排除（全維度歸零）</td></tr>
       <tr><td>MACD 柱狀體</td><td>20</td><td>正且遞增滿分；正遞減半分；負 0</td></tr>
-      <tr><td>量能放大</td><td>20</td><td>≥ 1.5x 均量滿分；≥ 1.0x 半分</td></tr>
-      <tr><td>20 日動能</td><td>15</td><td>&gt;10% 滿分；&gt;5% 半分；&gt;0% 1/4 分</td></tr>
+      <tr><td>量能放大</td><td>20</td><td>≥ 1.5x 均量且收盤位於振幅上 60% 以上（多頭推進量）滿分；≥ 1.0x 半分；出貨型爆量（收盤偏低）歸零</td></tr>
+      <tr><td>20 日動能</td><td>15</td><td>ATR 倍數法：≥ 2.0 ATR 滿分；≥ 1.0 ATR 半分；&gt;0 為 1/4 分（跨行業公平評比）</td></tr>
     </table>
   </div>
 

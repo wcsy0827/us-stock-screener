@@ -193,6 +193,7 @@ def fetch_info(symbols: list[str]) -> dict[str, dict]:
                     "name": info.get("shortName") or info.get("longName") or sym,
                     "fifty_two_week_high": info.get("fiftyTwoWeekHigh"),
                     "fifty_two_week_low":  info.get("fiftyTwoWeekLow"),
+                    "earnings_date": info.get("earningsDate"),
                 }
                 break
             except Exception as e:

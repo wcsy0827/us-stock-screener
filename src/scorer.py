@@ -71,35 +71,54 @@ def _score_macd(close: pd.Series) -> float:
 
 
 def _score_volume(df: pd.DataFrame) -> float:
-    """今日量 > 30日均量 × 1.5 得滿分；> 均量得一半；其餘 0 分。"""
+    """量能 × K 線位置綁定：爆量但 K_pos < 0.6（出貨訊號）直接歸零。"""
     vol = df["Volume"].dropna()
     if len(vol) < 5:
         return 0.0
     avg30 = float(vol.tail(30).mean()) if len(vol) >= 30 else float(vol.mean())
-    today = float(vol.iloc[-1])
+    today_vol = float(vol.iloc[-1])
     if avg30 == 0:
         return 0.0
-    ratio = today / avg30
+    ratio = today_vol / avg30
+
+    close = df["Close"].dropna()
+    high = df["High"].dropna()
+    low = df["Low"].dropna()
+    if len(close) < 1 or len(high) < 1 or len(low) < 1:
+        return 0.0
+    c, h, l = float(close.iloc[-1]), float(high.iloc[-1]), float(low.iloc[-1])
+    # K_pos = 0.5 防除零（High == Low 代表無波動，視為中性）
+    k_pos = 0.5 if h == l else (c - l) / (h - l)
+
     if ratio >= 1.5:
-        return float(WEIGHT_VOLUME)
+        return float(WEIGHT_VOLUME) if k_pos >= 0.6 else 0.0
     if ratio >= 1.0:
-        return float(WEIGHT_VOLUME * 0.5)
+        return float(WEIGHT_VOLUME * 0.5) if k_pos >= 0.6 else 0.0
     return 0.0
 
 
-def _score_momentum(close: pd.Series) -> float:
-    """20日漲幅 > 10% 得滿分；> 5% 得一半；> 0% 得 1/4；其餘 0 分。"""
-    if len(close) < 20:
+def _score_momentum(df: pd.DataFrame) -> float:
+    """ATR 倍數動能：(Close[-1]-Close[-20])/ATR14，≥2ATR=滿分；≥1ATR=半分；>0=1/4；其餘0。"""
+    close = df["Close"].dropna()
+    high = df["High"].dropna()
+    low = df["Low"].dropna()
+    if len(close) < 20 or len(high) < 15 or len(low) < 15:
         return 0.0
     p0, p1 = float(close.iloc[-20]), float(close.iloc[-1])
     if p0 == 0:
         return 0.0
-    chg = (p1 - p0) / p0
-    if chg >= 0.10:
+    atr_series = ta.atr(high, low, close, length=14)
+    if atr_series is None or atr_series.dropna().empty:
+        return 0.0
+    atr14 = float(atr_series.dropna().iloc[-1])
+    if atr14 <= 0:
+        return 0.0
+    momentum_atr = (p1 - p0) / atr14
+    if momentum_atr >= 2.0:
         return float(WEIGHT_MOMENTUM)
-    if chg >= 0.05:
+    if momentum_atr >= 1.0:
         return float(WEIGHT_MOMENTUM * 0.5)
-    if chg > 0:
+    if momentum_atr > 0:
         return float(WEIGHT_MOMENTUM * 0.25)
     return 0.0
 
@@ -132,7 +151,7 @@ def score_stock(sym: str, df: pd.DataFrame) -> dict:
     rsi = _score_rsi(rsi_val)
     macd = _score_macd(close)
     vol = _score_volume(df)
-    mom = _score_momentum(close)
+    mom = _score_momentum(df)
     return {
         "symbol": sym,
         "price": latest_close,

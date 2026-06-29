@@ -14,7 +14,9 @@
 | 2 | fetcher.py | symbols | price_data: dict | `.cache/price_YYYYMMDD.pkl`（當日） |
 | 2.5 | market.py | price_data | regime_quick: str | 無 |
 | 3 | fetcher.py | symbols | info_data: dict | `.cache/info_YYYYMMDD.json`（7 日） |
-| 4 | filter.py | price_data, info_data | l1_passed: list[str] | 無 |
+| 3.5 | earnings.py | symbols, info_data | earnings_data: dict | `.cache/earnings_registry.json`（30 日） |
+| 4 | filter.py | price_data, info_data | liq_filtered: list[str] | 無 |
+| 4.5 | earnings.py + filter.py | liq_filtered, info_data | l1_passed: list[str] | `.cache/earnings_registry.json` 更新 |
 | 5 | scorer.py | l1_passed, price_data, regime_quick | candidates: list[dict] | 無 |
 | 5.5 | market.py | candidate_sectors | market_context: dict | 無 |
 | 6 | ranker.py | candidates, price_data, info_data, market_context | ranked: list[dict] | 無 |
@@ -29,17 +31,24 @@
 |----------|----------|----------|
 | 日 K 數據 | `price_YYYYMMDD.pkl`，日期不符即重下 | 跨日 |
 | 基本面資訊 | 掃描 7 日內最新 `info_*.json` | 超過 7 日無任何快取 |
+| 財報日期 | `earnings_registry.json`，per-symbol TTL 判斷 | 各股 cached_at 超過 30 天 |
 | ETF / 大盤 | 無快取 | 每次執行都重新下載 |
 
 - `--no-cache` 旗標：跳過所有快取，強制重下
 - `clear_old_cache()`：執行前清除超過 7 日的 `.cache/` 檔案
 
-### L1 硬篩條件（filter.py）
+### L1 硬篩條件（filter.py，兩段執行）
 
+**第一段（Step 4 — 流動性）**
 - 股價 > $5
 - 30 日均量 > 500,000
 - 市值 > 3 億（$300M）
 - 近 5 日有成交（避免停牌股）
+
+**第二段（Step 4.5 — 財報防禦牆）**
+- 未來 3 天內無已知財報（`apply_earnings_filter()`）
+- `earnings_data[sym] is None` → 視為無已知財報，通過
+- 詳見 `specs/earnings.md`
 
 ### 回傳結構（`summary` dict）
 
@@ -93,5 +102,7 @@ def run(
 - [ ] `--no-cache`：price_data 不從 `.cache/` 讀取，重新下載
 - [ ] `regime_quick` 傳入 `score_all()` 且影響到 `effective_min` 值（可用 print 驗證）
 - [ ] Step 3 的 info 快取：`.cache/` 有 6 日前的 `info_*.json` → 直接讀取不重下
+- [ ] Step 3.5：首次執行 → `earnings_registry.json` 被建立；再次執行 → Tier 3 不觸發
+- [ ] Step 4.5：有財報股票 → 被排除，`summary["l1_count"]` 為財報過濾後的數量
 - [ ] DeepSeek API 失敗：流程繼續，`ranked` 為 `_enrich_fallback()` 的結果（非空列表）
 - [ ] BEAR_DISTRIBUTION → `ranked = []`，`summary["success"] = True`（非錯誤）
