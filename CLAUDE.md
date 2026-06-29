@@ -4,6 +4,32 @@
 
 每日自動掃描 S&P 500，透過三層篩選 + 大盤 Regime 感知，找出符合當日市場環境的買入機會。結果發布至 GitHub Pages。
 
+## 執行命令
+
+```powershell
+# 安裝
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+copy .env.example .env   # 填入 DEEPSEEK_API_KEY
+
+# 本機測試（完整流程，不 push）
+python main.py --dry-run
+
+# CI 模式（跳過今日重複執行確認）
+python main.py --dry-run --yes
+
+# 強制忽略快取，重新下載所有數據
+python main.py --dry-run --no-cache
+
+# 正式執行（生成並 push 至 GitHub Pages）
+$env:PYTHONUTF8=1; python main.py
+
+# Windows 包裝腳本
+.\run.ps1 --dry-run
+.\run.ps1 --top 10
+```
+
 ## 架構速覽
 
 ```
@@ -65,6 +91,14 @@ S&P 500 (~503 支)
 - 常數用全大寫，放在模組頂部
 - AI 輸出欄位的型態：`hold_period` 必須解析為整數（`_parse_hold_period` 已支援 int/float/str 輸入），Prompt 應要求 AI 直接輸出整數天數
 
+## 禁止事項
+
+- **不要直接修改 `docs/` 下的 HTML**（由 `publisher.py` 生成，手動改會被下次執行覆蓋）
+- **不要 commit** `.env`、`.cache/`、`.venv/`（`.gitignore` 已排除）
+- **不要在 CI workflow 移除 `--dry-run`**（workflow 已設計成執行後自己 git push）
+- **不要同時修改 `tracker.py` 和 `scorer.py`**（難以隔離問題，分次修改）
+- **不要繞過規格的 Design Decisions**（DD 是已解決的設計爭議，見上方五大決策）
+
 ## 快取說明
 
 | 快取類型 | 路徑 | 有效期 |
@@ -73,3 +107,9 @@ S&P 500 (~503 支)
 | 基本面資訊 | `.cache/info_YYYYMMDD.json` | 7 日（取最近一份） |
 | 追蹤清單 | `data/watchlist.json` | 永久（持久化） |
 | 歷史績效 | `data/performance_history.json` | 永久（只增不刪） |
+
+## GitHub Actions
+
+- 排程：週一至五 UTC 21:30（台灣時間隔日 05:30）
+- Secrets：`DEEPSEEK_API_KEY` 設在 repo Settings → Secrets and variables → Actions
+- 手動觸發：Actions 頁 → Daily Stock Screener → Run workflow

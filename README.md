@@ -162,11 +162,11 @@ copy .env.example .env
 ```env
 DEEPSEEK_API_KEY=your_deepseek_api_key_here
 
-MAX_OUTPUT=5
-MIN_SCORE=60
-MIN_PRICE=5
-MIN_VOLUME=500000
-MIN_MARKET_CAP=300000000
+MAX_OUTPUT=5           # 最多輸出幾支（預設 5）
+MIN_SCORE=60           # L2 最低評分門檻（程式預設 60，可自行調高）
+MIN_PRICE=5            # 最低股價
+MIN_VOLUME=500000      # 近 30 日最低均量
+MIN_MARKET_CAP=300000000  # 最低市值（3 億美元）
 ```
 
 > DeepSeek API key 申請：[platform.deepseek.com](https://platform.deepseek.com)
@@ -175,16 +175,23 @@ MIN_MARKET_CAP=300000000
 
 ```powershell
 # 測試（只生成 HTML，不 push 至 GitHub）
-$env:PYTHONUTF8=1; python main.py --dry-run
+python main.py --dry-run
+
+# CI 模式（跳過今日重複執行確認）
+python main.py --dry-run --yes
+
+# 強制忽略快取，重新下載所有數據
+python main.py --dry-run --no-cache
+
+# 自訂輸出數量與最低評分
+python main.py --dry-run --top 10 --min-score 65
 
 # 正式執行（生成 HTML 並 push）
 $env:PYTHONUTF8=1; python main.py
 
-# 常用選項
-python main.py --top 5          # 最多輸出幾支（預設 5）
-python main.py --min-score 65   # 自訂 L2 門檻（預設 60）
-python main.py --no-cache       # 忽略快取，強制重新下載
-python main.py --yes            # 跳過今日重複執行確認（CI 用）
+# Windows 包裝腳本
+.\run.ps1 --dry-run
+.\run.ps1 --top 10
 ```
 
 生成的報告位於 `docs/reports/YYYY-MM-DD.html`。
