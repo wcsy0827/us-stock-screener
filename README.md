@@ -97,7 +97,7 @@ S&P 500（~503 支）
 | ✅ active | 股價已落入買入區間且高於止損，報告顯示「持倉 N / 持有天數 天」及彩色浮盈浮虧（相對進場價） |
 | 🟡 watch | 股價略高於買入區間，等待回落 |
 | ❌ invalid | 趨勢轉弱、跌破 AI 止損價、開盤跳空觸發安全攔截，或已追高 >8% |
-| 🗑 expired | 觀察滿 5 個交易日自動移除 |
+| 🗑 expired | 觀察超過策略上限自動移除（突破/動能=5 日；反轉=10 日） |
 | 📦 settled | 觸發停利/停損/到期結算，歸檔至績效資料庫後移除 |
 
 **雙軌制失效判定**：
@@ -170,11 +170,12 @@ copy .env.example .env
 ```env
 DEEPSEEK_API_KEY=your_deepseek_api_key_here
 
-MAX_OUTPUT=5           # 最多輸出幾支（預設 5）
-MIN_SCORE=60           # L2 最低評分門檻（程式預設 60，可自行調高）
-MIN_PRICE=5            # 最低股價
-MIN_VOLUME=500000      # 近 30 日最低均量
+MAX_OUTPUT=5              # 最多輸出幾支（預設 5）
+MIN_SCORE=60              # L2 最低評分門檻（程式預設 60，可自行調高）
+MIN_PRICE=5               # 最低股價
+MIN_DOLLAR_VOLUME=10000000  # 近 30 日均量美元成交額下限（$1,000 萬）
 MIN_MARKET_CAP=300000000  # 最低市值（3 億美元）
+MIN_AI_CONFIDENCE=6       # AI 信心分數最低門檻（1-10，低於此分不加入追蹤）
 ```
 
 > DeepSeek API key 申請：[platform.deepseek.com](https://platform.deepseek.com)
