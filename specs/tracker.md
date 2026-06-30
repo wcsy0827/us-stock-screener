@@ -76,19 +76,23 @@ price < lower 且 price < stop_loss?          → invalid
 
 ### 結算優先順序（DD-10）
 
-active 部位結算依下列優先順序判定，使用**當日盤中 High/Low 實質觸價**（非收盤價）：
+active 部位結算依下列優先順序判定，盤中止損/停利使用**當日盤中 High/Low 實質觸價**；移動停利使用**收盤價**：
 
 ```
-1. 黑天鵝防禦：today_low ≤ stop_loss 且 today_high ≥ target → CLOSED_LOSS（保守原則）
-2. 盤中止損：today_low ≤ stop_loss                          → CLOSED_LOSS
-3. 盤中停利：today_high ≥ target                            → CLOSED_PROFIT
-4. 持倉到期：active_days ≥ hold_period                      → FORCE_EXPIRED
+1. 黑天鵝防禦：today_low ≤ effective_stop_loss 且 today_high ≥ target → CLOSED_LOSS（保守原則）
+2. 盤中止損：today_low ≤ effective_stop_loss                          → CLOSED_LOSS
+3. 盤中停利：today_high ≥ target                                      → CLOSED_PROFIT
+4. 移動停利：峰值浮盈 > 10% 且收盤回撤 ≥ 5%（僅動能/突破策略）       → CLOSED_TRAILING_STOP
+5. 持倉到期：active_days ≥ hold_period                                → FORCE_EXPIRED
 ```
+
+止損使用 `effective_stop_loss`（動態有效止損，見 DD-12），初始值等於 `planned_stop_loss`；觸發保本鎖定後上移至 `buy_zone_upper`。
 
 出場價規則：
-- `CLOSED_PROFIT` → `exit_price = target`（止損絕對值，非 today_high）
-- `CLOSED_LOSS`   → `exit_price = stop_loss`（止損絕對值，非 today_low）
-- `FORCE_EXPIRED` → `exit_price = close`（當日收盤價）
+- `CLOSED_PROFIT`         → `exit_price = target`（目標絕對值，非 today_high）
+- `CLOSED_LOSS`           → `exit_price = effective_stop_loss`（有效止損絕對值，非 today_low）
+- `CLOSED_TRAILING_STOP`  → `exit_price = close`（當日收盤價）
+- `FORCE_EXPIRED`         → `exit_price = close`（當日收盤價）
 
 High/Low NaN 防禦：若 today_high 或 today_low 為 NaN（停牌/數據缺失），強制 fallback 為當日 close，退化為收盤價判定，避免停損免疫 Bug。
 
@@ -96,7 +100,8 @@ High/Low NaN 防禦：若 today_high 或 today_low 為 NaN（停牌/數據缺失
 
 - **必須**：首次加入 watchlist 時記錄 `signal_date_close`（當日 auto_adjust 收盤價）
 - **必須**：每次評估前計算 `split_factor = 當前調整後歷史收盤 / signal_date_close`
-- **若** `abs(split_factor - 1.0) > 0.01`：在記憶體中臨時縮放 `buy_zone_lower`、`buy_zone_upper`、`stop_loss`、**`target`**，**不寫回 watchlist**
+- **若** `abs(split_factor - 1.0) > 0.01`：在記憶體中臨時縮放 `buy_zone_lower`、`buy_zone_upper`、`stop_loss`、`target`、`planned_stop_loss`、`effective_stop_loss`、`active_entry_price`、`highest_close_since_active`，**不寫回 watchlist**
+- `highest_close_since_active` 在 watchlist 中以**原生未拆股標尺**存儲；比對前先乘以 `split_factor` 轉換至調整後標尺
 - **必須**：觸發結算時，以 `adj`（縮放後的臨時字典）呼叫 `_check_settlement()`，確保出場價已正確反映拆股（見 DD-10）
 - 原始絕對值保留在 watchlist 供下次重算，避免累積誤差
 
@@ -152,6 +157,25 @@ def _is_expired(entry: dict) -> bool:
 ```
 
 ## Design Decisions
+
+### DD-12: 風控數據庫雙欄位結構（Original vs. Effective Stop Loss）
+
+- **選擇**：`watchlist.json` 每筆 active entry 新增四個欄位：
+  - `planned_stop_loss: float`（AI 原始止損，唯讀，DD-3 拆股計算基底）
+  - `effective_stop_loss: float`（動態有效止損，保本鎖定後上移）
+  - `highest_close_since_active: float`（進場後最高收盤，以**原生未拆股標尺**存儲）
+  - `is_breakeven_locked: bool`（明示保本鎖定旗標，預設 `false`）
+- **初始值**：`planned_stop_loss = effective_stop_loss = parsed(stop_loss)`；`highest_close_since_active = active_entry_price`；`is_breakeven_locked = false`
+- **行為**：每日評估時，`planned_stop_loss` 與 `effective_stop_loss` 均被 `split_factor` 臨時縮放（不寫回），保本觸發時僅更新 `effective_stop_loss`。`highest_close_since_active` 只在今日原生標尺創新高時更新，防止逆向除法累積浮點誤差。
+- **捨棄**：直接修改 `stop_loss`（DD-3 下次重算會 double-apply split_factor）；用浮點差判斷「是否已移動過」（抖動風險，改用 `is_breakeven_locked`）
+
+### DD-13: 全自動保本鎖定與移動停利
+
+- **選擇**：在 `_check_settlement()` 之前執行 `_apply_risk_controls()`，對 active 持倉自動維護風控狀態
+- **條款 1（保本鎖定）**：`current_close >= active_entry_price + (target - active_entry_price) × 0.5` 且 `is_breakeven_locked == false`，將 `effective_stop_loss` 上移至 `buy_zone_upper`，鎖定 `is_breakeven_locked = true`
+- **條款 2（移動停利）**：僅適用動能/突破策略（精確排除 `strategy == "反轉策略"`）；峰值浮盈 `(highest_close - entry) / entry >= 10%` 且收盤回撤 `(highest_close - close) / highest_close >= 5%`，觸發 `CLOSED_TRAILING_STOP`，出場價 = 收盤
+- **開倉當日安全**：`watch → active` 初始化後立刻同步寫入 `settlement_entry`（adj），防止同日停損時 `active_entry_price = 0` 引發除零錯誤
+- **捨棄**：修改 `stop_loss`（DD-3 衝突）；用收盤以外的價格觸發移動停利（盤中低點可能誤觸短線震盪）；對反轉策略啟用移動停利（反轉股進場點在 EMA50 下方，波動語意不同）
 
 ### DD-1: 反轉策略失效門檻改用 stop_loss 絕對價，而非 EMA50
 
@@ -245,8 +269,8 @@ def _is_expired(entry: dict) -> bool:
         "triggered_date",    // 首次進場（active）日期
         "actual_entry_price", // 代理進場價（首次轉 active 當日收盤）
         "exit_date",
-        "actual_exit_price", // CLOSED_PROFIT→target；CLOSED_LOSS→stop_loss；FORCE_EXPIRED→close
-        "exit_reason",       // CLOSED_PROFIT / CLOSED_LOSS / FORCE_EXPIRED
+        "actual_exit_price", // CLOSED_PROFIT→target；CLOSED_LOSS→effective_stop_loss；CLOSED_TRAILING_STOP/FORCE_EXPIRED→close
+        "exit_reason",       // CLOSED_PROFIT / CLOSED_LOSS / CLOSED_TRAILING_STOP / FORCE_EXPIRED
         "holding_days"
       },
       "performance_metrics": { "return_pct", "is_win" }
@@ -277,3 +301,7 @@ def _is_expired(entry: dict) -> bool:
 - [ ] **Active 免疫**：active 持倉再次出現在 L3 選股 → status/active_days/active_entry_price 完整保留，不被重置
 - [ ] **Watch 覆寫**：watch 個股再次出現在 L3 選股 → watch_days 歸零，date_added 更新為今日，AI 參數刷新
 - [ ] **停牌 NaN**：today_high/today_low 為 NaN 的股票 → 不觸發結算（fallback 為 close，stop_loss/target 條件不滿足）
+- [ ] **保本鎖定**：`active_entry_price=100, target=120, buy_zone_upper=105`，收盤 110 時 `effective_stop_loss` 自動更新為 105，`is_breakeven_locked=true`；次日收盤 112 時不再重複上移
+- [ ] **移動停利**：`highest_close_since_active=115`（>10% 盈），收盤跌至 109（≥5% 回撤）→ 結算 `CLOSED_TRAILING_STOP`，`exit_price=109`（close），`is_win=true`（正回報）
+- [ ] **反轉策略排除**：反轉股滿足回撤條件 → 不觸發 `CLOSED_TRAILING_STOP`
+- [ ] **開倉當日停損**：新進股首次轉 active 當日 today_low 觸及 stop_loss → 正常觸發 CLOSED_LOSS，`return_pct` 為負數（非 inf）

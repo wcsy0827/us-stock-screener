@@ -18,9 +18,15 @@ MAX_WATCH_DAYS    = 5       # watch 狀態最多等 5 個交易日（進場有�
 _DEFAULT_HOLD_DAYS = 10     # hold_period 無法解析時的預設持倉天數
 
 # 結算原因常數
-EXIT_PROFIT  = "CLOSED_PROFIT"
-EXIT_LOSS    = "CLOSED_LOSS"
-EXIT_EXPIRED = "FORCE_EXPIRED"
+EXIT_PROFIT   = "CLOSED_PROFIT"
+EXIT_LOSS     = "CLOSED_LOSS"
+EXIT_TRAILING = "CLOSED_TRAILING_STOP"
+EXIT_EXPIRED  = "FORCE_EXPIRED"
+
+# 風控常數（DD-13）
+BREAKEVEN_PROFIT_THRESHOLD = 0.5    # 達目標距離 50% 時觸發保本
+TRAILING_ACTIVATION_PCT    = 0.10   # 峰值浮盈需超過 10% 才啟動移動停利
+TRAILING_RETRACE_PCT       = 0.05   # 從峰值收盤回撤 5% 觸發出場
 
 
 # ── I/O ─────────────────────────────────────────────────────────────
@@ -248,22 +254,25 @@ def _check_settlement(
     today_low: float | None = None,
 ) -> tuple[str, float] | None:
     """
-    判斷 active 部位是否觸發結算（DD-10）。
+    判斷 active 部位是否觸發結算（DD-10、DD-12、DD-13）。
     回傳 (exit_reason, exit_price) 或 None（未觸發）。
 
     優先順序：
-    1. 黑天鵝（同日 today_low≤stop 且 today_high≥target）→ CLOSED_LOSS（保守原則）
-    2. 盤中止損：today_low ≤ stop_loss → CLOSED_LOSS，exit_price = stop_loss
+    1. 黑天鵝（同日 today_low≤effective_stop_loss 且 today_high≥target）→ CLOSED_LOSS
+    2. 盤中止損：today_low ≤ effective_stop_loss → CLOSED_LOSS，exit_price = effective_stop_loss
     3. 盤中停利：today_high ≥ target   → CLOSED_PROFIT，exit_price = target
-    4. 時間到期：active_days ≥ hold_period → FORCE_EXPIRED，exit_price = close
+    4. 移動停利：峰值浮盈>10% 且收盤回撤≥5%（僅動能/突破）→ CLOSED_TRAILING_STOP，exit_price = close
+    5. 時間到期：active_days ≥ hold_period → FORCE_EXPIRED，exit_price = close
 
-    拆股情境：應傳入 adj（已縮放的臨時字典）確保 stop_loss/target 為正確絕對值。
+    拆股情境：應傳入 adj（已縮放的臨時字典）確保所有門檻為正確絕對值（DD-3）。
+    止損使用 effective_stop_loss（含保本後上移值），fallback 為原始 stop_loss（DD-12）。
     """
     if entry.get("status") != "active":
         return None
 
     target      = _parse_target(entry.get("target", "-"))
-    stop_loss   = _parse_stop_loss(entry.get("stop_loss", "-"))
+    stop_loss   = (entry.get("effective_stop_loss")
+                   or _parse_stop_loss(entry.get("stop_loss", "-")))
     hold_limit  = _parse_hold_period(entry.get("hold_period", "-"))
     active_days = entry.get("active_days", 0)
 
@@ -273,13 +282,24 @@ def _check_settlement(
             and target is not None and today_high >= target):
         return EXIT_LOSS, stop_loss
 
-    # 盤中止損（今日最低價觸及止損）
+    # 盤中止損（今日最低價觸及有效止損）
     if today_low is not None and stop_loss is not None and today_low <= stop_loss:
         return EXIT_LOSS, stop_loss
 
     # 盤中停利（今日最高價觸及目標）
     if today_high is not None and target is not None and today_high >= target:
         return EXIT_PROFIT, target
+
+    # 移動停利（收盤觸發；雙欄位穿透 fallback；精確排除反轉策略，DD-13）
+    strategy = entry.get("strategy") or entry.get("assigned_strategy") or ""
+    if strategy != "反轉策略":
+        entry_price  = entry.get("active_entry_price") or 0
+        prev_highest = entry.get("highest_close_since_active") or entry_price
+        if entry_price > 0 and prev_highest > entry_price:
+            max_gain_pct = (prev_highest - entry_price) / entry_price
+            retrace_pct  = (prev_highest - price) / prev_highest
+            if max_gain_pct >= TRAILING_ACTIVATION_PCT and retrace_pct >= TRAILING_RETRACE_PCT:
+                return EXIT_TRAILING, price
 
     # 持倉天數到期（使用收盤價）
     if active_days >= hold_limit:
@@ -323,7 +343,11 @@ def _archive_to_performance_history(
             "buy_zone_lower":    entry.get("buy_zone_lower"),
             "buy_zone_upper":    entry.get("buy_zone_upper"),
             "planned_target":    entry.get("target", "-"),
-            "planned_stop_loss": entry.get("stop_loss", "-"),
+            "planned_stop_loss": (
+                f"${entry['planned_stop_loss']:.2f}"
+                if entry.get("planned_stop_loss")
+                else entry.get("stop_loss", "-")
+            ),
         },
         "actual_outcome": {
             "triggered_date":     entry.get("active_start_date", ""),
@@ -335,7 +359,8 @@ def _archive_to_performance_history(
         },
         "performance_metrics": {
             "return_pct": return_pct,
-            "is_win":     (return_pct > 0) if return_pct is not None else None,
+            # 純數學判定，與出場原因解耦：CLOSED_TRAILING_STOP 正回報同樣計 Win（DD-13）
+            "is_win":     return_pct > 0 if return_pct is not None else None,
         },
     }
 
@@ -359,6 +384,62 @@ def _archive_to_performance_history(
 
     sign = f"{return_pct:+.2f}%" if return_pct is not None else "N/A"
     print(f"[tracker] {entry['symbol']} 結算歸檔（{exit_reason}，回報 {sign}）")
+
+
+def _apply_risk_controls(
+    adj: dict, price: float, split_factor: float, original_entry: dict
+) -> None:
+    """
+    保本鎖定與最高收盤更新（DD-12、DD-13）。
+    adj 中的欄位為 split-scaled 調整後標尺，用於本輪結算比對。
+    original_entry 以原生未拆股標尺持久化至 watchlist.json，避免逆向除法累積誤差。
+    """
+    if adj.get("status") != "active":
+        return
+
+    entry_price    = adj.get("active_entry_price") or 0
+    target         = _parse_target(adj.get("target", "-"))
+    effective_sl   = adj.get("effective_stop_loss")
+    buy_zone_upper = adj.get("buy_zone_upper", 0)
+    prev_highest   = adj.get("highest_close_since_active") or entry_price
+
+    if entry_price <= 0:
+        return
+
+    # 向後相容：存量 active 持倉首次遇到新版 code 時，一次性初始化風控欄位
+    if effective_sl is None:
+        fallback_sl = (adj.get("planned_stop_loss")
+                       or _parse_stop_loss(adj.get("stop_loss", "-")))
+        adj["planned_stop_loss"]              = fallback_sl
+        adj["effective_stop_loss"]            = fallback_sl
+        adj["is_breakeven_locked"]            = False
+        original_entry["planned_stop_loss"]   = fallback_sl
+        original_entry["effective_stop_loss"] = fallback_sl
+        original_entry.setdefault("is_breakeven_locked", False)
+        effective_sl = fallback_sl
+
+    # ── 保本鎖定（Fix #2：明示旗標，非浮點差判定）──
+    if (not adj.get("is_breakeven_locked", False)
+            and target is not None
+            and effective_sl is not None
+            and buy_zone_upper > (effective_sl or 0)):
+        breakeven_threshold = entry_price + (target - entry_price) * BREAKEVEN_PROFIT_THRESHOLD
+        if price >= breakeven_threshold:
+            adj["effective_stop_loss"] = buy_zone_upper
+            adj["is_breakeven_locked"] = True
+            # Fix #3：直接讀原生 buy_zone_upper，避免 buy_zone_upper / split_factor 除法誤差
+            raw_upper = original_entry.get("buy_zone_upper") or (buy_zone_upper / split_factor)
+            original_entry["effective_stop_loss"] = raw_upper
+            original_entry["is_breakeven_locked"] = True
+            print(f"[tracker] {adj.get('symbol', '')} 保本鎖定：止損上移至 ${raw_upper:.2f}")
+
+    # ── 最高收盤更新（Fix #3：只在原生標尺創新高時才寫回 DB）──
+    today_price_raw = price / split_factor
+    stored_highest  = original_entry.get("highest_close_since_active") or 0
+    if today_price_raw > stored_highest:
+        original_entry["highest_close_since_active"] = today_price_raw
+        adj["highest_close_since_active"]            = price
+    # 未創新高：original_entry 保持唯讀，不累積浮點誤差
 
 
 def _days(entry: dict) -> int:
@@ -461,6 +542,16 @@ def run_tracker(
             tgt = _parse_target(entry.get("target", "-"))
             if tgt:
                 adj["target"] = f"${tgt * split_factor:.2f}"
+            # DD-12：風控欄位同步縮放（不寫回 watchlist）
+            planned_sl = entry.get("planned_stop_loss") or sl
+            eff_sl     = entry.get("effective_stop_loss") or planned_sl
+            adj["planned_stop_loss"]  = planned_sl * split_factor if planned_sl else None
+            adj["effective_stop_loss"] = eff_sl    * split_factor if eff_sl    else None
+            adj["is_breakeven_locked"] = entry.get("is_breakeven_locked", False)
+            # active_entry_price 與 highest_close 在 watch→active 初始化後才有效，暫留空（Fix #1）
+            adj["active_entry_price"]          = (entry.get("active_entry_price") or 0) * split_factor
+            highest = entry.get("highest_close_since_active") or entry.get("active_entry_price") or 0
+            adj["highest_close_since_active"]  = highest * split_factor
             new_status, reason = _eval_status(adj, price, ema20, ema50)
             settlement_entry = adj   # 結算也使用縮放後的 adj（DD-10）
         else:
@@ -476,11 +567,33 @@ def run_tracker(
         if entry.get("signal_date_close") is None:
             entry["signal_date_close"] = price
 
-        # 首次進入 active：記錄代理進場價與日期
+        # 首次進入 active：記錄代理進場價、日期，並初始化風控欄位（DD-12、DD-13）
         if new_status == "active" and prev_status == "watch":
             if entry.get("active_entry_price") is None:
                 entry["active_entry_price"] = price
                 entry["active_start_date"]  = today
+            if entry.get("planned_stop_loss") is None:
+                planned_val = _parse_stop_loss(entry.get("stop_loss", "-"))
+                entry["planned_stop_loss"]   = planned_val
+                entry["effective_stop_loss"] = planned_val
+            entry.setdefault("is_breakeven_locked", False)
+            if entry.get("highest_close_since_active") is None:
+                # 以原生標尺存儲（Fix #3）
+                entry["highest_close_since_active"] = price
+
+            # Fix #1：同步寫入 settlement_entry（adj），防止開倉當日停損時 entry_price=0 除零
+            if settlement_entry is not entry:
+                settlement_entry["active_entry_price"]         = price
+                settlement_entry["planned_stop_loss"]          = (entry["planned_stop_loss"] or 0) * split_factor
+                settlement_entry["effective_stop_loss"]        = settlement_entry["planned_stop_loss"]
+                settlement_entry["is_breakeven_locked"]        = False
+                settlement_entry["highest_close_since_active"] = price
+            else:
+                settlement_entry["active_entry_price"]         = price
+                settlement_entry["planned_stop_loss"]          = entry["planned_stop_loss"]
+                settlement_entry["effective_stop_loss"]        = entry["effective_stop_loss"]
+                settlement_entry["is_breakeven_locked"]        = False
+                settlement_entry["highest_close_since_active"] = price
 
         # 計數器遞增（直接寫入 entry，確保被 JSON 序列化）
         if new_status == "watch":
@@ -488,7 +601,11 @@ def run_tracker(
         elif new_status == "active":
             entry["active_days"] = entry.get("active_days", 0) + 1
 
-        # 結算檢查：盤中 High/Low 實質觸價（DD-10）
+        # 風控更新：保本鎖定 + 最高收盤追蹤（DD-12、DD-13）；僅持續 active 狀態執行
+        if prev_status == "active" and new_status == "active":
+            _apply_risk_controls(settlement_entry, price, split_factor, entry)
+
+        # 結算檢查：盤中 High/Low 實質觸價 + 移動停利（DD-10、DD-13）
         settlement = _check_settlement(settlement_entry, price, today_high, today_low)
         if settlement:
             exit_reason, exit_price = settlement
