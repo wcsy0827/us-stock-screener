@@ -3,11 +3,11 @@
     "symbol": "GLW",
     "name": "Corning Incorporated",
     "sector": "Technology",
-    "buy_zone": "$252～$258",
-    "buy_zone_lower": 252.0,
-    "buy_zone_upper": 258.0,
-    "target": "$280",
-    "stop_loss": "$245",
+    "buy_zone": "$250～$260",
+    "buy_zone_lower": 250.0,
+    "buy_zone_upper": 260.0,
+    "target": "$290",
+    "stop_loss": "$240",
     "hold_period": "15",
     "strategy": "動能策略",
     "tracked_dates": [
@@ -26,7 +26,7 @@
     "vix_value": 16.45,
     "l2_score": 90.0,
     "ai_confidence": 9,
-    "ai_strategy_reason": "均線多頭排列(EMA5>EMA10>EMA20>EMA50)，RSI=69.3，MACD正遞增，符合動能策略條件。"
+    "ai_strategy_reason": "均線多頭排列(EMA5>EMA10>EMA20>EMA50)，RSI=69.3，MACD正增，符合動能策略條件。"
   },
   {
     "symbol": "KLAC",
@@ -36,7 +36,7 @@
     "buy_zone_lower": 275.0,
     "buy_zone_upper": 282.0,
     "target": "$310",
-    "stop_loss": "$268",
+    "stop_loss": "$265",
     "hold_period": "15",
     "strategy": "動能策略",
     "tracked_dates": [
@@ -55,17 +55,17 @@
     "vix_value": 16.45,
     "l2_score": 90.0,
     "ai_confidence": 9,
-    "ai_strategy_reason": "均線多頭排列，RSI=66.4，MACD正遞增，vol_ratio=1.13，動能策略條件成立。"
+    "ai_strategy_reason": "均線多頭排列，RSI=66.4，MACD正增，距52週高點僅-0.3%，動能強。"
   },
   {
     "symbol": "LRCX",
     "name": "Lam Research Corporation",
     "sector": "Technology",
-    "buy_zone": "$405～$416",
+    "buy_zone": "$405～$415",
     "buy_zone_lower": 405.0,
-    "buy_zone_upper": 416.0,
-    "target": "$450",
-    "stop_loss": "$395",
+    "buy_zone_upper": 415.0,
+    "target": "$460",
+    "stop_loss": "$390",
     "hold_period": "15",
     "strategy": "動能策略",
     "tracked_dates": [
@@ -84,7 +84,7 @@
     "vix_value": 16.45,
     "l2_score": 90.0,
     "ai_confidence": 8,
-    "ai_strategy_reason": "均線多頭排列，RSI=63.7，MACD正遞增，vol_ratio=1.16，動能策略條件。"
+    "ai_strategy_reason": "均線多頭排列，RSI=63.7，MACD正增，距52週高點-1.0%，動能策略條件成立。"
   },
   {
     "symbol": "TER",
@@ -93,8 +93,8 @@
     "buy_zone": "$458～$468",
     "buy_zone_lower": 458.0,
     "buy_zone_upper": 468.0,
-    "target": "$510",
-    "stop_loss": "$448",
+    "target": "$520",
+    "stop_loss": "$445",
     "hold_period": "15",
     "strategy": "動能策略",
     "tracked_dates": [
@@ -113,7 +113,7 @@
     "vix_value": 16.45,
     "l2_score": 90.0,
     "ai_confidence": 8,
-    "ai_strategy_reason": "均線多頭排列，RSI=60.1，MACD正遞增，vol_ratio=1.06，動能策略條件。"
+    "ai_strategy_reason": "均線多頭排列，RSI=60.1，MACD正增，距52週高點-1.9%，符合動能策略。"
   },
   {
     "symbol": "TROW",
@@ -122,9 +122,9 @@
     "buy_zone": "$112～$116",
     "buy_zone_lower": 112.0,
     "buy_zone_upper": 116.0,
-    "target": "$128",
-    "stop_loss": "$109",
-    "hold_period": "12",
+    "target": "$130",
+    "stop_loss": "$108",
+    "hold_period": "10",
     "strategy": "動能策略",
     "tracked_dates": [
       "2026-06-30"
@@ -142,6 +142,6 @@
     "vix_value": 16.45,
     "l2_score": 90.0,
     "ai_confidence": 7,
-    "ai_strategy_reason": "均線多頭排列，RSI=74.8，MACD正遞增，vol_ratio=1.81，動能策略條件。"
+    "ai_strategy_reason": "均線多頭排列，RSI=74.8，MACD正增，量比1.81放量，動能策略條件成立。"
   }
 ]
