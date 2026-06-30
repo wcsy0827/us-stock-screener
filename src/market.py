@@ -171,29 +171,35 @@ def determine_market_regime(breadth_pct: float, vix_value: float) -> dict:
 
 # ── 輕量 Regime 快速判定（L2 評分前使用）────────────────────────────
 
-def fetch_regime_quick(all_stocks_data: dict) -> tuple[str, float, float]:
+def fetch_regime_quick(all_stocks_data: dict) -> tuple[str, float, float, bool]:
     """
     快速判定大盤 Regime，只下載 VIX，搭配已有 price_data 計算廣度。
-    回傳 (regime, breadth_pct, vix_value)。
+    回傳 (regime, breadth_pct, vix_value, vix_ok)。
+    vix_ok=False 表示下載失敗，pipeline 應在 L3 前中斷。
     在 pipeline Step 2.5 呼叫，比 fetch_market_context 早執行，
     讓 scorer 能根據 regime 動態調整 L2 門檻。
     """
     breadth_pct = calculate_market_breadth(all_stocks_data)
     vix_value = 20.0  # 下載失敗時使用中性值
+    vix_ok = False
     try:
         raw = yf.download(
             "^VIX", period="5d", interval="1d",
             auto_adjust=True, progress=False,
         )
-        close = raw["Close"].dropna() if "Close" in raw.columns else pd.Series(dtype=float)
+        close_col = raw["Close"] if "Close" in raw.columns else pd.Series(dtype=float)
+        # yfinance 單 ticker 下載有時回傳單欄 DataFrame，squeeze() 統一轉為 Series
+        close = (close_col.squeeze() if isinstance(close_col, pd.DataFrame) else close_col).dropna()
         if not close.empty:
             vix_value = float(close.iloc[-1])
+            vix_ok = True
     except Exception as e:
         print(f"[market] fetch_regime_quick VIX 下載失敗，使用預設值 20.0：{e}")
     regime_dict = determine_market_regime(breadth_pct, vix_value)
     regime = regime_dict["regime"]
-    print(f"[market] 快速 Regime：{regime}（廣度={breadth_pct}%，VIX={vix_value:.1f}）")
-    return regime, breadth_pct, vix_value
+    vix_status = f"VIX={vix_value:.1f}" if vix_ok else f"VIX=20.0（fallback）"
+    print(f"[market] 快速 Regime：{regime}（廣度={breadth_pct}%，{vix_status}）")
+    return regime, breadth_pct, vix_value, vix_ok
 
 
 # ── 主函式 ───────────────────────────────────────────────────────────

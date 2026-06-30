@@ -76,8 +76,9 @@ def run(
     regime_quick = ""
     breadth_quick: float | None = None
     vix_quick: float | None = None
+    vix_ok = False
     try:
-        regime_quick, breadth_quick, vix_quick = fetch_regime_quick(price_data)
+        regime_quick, breadth_quick, vix_quick, vix_ok = fetch_regime_quick(price_data)
         print(f"[pipeline] 完成 ({_elapsed(t)})｜Regime={regime_quick}")
     except Exception as e:
         print(f"[pipeline] 警告：Regime 快速判定失敗，L2 使用預設門檻：{e}")
@@ -174,6 +175,13 @@ def run(
         print(f"[pipeline] 警告：大盤數據抓取失敗，繼續執行：{e}")
         market_context = {}
     summary["market_context"] = market_context
+
+    # ── VIX Gate：VIX 資料失敗時不進行 L3，避免 AI 拿到錯誤市場背景 ──
+    if not vix_ok:
+        print("[pipeline] ⚠️  VIX 資料不可靠（下載失敗），跳過 L3 AI 精選以節省資源")
+        summary["ranked"] = []
+        summary["success"] = True
+        return summary
 
     # ── Step 6: L3 AI 排序 ──────────────────────────────────────
     print("\n[pipeline] ── Step 6/6：L3 AI 排序 ──")
