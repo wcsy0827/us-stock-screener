@@ -106,7 +106,7 @@ def _parse_buy_zone(buy_zone_str: str) -> tuple[float, float] | None:
 
 
 def _fetch_latest(symbols: list[str]) -> dict[str, dict]:
-    """批次下載最新收盤價與 EMA20。"""
+    """批次下載最新收盤價、盤中高低點與 EMA。High/Low NaN 時 fallback 為 close（DD-10）。"""
     if not symbols:
         return {}
     try:
@@ -141,8 +141,17 @@ def _fetch_latest(symbols: list[str]) -> dict[str, dict]:
         price = float(close.iloc[-1])
         ema20 = float(close.ewm(span=20, adjust=False).mean().iloc[-1]) if len(close) >= 20 else None
         ema50 = float(close.ewm(span=50, adjust=False).mean().iloc[-1]) if len(close) >= 50 else None
+
+        # 日內高低點：NaN fallback → close，避免停損免疫 Bug（DD-10）
+        high_raw = df["High"].iloc[-1] if "High" in df.columns else float("nan")
+        low_raw  = df["Low"].iloc[-1]  if "Low"  in df.columns else float("nan")
+        today_high = float(high_raw) if pd.notna(high_raw) else price
+        today_low  = float(low_raw)  if pd.notna(low_raw)  else price
+
         result[sym] = {
             "price":        round(price, 2),
+            "today_high":   round(today_high, 2),
+            "today_low":    round(today_low, 2),
             "ema20":        round(ema20, 2) if ema20 else None,
             "ema50":        round(ema50, 2) if ema50 else None,
             "close_series": close,
@@ -232,11 +241,23 @@ def _eval_status(
     return "watch", None           # 跌穿下限但未到止損，繼續觀察
 
 
-def _check_settlement(entry: dict, price: float) -> tuple[str, float] | None:
+def _check_settlement(
+    entry: dict,
+    price: float,
+    today_high: float | None = None,
+    today_low: float | None = None,
+) -> tuple[str, float] | None:
     """
-    判斷 active 部位是否觸發結算。
+    判斷 active 部位是否觸發結算（DD-10）。
     回傳 (exit_reason, exit_price) 或 None（未觸發）。
-    檢查優先順序：停利 > 停損 > 時間到期（FORCE_EXPIRED）。
+
+    優先順序：
+    1. 黑天鵝（同日 today_low≤stop 且 today_high≥target）→ CLOSED_LOSS（保守原則）
+    2. 盤中止損：today_low ≤ stop_loss → CLOSED_LOSS，exit_price = stop_loss
+    3. 盤中停利：today_high ≥ target   → CLOSED_PROFIT，exit_price = target
+    4. 時間到期：active_days ≥ hold_period → FORCE_EXPIRED，exit_price = close
+
+    拆股情境：應傳入 adj（已縮放的臨時字典）確保 stop_loss/target 為正確絕對值。
     """
     if entry.get("status") != "active":
         return None
@@ -246,12 +267,24 @@ def _check_settlement(entry: dict, price: float) -> tuple[str, float] | None:
     hold_limit  = _parse_hold_period(entry.get("hold_period", "-"))
     active_days = entry.get("active_days", 0)
 
-    if target is not None and price >= target:
-        return EXIT_PROFIT, price
-    if stop_loss is not None and price <= stop_loss:
-        return EXIT_LOSS, price
+    # 黑天鵝：同日 Low≤stop 且 High≥target，保守判為停損
+    if (today_low is not None and today_high is not None
+            and stop_loss is not None and today_low <= stop_loss
+            and target is not None and today_high >= target):
+        return EXIT_LOSS, stop_loss
+
+    # 盤中止損（今日最低價觸及止損）
+    if today_low is not None and stop_loss is not None and today_low <= stop_loss:
+        return EXIT_LOSS, stop_loss
+
+    # 盤中停利（今日最高價觸及目標）
+    if today_high is not None and target is not None and today_high >= target:
+        return EXIT_PROFIT, target
+
+    # 持倉天數到期（使用收盤價）
     if active_days >= hold_limit:
         return EXIT_EXPIRED, price
+
     return None
 
 
@@ -350,10 +383,14 @@ def _is_expired(entry: dict) -> bool:
 def run_tracker(
     new_ranked: list[dict],
     market_context: dict | None = None,
+    market_date: str | None = None,
 ) -> tuple[list[dict], dict]:
     """
     執行訊號追蹤流程。
     回傳 (updated_watchlist, categories)。
+
+    執行順序（DD-11）：D（下載現有）→ E（評估現有）→ B/C（處理新訊號）。
+    新訊號在當輪不被評估（1-day lag），下一個交易日才進入狀態機。
 
     categories 結構：
       active:   已落入買入區間的追蹤中股票
@@ -364,7 +401,7 @@ def run_tracker(
       new:      本次新加入的股票（含完整 AI 資料）
       reset:    本次重新入選並重置的股票（含完整 AI 資料）
     """
-    today = date.today().isoformat()
+    today = market_date or date.today().isoformat()
     watchlist = load_watchlist()
     mc = market_context or {}
 
@@ -381,11 +418,93 @@ def run_tracker(
         print(f"[tracker] 今日重複執行，已清除今日新增的股票，重新以新結果取代")
 
     existing = {e["symbol"]: e for e in watchlist}
+
+    # ── D. 批次下載現有持倉最新價格（High/Low/Close/EMA）────────────
+    existing_symbols = list(existing.keys())
+    latest = _fetch_latest(existing_symbols)
+    print(f"[tracker] 追蹤清單：{len(existing_symbols)} 支，成功取得 {len(latest)} 支最新數據")
+
+    # ── E. 評估現有持倉狀態、更新計數器、執行結算 ───────────────────
+    settled_entries: list[dict] = []
+
+    for entry in watchlist:
+        sym = entry["symbol"]
+
+        if today not in entry["tracked_dates"]:
+            entry["tracked_dates"].append(today)
+
+        if sym not in latest:
+            entry.setdefault("current_price", None)
+            continue
+
+        price        = latest[sym]["price"]
+        ema20        = latest[sym]["ema20"]
+        ema50        = latest[sym].get("ema50")
+        close_series = latest[sym].get("close_series")
+        today_high   = latest[sym].get("today_high")
+        today_low    = latest[sym].get("today_low")
+
+        # 拆股免疫：以信號日的 auto_adjust 歷史價計算平移因子（DD-3）
+        signal_close = entry.get("signal_date_close")
+        signal_date  = entry["tracked_dates"][0] if entry.get("tracked_dates") else ""
+        split_factor = 1.0
+        if signal_close and close_series is not None:
+            split_factor = _calc_split_factor(signal_date, signal_close, close_series)
+        if abs(split_factor - 1.0) > 0.01:
+            print(f"[tracker] {sym} 偵測到拆股，平移因子={split_factor:.4f}")
+            adj = dict(entry)
+            adj["buy_zone_lower"] = entry.get("buy_zone_lower", 0.0) * split_factor
+            adj["buy_zone_upper"] = entry["buy_zone_upper"] * split_factor
+            sl = _parse_stop_loss(entry.get("stop_loss", "-"))
+            if sl:
+                adj["stop_loss"] = f"${sl * split_factor:.2f}"
+            tgt = _parse_target(entry.get("target", "-"))
+            if tgt:
+                adj["target"] = f"${tgt * split_factor:.2f}"
+            new_status, reason = _eval_status(adj, price, ema20, ema50)
+            settlement_entry = adj   # 結算也使用縮放後的 adj（DD-10）
+        else:
+            new_status, reason = _eval_status(entry, price, ema20, ema50)
+            settlement_entry = entry
+
+        prev_status = entry.get("status", "watch")
+        entry["status"]         = new_status
+        entry["invalid_reason"] = reason
+        entry["current_price"]  = price
+
+        # 記錄信號日收盤價（首次追蹤時設定，供後續拆股校正使用）
+        if entry.get("signal_date_close") is None:
+            entry["signal_date_close"] = price
+
+        # 首次進入 active：記錄代理進場價與日期
+        if new_status == "active" and prev_status == "watch":
+            if entry.get("active_entry_price") is None:
+                entry["active_entry_price"] = price
+                entry["active_start_date"]  = today
+
+        # 計數器遞增（直接寫入 entry，確保被 JSON 序列化）
+        if new_status == "watch":
+            entry["watch_days"] = entry.get("watch_days", 0) + 1
+        elif new_status == "active":
+            entry["active_days"] = entry.get("active_days", 0) + 1
+
+        # 結算檢查：盤中 High/Low 實質觸價（DD-10）
+        settlement = _check_settlement(settlement_entry, price, today_high, today_low)
+        if settlement:
+            exit_reason, exit_price = settlement
+            _archive_to_performance_history(entry, exit_reason, exit_price, today)
+            entry["_settled"]     = True
+            entry["_exit_reason"] = exit_reason   # 供 publisher 渲染今日結算區段
+            entry["_exit_price"]  = exit_price
+            settled_entries.append(entry)
+
+    # ── B/C（後移）. 處理今日 L3 新訊號（雙軌分流，DD-9/DD-11）──────
+    # 重建 existing，反映 E 後的最新狀態（含 status 變化）
+    existing = {e["symbol"]: e for e in watchlist}
     reset_symbols: set[str] = set()
     new_entries: list[dict] = []
     reset_entries: list[dict] = []
 
-    # B. 重置 / C. 新增
     for stock in new_ranked:
         sym = stock["symbol"]
         parsed = _parse_buy_zone(stock.get("buy_zone", "-"))
@@ -409,8 +528,10 @@ def run_tracker(
             "active_days":        0,
             "signal_date_close":  None,
             # ── 進場追蹤 ──
-            "active_entry_price": None,   # 首次轉 active 當日收盤（代理進場價）
-            "active_start_date":  None,   # 首次轉 active 日期
+            "active_entry_price": None,
+            "active_start_date":  None,
+            # ── 日期錨定（DD-11）──
+            "date_added":         today,
             # ── 信號時刻大盤背景（供績效分析） ──
             "entry_regime":       mc.get("regime", ""),
             "market_breadth_pct": mc.get("market_breadth_pct"),
@@ -421,95 +542,25 @@ def run_tracker(
             "ai_strategy_reason": stock.get("strategy_reason", ""),
         }
         if sym in existing:
-            existing[sym].update(base)
-            reset_symbols.add(sym)
-            reset_entries.append(stock)
+            if existing[sym].get("status") == "active":
+                # active 持倉再入選：訊號免疫，跳過重置（DD-9）
+                print(f"[tracker] {sym} 已持倉（active），跳過重置，沿用原交易計劃")
+            else:
+                # watch / invalid：訊號覆寫展期，重置觀察期與 AI 參數
+                existing[sym].update(base)
+                reset_symbols.add(sym)
+                reset_entries.append(stock)
         else:
+            # 全新個股：加入 watchlist，本輪不評估（1-day lag 天然實現）
             watchlist.append({
-                "symbol":     sym,
-                "name":       stock.get("name", sym),
-                "sector":     stock.get("sector", "Unknown"),
-                "date_added": today,
+                "symbol": sym,
+                "name":   stock.get("name", sym),
+                "sector": stock.get("sector", "Unknown"),
                 **base,
             })
             new_entries.append(stock)
 
-    # 重建 existing（含新增項）
-    existing = {e["symbol"]: e for e in watchlist}
-
-    # D. 批次下載最新價格
-    all_symbols = list(existing.keys())
-    latest = _fetch_latest(all_symbols)
-    print(f"[tracker] 追蹤清單：{len(all_symbols)} 支，成功取得 {len(latest)} 支最新數據")
-
-    # E. 更新 tracked_dates、狀態、計數器，並對 active 部位執行結算檢查
-    settled_entries: list[dict] = []
-
-    for entry in watchlist:
-        sym = entry["symbol"]
-
-        if today not in entry["tracked_dates"]:
-            entry["tracked_dates"].append(today)
-
-        if sym not in latest:
-            entry.setdefault("current_price", None)
-            continue
-
-        price        = latest[sym]["price"]
-        ema20        = latest[sym]["ema20"]
-        ema50        = latest[sym].get("ema50")
-        close_series = latest[sym].get("close_series")
-
-        # 拆股免疫：以信號日的 auto_adjust 歷史價計算平移因子
-        signal_close = entry.get("signal_date_close")
-        signal_date  = entry["tracked_dates"][0] if entry.get("tracked_dates") else ""
-        split_factor = 1.0
-        if signal_close and close_series is not None:
-            split_factor = _calc_split_factor(signal_date, signal_close, close_series)
-        if abs(split_factor - 1.0) > 0.01:
-            print(f"[tracker] {sym} 偵測到拆股，平移因子={split_factor:.4f}")
-            adj = dict(entry)
-            adj["buy_zone_lower"] = entry.get("buy_zone_lower", 0.0) * split_factor
-            adj["buy_zone_upper"] = entry["buy_zone_upper"] * split_factor
-            sl = _parse_stop_loss(entry.get("stop_loss", "-"))
-            if sl:
-                adj["stop_loss"] = f"${sl * split_factor:.2f}"
-            new_status, reason = _eval_status(adj, price, ema20, ema50)
-        else:
-            new_status, reason = _eval_status(entry, price, ema20, ema50)
-
-        prev_status = entry.get("status", "watch")
-        entry["status"]        = new_status
-        entry["invalid_reason"] = reason
-        entry["current_price"] = price
-
-        # 記錄信號日收盤價（首次追蹤時設定，供後續拆股校正使用）
-        if entry.get("signal_date_close") is None:
-            entry["signal_date_close"] = price
-
-        # 首次進入 active：記錄代理進場價與日期
-        if new_status == "active" and prev_status == "watch":
-            if entry.get("active_entry_price") is None:
-                entry["active_entry_price"] = price
-                entry["active_start_date"]  = today
-
-        # 計數器遞增（直接寫入 entry，確保被 JSON 序列化）
-        if new_status == "watch":
-            entry["watch_days"] = entry.get("watch_days", 0) + 1
-        elif new_status == "active":
-            entry["active_days"] = entry.get("active_days", 0) + 1
-
-        # 結算檢查（僅對 active 部位）
-        settlement = _check_settlement(entry, price)
-        if settlement:
-            exit_reason, exit_price = settlement
-            _archive_to_performance_history(entry, exit_reason, exit_price, today)
-            entry["_settled"] = True
-            entry["_exit_reason"] = exit_reason   # 供 publisher 渲染今日結算區段
-            entry["_exit_price"]  = exit_price
-            settled_entries.append(entry)
-
-    # F. 分類（移除前快照）
+    # ── F. 分類（移除前快照）────────────────────────────────────────
     settled_symbols = {e["symbol"] for e in settled_entries}
     expired = [e for e in watchlist if _is_expired(e) and e["symbol"] not in settled_symbols]
     active = [
@@ -544,13 +595,13 @@ def run_tracker(
         "reset":    reset_entries,
     }
 
-    # G. 移除已到期與已結算
+    # ── G. 移除已到期與已結算 ────────────────────────────────────────
     watchlist = [
         e for e in watchlist
         if not _is_expired(e) and not e.get("_settled")
     ]
 
-    # H. 儲存
+    # ── H. 儲存 ──────────────────────────────────────────────────────
     save_watchlist(watchlist)
     print(f"[tracker] watchlist 更新完成，保留 {len(watchlist)} 筆"
           f"（結算歸檔 {len(settled_entries)} 筆）")
