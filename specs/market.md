@@ -86,6 +86,14 @@ def fetch_market_context(
 - **原因**：VIX 20 是「正常波動」的中間值，20 以下 BULL，25 以上 PANIC。預設 20 讓 Regime 退化至由廣度主導（廣度高→BULL_TREND；廣度低→BEAR_DISTRIBUTION），是最保守的選擇。
 - **捨棄**：預設 0（誤判所有情境為 BULL）；預設 30（誤判為 PANIC，過度激進）
 
+### DD-3: 廣度使用 N 日滾動平均，防止邊界震盪
+
+- **選擇**：`calculate_market_breadth()` 新增 `smoothing_days`（預設 `BREADTH_SMOOTHING_DAYS=3`），回傳近 N 個交易日廣度的算術平均，而非單日值
+- **原因**：廣度在 35%/60% 邊界附近每日小幅震盪（如 34%→36%→34%），會導致 Regime 日日翻轉，L2 門檻（40 vs 60 分）與 L3 主推策略跟著變，選股邏輯不穩定。N 日平均以現有 price_data 的歷史切片計算，不增加任何額外 API 請求。
+- **計算方式**：對 `offset = 0, 1, ..., N-1`，各取 `close.iloc[: len(close) - offset]`（模擬 N 天前視角），以最後 50 根算 SMA50，判定該日廣度，最後取算術平均。今日原始廣度（offset=0）仍單獨 print 供觀察。
+- **回傳值不變**：`fetch_regime_quick()` 仍回傳 `(regime, breadth_pct, vix_value, vix_ok)`；`breadth_pct` 改為 N 日均值（更穩定），Step 5.5 照常複用
+- **捨棄**：單日廣度（邊界震盪）；外部狀態檔儲存歷史廣度（增加 I/O，且現有 price_data 已含所需 90 日歷史）；滯後帶（hysteresis band）——需記憶「前次 Regime」狀態，引入狀態依賴，實作更複雜且直覺性低
+
 ## Acceptance Criteria
 
 - [ ] 廣度=70%、VIX=15 → `BULL_TREND`
@@ -94,3 +102,6 @@ def fetch_market_context(
 - [ ] 廣度=25%、VIX=18 → `BEAR_DISTRIBUTION`
 - [ ] `fetch_regime_quick()` 不對廣度計算發出任何 yfinance 請求（廣度只用 price_data）
 - [ ] 市場背景中產業 ETF 含 `change_5d_pct` 和 `change_20d_pct` 兩個欄位
+- [ ] 廣度今日=34%、昨日=37%、前日=38% → 3日均=36.3% → Regime=CONSOLIDATION（不誤切換至 BEAR）
+- [ ] 廣度連續 3 日均 < 35% → Regime 切換至 BEAR_DISTRIBUTION 或 PANIC_REVERSAL（依 VIX）
+- [ ] print 訊息同時顯示今日原始廣度（含 above/total）與 N 日均值
