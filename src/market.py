@@ -6,6 +6,8 @@ import pandas as pd
 import yfinance as yf
 
 
+BREADTH_SMOOTHING_DAYS = 3  # Regime 廣度平滑窗口（specs/market.md DD-3）
+
 # 產業 → 代表性 ETF
 SECTOR_ETF_MAP: dict[str, str] = {
     "Technology": "XLK",
@@ -91,27 +93,44 @@ def _analyze(df: pd.DataFrame) -> dict:
 
 # ── 市場廣度計算 ─────────────────────────────────────────────────────
 
-def calculate_market_breadth(all_stocks_data: dict) -> float:
+def calculate_market_breadth(
+    all_stocks_data: dict,
+    smoothing_days: int = BREADTH_SMOOTHING_DAYS,
+) -> float:
     """
-    計算市場廣度：收盤價高於 50 SMA 的股票比例（%）。
-    排除歷史 K 線不足 50 根的股票，確保 50 SMA 計算精準。
-    回傳 0~100 的百分比值。
+    計算市場廣度（收盤 > 50 SMA 比例），回傳近 smoothing_days 日算術平均（DD-3）。
+    以現有 price_data 歷史切片模擬各日視角，無額外 API 請求。
     """
-    above = 0
-    total = 0
-    for sym, df in all_stocks_data.items():
-        close = df["Close"].dropna()
-        if len(close) < 50:
-            continue
-        sma50 = float(close.tail(50).mean())
-        total += 1
-        if float(close.iloc[-1]) > sma50:
-            above += 1
-    if total == 0:
-        return 50.0  # 無法計算時回傳中性值
-    pct = round(above / total * 100, 1)
-    print(f"[market] 市場廣度：{above}/{total} 支股票站上50SMA = {pct}%")
-    return pct
+    def _breadth_for_offset(offset: int) -> float | None:
+        above, total = 0, 0
+        for sym, df in all_stocks_data.items():
+            close = df["Close"].dropna()
+            if len(close) < 50 + offset:
+                continue
+            effective = close.iloc[: len(close) - offset] if offset else close
+            sma50 = float(effective.tail(50).mean())
+            total += 1
+            if float(effective.iloc[-1]) > sma50:
+                above += 1
+        if total == 0:
+            return None
+        pct = round(above / total * 100, 1)
+        if offset == 0:
+            print(f"[market] 市場廣度：{above}/{total} 支股票站上50SMA = {pct}%（今日）")
+        return pct
+
+    values = []
+    for d in range(smoothing_days):
+        v = _breadth_for_offset(d)
+        if v is not None:
+            values.append(v)
+
+    if not values:
+        return 50.0
+    avg = round(sum(values) / len(values), 1)
+    if smoothing_days > 1:
+        print(f"[market] 市場廣度 {smoothing_days}日均：{avg}%（用於 Regime 判定）")
+    return avg
 
 
 # ── 市場環境狀態機 ───────────────────────────────────────────────────

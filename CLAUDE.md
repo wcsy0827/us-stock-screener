@@ -36,7 +36,7 @@ $env:PYTHONUTF8=1; python main.py
 S&P 500 (~503 支)
   ↓ Step 1   universe.py     爬取成份股
   ↓ Step 2   fetcher.py      下載 90 日日 K（.cache/ 快取）
-  ↓ Step 2.5 market.py       快速 Regime 判定（廣度 + VIX）← 必須在 scorer 之前
+  ↓ Step 2.5 market.py       快速 Regime 判定（近 3 日均廣度 + VIX）← 必須在 scorer 之前
                               回傳 (regime, breadth_pct, vix_value)，供 Step 5.5 複用
   ↓ Step 3   fetcher.py      抓基本面（7 日快取），順帶提取 earningsDate 欄位
   ↓ Step 3.5 earnings.py     財報日查詢（Tier 1+2）→ earnings_registry.json（30 日快取）
