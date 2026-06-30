@@ -16,7 +16,7 @@
 | `BEAR_DISTRIBUTION` | < 35% | < 25 |
 
 - **CONSOLIDATION** 優先級高於另兩個廣度 < 35% 的象限（當廣度在 35-60% 時，不論 VIX 高低都是 CONSOLIDATION）
-- VIX 取最近交易日收盤價；下載失敗時預設 20.0
+- VIX 取最近交易日收盤價；下載失敗時預設 20.0，並設 `vix_ok=False` 通知 pipeline 跳過 L3
 
 ### 市場廣度計算
 
@@ -58,8 +58,9 @@ def determine_market_regime(breadth_pct: float, vix_value: float) -> dict:
     }
     """
 
-def fetch_regime_quick(all_stocks_data: dict) -> tuple[str, float, float]:
-    """回傳 (regime, breadth_pct, vix_value)。只下載 VIX，廣度用 all_stocks_data。"""
+def fetch_regime_quick(all_stocks_data: dict) -> tuple[str, float, float, bool]:
+    """回傳 (regime, breadth_pct, vix_value, vix_ok)。只下載 VIX，廣度用 all_stocks_data。
+    vix_ok=False 表示下載失敗，pipeline 應在 L3 前中斷。"""
 
 def fetch_market_context(
     candidate_sectors: set[str],

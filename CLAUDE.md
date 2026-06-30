@@ -80,7 +80,7 @@ S&P 500 (~503 支)
 
 2. **拆股免疫（tracker.py DD-3）**：yfinance `auto_adjust=True` 在拆股後會回溯修改全部歷史收盤價，導致 watchlist 記錄的絕對止損價變成幽靈訊號。解法：記錄 `signal_date_close`，每日計算 split_factor 並平移所有門檻。→ 詳見 `specs/tracker.md`
 
-3. **Step 2.5 指標複用（pipeline.py DD-1）**：市場廣度 + VIX 在 Step 2.5 計算後直接傳給 Step 5.5，不重算、不重下載。`fetch_regime_quick` 的三個回傳值（`regime`, `breadth_pct`, `vix_value`）均須保留並傳入 `fetch_market_context`，否則兩次判定間有分鐘級時差導致 Regime 不一致。→ 詳見 `specs/pipeline.md`
+3. **Step 2.5 指標複用（pipeline.py DD-1）**：市場廣度 + VIX 在 Step 2.5 計算後直接傳給 Step 5.5，不重算、不重下載。`fetch_regime_quick` 的四個回傳值（`regime`, `breadth_pct`, `vix_value`, `vix_ok`）均須保留；`vix_ok=False` 時 pipeline 在 L3 前中斷，不呼叫 DeepSeek API。→ 詳見 `specs/pipeline.md`
 
 4. **開盤跳空安全攔截（tracker.py DD-7）**：`watch → active` 轉換時，除了 `price >= buy_zone_lower` 外，必須額外確認 `price > stop_loss`。防止 AI 誤設止損在買入區間內時，跳空進場卻已跌破止損，污染 performance_history.json。→ 詳見 `specs/tracker.md`
 
