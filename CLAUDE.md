@@ -74,11 +74,11 @@ S&P 500 (~503 支)
 - 若需求與現有規格衝突，**先更新規格**，說明為何改變，再動程式碼
 - 規格的 Design Decisions 節是已解決的設計爭議，不得在未取得用戶同意前繞過
 
-## 五個最重要的設計決策（摘要）
+## 九個最重要的設計決策（摘要）
 
 1. **EMA50 悖論（tracker.py DD-1）**：反轉策略進場點本就在 EMA50 之下，不能以跌破 EMA50 作為失效門檻。反轉股失效條件改用 AI 設定的 `stop_loss` 絕對價。→ 詳見 `specs/tracker.md`
 
-2. **拆股免疫（tracker.py DD-3）**：yfinance `auto_adjust=True` 在拆股後會回溯修改全部歷史收盤價，導致 watchlist 記錄的絕對止損價變成幽靈訊號。解法：記錄 `signal_date_close`，每日計算 split_factor 並平移所有門檻。→ 詳見 `specs/tracker.md`
+2. **拆股免疫（tracker.py DD-3）**：yfinance `auto_adjust=True` 在拆股後會回溯修改全部歷史收盤價，導致 watchlist 記錄的絕對止損價變成幽靈訊號。解法：記錄 `signal_date_close`，每日計算 split_factor 並平移所有門檻。adj 必須同時縮放 `stop_loss` 與 `target`；`_check_settlement` 呼叫時傳入 adj（非原始 entry）。→ 詳見 `specs/tracker.md`
 
 3. **Step 2.5 指標複用（pipeline.py DD-1）**：市場廣度 + VIX 在 Step 2.5 計算後直接傳給 Step 5.5，不重算、不重下載。`fetch_regime_quick` 的四個回傳值（`regime`, `breadth_pct`, `vix_value`, `vix_ok`）均須保留；`vix_ok=False` 時 pipeline 在 L3 前中斷，不呼叫 DeepSeek API。→ 詳見 `specs/pipeline.md`
 
@@ -87,6 +87,12 @@ S&P 500 (~503 支)
 5. **績效結算狀態機（tracker.py DD-6）**：active 部位不由時間到期控制，改由 `_check_settlement()` 的三態結算（CLOSED_PROFIT / CLOSED_LOSS / FORCE_EXPIRED）觸發，結算後寫入 `data/performance_history.json` 並移出 watchlist。publisher 讀取此檔案時必須做冷啟動保護（檔案不存在或空陣列時回傳零值，不得拋 ZeroDivisionError）。→ 詳見 `specs/tracker.md`
 
 6. **持倉天數用交易日（tracker.py DD-8）**：`_archive_to_performance_history` 的 `holding_days` 以 `active_days` 計數器（每個交易日 +1）為主，不得使用 `exit_date - active_start_date` 的日曆天差（包含週末，語意錯誤）。`_count_trading_days` 僅作為計數器缺失時的備援。→ 詳見 `specs/tracker.md`
+
+7. **Active 持倉再入選時不重置（tracker.py DD-9）**：當 `existing[sym].status == "active"` 時，跳過 `update(base)`，不加入 `reset_symbols`，讓部位繼續出現在 `categories["active"]`。防止 `active_days` 歸零、`active_entry_price=None`、`hold_period` 永遠不觸發，進而污染 `performance_history.json`。→ 詳見 `specs/tracker.md`
+
+8. **日內高低點實質結算（tracker.py DD-10）**：`_check_settlement()` 改用 `today_low ≤ stop_loss` 觸發 CLOSED_LOSS、`today_high ≥ target` 觸發 CLOSED_PROFIT；exit_price 為 stop_loss/target 絕對值而非收盤價。黑天鵝（同日雙觸發）保守判為 CLOSED_LOSS。High/Low NaN 時 fallback 為 close，避免停損免疫。→ 詳見 `specs/tracker.md`
+
+9. **執行順序強制約束 + 基準日錨定（tracker.py DD-11）**：`run_tracker()` 執行順序固定為 D（下載現有）→ E（評估現有）→ B/C（處理新訊號）。新選股在當輪不被評估，自然形成 1-day lag。`today` 由 `market_date` 參數注入（pipeline 從 `price_data["SPY"].index[-1].date()` 提取），確保本地 CST 與 CI UTC 執行行為一致。→ 詳見 `specs/tracker.md`
 
 ## 程式碼慣例
 
@@ -106,7 +112,7 @@ S&P 500 (~503 支)
 - **不要 commit** `.env`、`.cache/`、`.venv/`（`.gitignore` 已排除）
 - **不要在 CI workflow 移除 `--dry-run`**（workflow 已設計成執行後自己 git push）
 - **不要同時修改 `tracker.py` 和 `scorer.py`**（難以隔離問題，分次修改）
-- **不要繞過規格的 Design Decisions**（DD 是已解決的設計爭議，見上方五大決策）
+- **不要繞過規格的 Design Decisions**（DD 是已解決的設計爭議，見上方九大決策）
 
 ## 快取說明
 

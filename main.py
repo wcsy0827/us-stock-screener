@@ -88,7 +88,7 @@ if __name__ == "__main__":
 
     ranked = summary.get("ranked", [])
     market_context = summary.get("market_context", {})
-    _, categories = run_tracker(ranked, market_context=market_context)
+    _, categories = run_tracker(ranked, market_context=market_context, market_date=summary.get("market_date"))
 
     stats = {
         "total":    summary.get("total", 0),

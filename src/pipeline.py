@@ -64,6 +64,11 @@ def run(
                 save_price_cache(price_data)
         summary["downloaded"] = len(price_data)
         print(f"[pipeline] 完成 ({_elapsed(t)})｜成功 {len(price_data)} 支")
+
+        # 提取 SPY 最後交易日，供 tracker 作為基準日（DD-11）
+        spy_df = price_data.get("SPY")
+        if spy_df is not None and not spy_df.empty:
+            summary["market_date"] = spy_df.index[-1].date().isoformat()
     except Exception as e:
         summary["error"] = f"Step2 fetcher 失敗：{e}"
         print(f"[pipeline] 錯誤：{summary['error']}")

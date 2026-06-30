@@ -10,7 +10,7 @@
 
 ```
 [新加入] → watch
-  watch  → active   （price 落入 buy_zone）
+  watch  → active   （次日 price 落入 buy_zone，1-day lag）
   watch  → invalid  （失效條件觸發）
   watch  → expired  （watch_days >= MAX_WATCH_DAYS=5）
   active → settled  （CLOSED_PROFIT / CLOSED_LOSS / FORCE_EXPIRED，歸檔至 performance_history.json）
@@ -51,17 +51,63 @@ price < lower 且 price < stop_loss?          → invalid
 
 - **必須**：`watch → active` 轉換前，需額外確認 `price > stop_loss`，防止 AI 誤設止損在買入區間內時造成績效污染（DD-7）
 
+### 重複訊號雙軌分流（DD-9）
+
+當每日 L3 篩出的新訊號與 watchlist 中既有個股重疊時，依當前狀態分流：
+
+| 現有狀態 | 處理方式 |
+|---------|---------|
+| `active`（已持倉） | **訊號免疫**：跳過，不重置任何欄位，沿用原交易計劃。持倉繼續出現在 `categories["active"]` |
+| `watch` / `invalid` | **訊號覆寫展期**：以最新 AI 參數（buy_zone、stop_loss、target、strategy）全面覆蓋，`watch_days` 歸零，`date_added` 更新為今日，重新計算 5 天觀察期 |
+| 全新個股 | 加入 watchlist，`status=watch`，本輪不評估（1-day lag） |
+
+### 執行順序約束（DD-11）
+
+每日執行順序**必須**為 D → E → B/C：
+
+1. **D（下載）**：`_fetch_latest(existing_symbols)`，只下載現有 watchlist 的 High/Low/Close/EMA
+2. **E（評估）**：對現有 watchlist 全部條目執行 `_eval_status()` + `_check_settlement()`
+3. **B/C（新訊號）**：處理今日 L3 新票，active 免疫、watch 覆寫、新增
+
+此順序確保：
+- 現有 watch 條目先以舊參數評估進場，再被新 AI 參數覆寫（若仍為 watch）
+- 今日新加入的個股在本輪不被評估（1-day lag 天然實現）
+- active 持倉在評估後受 DD-9 保護，不被同日新訊號重置
+
+### 結算優先順序（DD-10）
+
+active 部位結算依下列優先順序判定，使用**當日盤中 High/Low 實質觸價**（非收盤價）：
+
+```
+1. 黑天鵝防禦：today_low ≤ stop_loss 且 today_high ≥ target → CLOSED_LOSS（保守原則）
+2. 盤中止損：today_low ≤ stop_loss                          → CLOSED_LOSS
+3. 盤中停利：today_high ≥ target                            → CLOSED_PROFIT
+4. 持倉到期：active_days ≥ hold_period                      → FORCE_EXPIRED
+```
+
+出場價規則：
+- `CLOSED_PROFIT` → `exit_price = target`（止損絕對值，非 today_high）
+- `CLOSED_LOSS`   → `exit_price = stop_loss`（止損絕對值，非 today_low）
+- `FORCE_EXPIRED` → `exit_price = close`（當日收盤價）
+
+High/Low NaN 防禦：若 today_high 或 today_low 為 NaN（停牌/數據缺失），強制 fallback 為當日 close，退化為收盤價判定，避免停損免疫 Bug。
+
 ### 拆股免疫
 
 - **必須**：首次加入 watchlist 時記錄 `signal_date_close`（當日 auto_adjust 收盤價）
 - **必須**：每次評估前計算 `split_factor = 當前調整後歷史收盤 / signal_date_close`
-- **若** `abs(split_factor - 1.0) > 0.01`：在記憶體中臨時縮放 `buy_zone_lower`、`buy_zone_upper`、`stop_loss`，**不寫回 watchlist**
+- **若** `abs(split_factor - 1.0) > 0.01`：在記憶體中臨時縮放 `buy_zone_lower`、`buy_zone_upper`、`stop_loss`、**`target`**，**不寫回 watchlist**
+- **必須**：觸發結算時，以 `adj`（縮放後的臨時字典）呼叫 `_check_settlement()`，確保出場價已正確反映拆股（見 DD-10）
 - 原始絕對值保留在 watchlist 供下次重算，避免累積誤差
 
 ## Interface
 
 ```python
-def run_tracker(new_ranked: list[dict]) -> tuple[list[dict], dict]:
+def run_tracker(
+    new_ranked: list[dict],
+    market_context: dict | None = None,
+    market_date: str | None = None,   # 由 pipeline 注入 SPY 最後交易日（DD-11）
+) -> tuple[list[dict], dict]:
     """執行訊號追蹤流程，回傳 (updated_watchlist, categories)。"""
 
 # categories 結構：
@@ -73,6 +119,23 @@ def run_tracker(new_ranked: list[dict]) -> tuple[list[dict], dict]:
 #   "new":     list[dict],   # 本次新加入（完整 AI 資料）
 #   "reset":   list[dict],   # 本次重新入選並重置
 # }
+
+def _fetch_latest(symbols: list[str]) -> dict[str, dict]:
+    """
+    批次下載最新 Close/High/Low/EMA。
+    High/Low NaN 時 fallback 為 close，確保結算邏輯不受停牌股影響。
+    """
+
+def _check_settlement(
+    entry: dict,
+    price: float,
+    today_high: float | None = None,
+    today_low: float | None = None,
+) -> tuple[str, float] | None:
+    """
+    判斷 active 部位是否觸發結算，使用盤中 High/Low 實質觸價（DD-10）。
+    拆股情境下應傳入 adj（縮放後）作為 entry，確保出場價正確。
+    """
 
 def _parse_hold_period(hold_period_str: str, default: int = 10) -> int:
     """解析 "5-10 個交易日" → 取最大值（10）；無法解析回傳 default。"""
@@ -138,6 +201,24 @@ def _is_expired(entry: dict) -> bool:
 - **原因**：`_is_expired()` 只能判斷「時間到期」，無法觸發停利/停損邏輯；讓兩套機制同時運作會有 double-exit 風險（先被 `_is_expired()` 移除，再被 `_check_settlement()` 嘗試歸檔 → KeyError）
 - **捨棄**：`_is_expired()` 同時適用 active（兩套機制競爭，造成邏輯混亂）
 
+### DD-9: active 持倉再入選時不重置交易計劃
+
+- **選擇**：`existing[sym].status == "active"` 時，跳過 `update(base)`，不加入 `reset_symbols`，讓該部位繼續出現在 `categories["active"]`，沿用原有的 `stop_loss / target / hold_period / active_entry_price`
+- **原因**：AI 再選同一股語意為「持倉觀點不變」；若允許重置則 `active_days` 歸零、`active_entry_price=None`，`hold_period` 永不觸發，`performance_history.json` 被污染
+- **捨棄**：加入 `reset_symbols`（active 從 `categories["active"]` 消失，publisher 看不到持倉）；mid-trade 更新 stop_loss/target（系統缺乏明確「調單」語意，且會干擾績效計算）
+
+### DD-10: 日內高低點實質結算（含拆股免疫聯動）
+
+- **選擇**：`_check_settlement` 改用 `today_low ≤ stop_loss` 觸發 CLOSED_LOSS（出場價=stop_loss）、`today_high ≥ target` 觸發 CLOSED_PROFIT（出場價=target）；黑天鵝（同日雙觸發）優先判為 CLOSED_LOSS；拆股時以 `adj`（同時縮放 stop_loss 和 target）呼叫結算，確保出場價為拆股後的正確絕對值
+- **原因**：盤中觸價單（Stop/Limit Order）以 High/Low 為準，純收盤判定會錯失盤中止損事件、低估停利觸發率、且拆股後原始止損值失準；NaN fallback 為 close 可防止停牌股觸發停損免疫 Bug
+- **捨棄**：純 close 結算（落後實質觸價，績效系統性高估）；不縮放 target（split 後 exit_price 偏高，虛胖績效）
+
+### DD-11: 執行順序強制約束 + 基準日錨定
+
+- **選擇**：`run_tracker()` 重構為 D（下載現有持倉）→ E（評估現有持倉）→ B/C（處理新訊號）；`today` 改由 `market_date` 參數注入（由 pipeline 從 `price_data["SPY"].index[-1].date()` 提取），有值時使用，否則 fallback 為 `date.today()`
+- **原因**：原順序 B/C→D→E 導致：(1) 新選股用同日 close 立即評估，缺少 1-day lag；(2) watch 狀態的舊個股在評估前被覆蓋為新 AI 參數，可能因買入區間不同而錯失進場。`date.today()` 在本地 CST 早晨執行與 CI UTC 盤後執行可能相差一天，導致 `is_rerun` 機制與 `date_added` 異常
+- **捨棄**：在 B/C 後對新加入條目設 skip flag（增加複雜度）；繼續用 `date.today()`（時區漂移，本地/CI 行為不一致）
+
 ---
 
 ## performance_history.json Schema
@@ -164,7 +245,7 @@ def _is_expired(entry: dict) -> bool:
         "triggered_date",    // 首次進場（active）日期
         "actual_entry_price", // 代理進場價（首次轉 active 當日收盤）
         "exit_date",
-        "actual_exit_price",
+        "actual_exit_price", // CLOSED_PROFIT→target；CLOSED_LOSS→stop_loss；FORCE_EXPIRED→close
         "exit_reason",       // CLOSED_PROFIT / CLOSED_LOSS / FORCE_EXPIRED
         "holding_days"
       },
@@ -182,12 +263,17 @@ def _is_expired(entry: dict) -> bool:
 
 - [ ] watch 股票連跑 6 次（6 個交易日），第 6 次出現在 `expired`，不是 `watch`
 - [ ] active 部位不因 `_is_expired()` 到期：跑超過 10 次而未觸發停利/停損/FORCE_EXPIRED，不出現在 expired
-- [ ] CLOSED_PROFIT：手動將 watchlist entry 的 `target` 設為略低於 `current_price` → 觸發歸檔，從 watchlist 消失，出現在 `categories["settled"]`
-- [ ] CLOSED_LOSS：`stop_loss` 設為略高於 `current_price` → 觸發歸檔
-- [ ] FORCE_EXPIRED：手動將 `active_days` 設為等於 `hold_period` 解析值 → 觸發歸檔
+- [ ] CLOSED_PROFIT：手動將 today_high 設為高於 target → 觸發歸檔，`actual_exit_price = target`（非 today_high）
+- [ ] CLOSED_LOSS：手動將 today_low 設為低於 stop_loss → 觸發歸檔，`actual_exit_price = stop_loss`
+- [ ] 黑天鵝：today_low ≤ stop_loss 且 today_high ≥ target 同時成立 → 結算為 CLOSED_LOSS
+- [ ] FORCE_EXPIRED：手動將 `active_days` 設為等於 `hold_period` 解析值 → 觸發歸檔，`actual_exit_price = close`
 - [ ] 歸檔後 `performance_history.json` 有新紀錄，`return_pct` 計算正確，`is_win` 符號正確
 - [ ] `entry_regime` 有值（非空字串），來自 `market_context["regime"]`
 - [ ] `actual_entry_price` = 首次轉 active 當日的收盤價（非 buy_zone_lower）
 - [ ] 反轉策略股票（strategy="反轉策略"）：`price=179, stop_loss="$180"` → invalid；`price=175, ema20=176` → **仍依 stop_loss 判斷**，不依 EMA20
 - [ ] 動能策略股票：`price < ema20` → invalid，即使 `price > stop_loss`
-- [ ] 拆股模擬：`signal_date_close=300`，close_series 信號日顯示 100 → `split_factor≈0.333`，門檻等比例縮小
+- [ ] 拆股模擬：`signal_date_close=300`，close_series 信號日顯示 100 → `split_factor≈0.333`，門檻等比例縮小，stop_loss 與 target 均縮放
+- [ ] **1-day lag**：今日新選股（全新 sym），當日 close 已在買入區間 → 仍保持 `watch`，不立即 `active`
+- [ ] **Active 免疫**：active 持倉再次出現在 L3 選股 → status/active_days/active_entry_price 完整保留，不被重置
+- [ ] **Watch 覆寫**：watch 個股再次出現在 L3 選股 → watch_days 歸零，date_added 更新為今日，AI 參數刷新
+- [ ] **停牌 NaN**：today_high/today_low 為 NaN 的股票 → 不觸發結算（fallback 為 close，stop_loss/target 條件不滿足）
