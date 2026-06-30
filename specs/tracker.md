@@ -12,10 +12,10 @@
 [新加入] → watch
   watch  → active   （次日 price 落入 buy_zone，1-day lag）
   watch  → invalid  （失效條件觸發）
-  watch  → expired  （watch_days >= MAX_WATCH_DAYS=5）
+  watch  → expired  （watch_days >= 策略對應 watch 上限：突破/動能=5日，反轉=10日）
   active → settled  （CLOSED_PROFIT / CLOSED_LOSS / FORCE_EXPIRED，歸檔至 performance_history.json）
   active → invalid  （失效條件觸發，e.g. 跌破止損但尚未達結算門檻）
-  invalid → expired （_days() >= MAX_WATCH_DAYS）
+  invalid → expired （_days() >= 策略對應 watch 上限）
 ```
 
 **active 部位不再由 `_is_expired()` 到期**，改由 `_check_settlement()` 控制完整生命週期。
@@ -243,6 +243,32 @@ def _is_expired(entry: dict) -> bool:
 - **原因**：原順序 B/C→D→E 導致：(1) 新選股用同日 close 立即評估，缺少 1-day lag；(2) watch 狀態的舊個股在評估前被覆蓋為新 AI 參數，可能因買入區間不同而錯失進場。`date.today()` 在本地 CST 早晨執行與 CI UTC 盤後執行可能相差一天，導致 `is_rerun` 機制與 `date_added` 異常
 - **捨棄**：在 B/C 後對新加入條目設 skip flag（增加複雜度）；繼續用 `date.today()`（時區漂移，本地/CI 行為不一致）
 
+### DD-12: 風控雙欄位（planned_stop_loss + effective_stop_loss）
+
+- **選擇**：`planned_stop_loss`（float）為 AI 原始值，唯讀，專作 DD-3 拆股基底；`effective_stop_loss`（float）為動態止損；`is_breakeven_locked`（bool）保本鎖定旗標
+- **原因**：保本鎖定後 `effective_stop_loss` 上移至 `buy_zone_upper`，若僅存一個欄位，拆股縮放基底不明確，累積除法誤差；分離後各司其職
+- **捨棄**：單欄位 stop_loss（拆股後基底不可信）
+
+### DD-13: 全自動保本鎖定與移動停利
+
+- **選擇**：進場後收盤達目標距離 50% 時自動鎖定保本（`effective_stop_loss` 上移至 `buy_zone_upper`）；動能/突破策略峰值浮盈超過 10% 後收盤回撤 5% 觸發 `CLOSED_TRAILING_STOP`
+- **原因**：手動設定保本點容易遺漏；移動停利鎖定已兌現部分利潤，防止高峰回吐
+- **捨棄**：固定停利（錯失更大上漲）；無保本鎖定（V型反彈後止損在買入區間以下，部位歸零）
+
+### DD-14: ai_confidence 最低門檻過濾（tracker B/C 步驟）
+
+- **選擇**：B/C 步驟處理 new_ranked 時，`confidence < MIN_AI_CONFIDENCE`（預設 6）的個股直接跳過，不加入 watchlist
+- **原因**：`ranker.py` 已要求 AI 提供 1-10 的信心分數，存入 watchlist 的 `ai_confidence` 欄位，但從未用於任何過濾。信心 5 分以下的選股屬於 AI 自評「不確定」的狀況，加入 watchlist 卻無法區分處理，等同白收數據。門檻設 6（預設），可透過 `MIN_AI_CONFIDENCE` env var 調整。`ranker.py` 預設 fallback 為 5，因此設 6 意味著 AI 明確給分低於 6 或未給分的選股均被過濾。
+- **欄位路徑**：`ranker.py` 回傳的 dict 中為 `"confidence"`（int）；tracker 讀取時使用 `stock.get("confidence") or 0`，None/缺失均視為 0（不通過）
+- **捨棄**：在 ranker.py 過濾（使架構耦合）；無門檻保持現狀（信心數據形同虛設）
+
+### DD-15: 依策略差異化 watch 天數上限
+
+- **選擇**：以 `_WATCH_DAYS_BY_STRATEGY` 字典 + `_DEFAULT_WATCH_DAYS=5` 替換 `MAX_WATCH_DAYS=5` 常數；`反轉策略` 對應 10 日，其餘策略維持 5 日
+- **原因**：突破/動能策略的進場信號具時效性，超過 5 天未突破則 setup 失效，5 日合理；反轉策略的底部確認需要更長時間醞釀（底部整理、拋壓衰竭），5 日 expired 太早，常在真正反彈前就被移除。差異化 watch 上限讓兩類策略各取所需。
+- **`_max_watch_days(entry)` 函式**：讀取 `entry["strategy"]`，查表回傳對應上限，查無則回傳 `_DEFAULT_WATCH_DAYS`
+- **捨棄**：統一 5 日（對反轉策略過短）；統一 10 日（突破/動能 setup 過期後 5 天仍佔用 watchlist）
+
 ---
 
 ## performance_history.json Schema
@@ -305,3 +331,9 @@ def _is_expired(entry: dict) -> bool:
 - [ ] **移動停利**：`highest_close_since_active=115`（>10% 盈），收盤跌至 109（≥5% 回撤）→ 結算 `CLOSED_TRAILING_STOP`，`exit_price=109`（close），`is_win=true`（正回報）
 - [ ] **反轉策略排除**：反轉股滿足回撤條件 → 不觸發 `CLOSED_TRAILING_STOP`
 - [ ] **開倉當日停損**：新進股首次轉 active 當日 today_low 觸及 stop_loss → 正常觸發 CLOSED_LOSS，`return_pct` 為負數（非 inf）
+- [ ] **DD-14 信心過濾**：confidence=5 的新選股（MIN_AI_CONFIDENCE=6）→ 不加入 watchlist，log 顯示「AI 信心分數 5 < 6，跳過」
+- [ ] **DD-14 信心通過**：confidence=6 的新選股 → 正常加入 watchlist
+- [ ] **DD-14 信心缺失**：confidence=None/缺失 → 視為 0，不加入 watchlist
+- [ ] **DD-15 反轉策略 watch**：strategy="反轉策略" 的 watch 股票追蹤 5 日 → 仍在 watchlist（未 expired）
+- [ ] **DD-15 反轉策略 expired**：strategy="反轉策略" 的 watch 股票追蹤 10 日 → 進入 expired
+- [ ] **DD-15 突破策略 expired**：strategy="突破策略" 的 watch 股票追蹤 5 日 → 進入 expired（行為不變）

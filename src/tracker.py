@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 from datetime import date, timedelta
 from pathlib import Path
@@ -14,7 +15,11 @@ _DATA_DIR        = Path(__file__).parent.parent / "data"
 _WATCHLIST_PATH  = _DATA_DIR / "watchlist.json"
 _PERF_PATH       = _DATA_DIR / "performance_history.json"
 
-MAX_WATCH_DAYS    = 5       # watch 狀態最多等 5 個交易日（進場有效期限）
+MIN_AI_CONFIDENCE  = int(os.getenv("MIN_AI_CONFIDENCE", "6"))  # AI 信心分數最低門檻（DD-14）
+_DEFAULT_WATCH_DAYS = 5                    # 突破/動能策略 watch 上限（DD-15）
+_WATCH_DAYS_BY_STRATEGY: dict[str, int] = {
+    "反轉策略": 10,                         # 底部確認需更長時間
+}
 _DEFAULT_HOLD_DAYS = 10     # hold_period 無法解析時的預設持倉天數
 
 # 結算原因常數
@@ -447,16 +452,21 @@ def _days(entry: dict) -> int:
     return len(entry.get("tracked_dates", []))
 
 
+def _max_watch_days(entry: dict) -> int:
+    """依策略回傳 watch/invalid 天數上限（DD-15）。"""
+    return _WATCH_DAYS_BY_STRATEGY.get(entry.get("strategy", ""), _DEFAULT_WATCH_DAYS)
+
+
 def _is_expired(entry: dict) -> bool:
     """
     判斷是否已到期應移除。
-    - watch / invalid：超過 MAX_WATCH_DAYS 個追蹤日即到期
+    - watch / invalid：超過策略對應 watch 上限（DD-15）個追蹤日即到期
     - active：由 _check_settlement() 接管（FORCE_EXPIRED），此處永不到期
     """
     status = entry.get("status", "watch")
     if status == "active":
         return False   # active 部位由結算邏輯控制生命週期
-    return _days(entry) >= MAX_WATCH_DAYS
+    return _days(entry) >= _max_watch_days(entry)
 
 
 # ── 主函式 ──────────────────────────────────────────────────────────
@@ -624,6 +634,10 @@ def run_tracker(
 
     for stock in new_ranked:
         sym = stock["symbol"]
+        confidence = stock.get("confidence") or 0
+        if confidence < MIN_AI_CONFIDENCE:
+            print(f"[tracker] {sym} AI 信心分數 {confidence} < {MIN_AI_CONFIDENCE}，跳過")
+            continue
         parsed = _parse_buy_zone(stock.get("buy_zone", "-"))
         if parsed is None:
             continue
