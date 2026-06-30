@@ -34,7 +34,7 @@ def _load_performance_stats() -> dict:
     records = [
         r for r in data.get("history_records", [])
         if r.get("actual_outcome", {}).get("exit_reason") in (
-            "CLOSED_PROFIT", "CLOSED_LOSS", "FORCE_EXPIRED"
+            "CLOSED_PROFIT", "CLOSED_LOSS", "CLOSED_TRAILING_STOP", "FORCE_EXPIRED"
         )
     ]
     if not records:
@@ -443,6 +443,8 @@ def _settled_row(e: dict) -> str:
         reason_html = '<span class="c-active">🎯 達到目標價，停利出場</span>'
     elif exit_reason == "CLOSED_LOSS":
         reason_html = '<span class="c-invalid">🛑 觸發止損，停損出場</span>'
+    elif exit_reason == "CLOSED_TRAILING_STOP":
+        reason_html = '<span class="c-watch">📈 移動停利觸發，鎖利出場</span>'
     else:
         reason_html = f'<span class="c-watch">⏰ 持倉期限（{active_days} 天）已到，強制出場</span>'
 
@@ -733,7 +735,7 @@ _INFO_HTML = """
       <tr><td>🟡 watch</td><td>略高於買入區間等待回落，或低於下限但尚未跌破止損（繼續觀察）</td></tr>
       <tr><td>❌ invalid</td><td>趨勢轉弱、跌破止損或開盤跳空攔截，訊號失效</td></tr>
       <tr><td>🗑 expired</td><td>觀察滿 5 個交易日，自動移除</td></tr>
-      <tr><td>📦 settled</td><td>停利／停損／到期結算，歸檔績效資料庫</td></tr>
+      <tr><td>📦 settled</td><td>停利／停損／移動停利／到期結算，歸檔績效資料庫</td></tr>
     </table>
   </div>
 
