@@ -9,7 +9,7 @@ import pandas as pd
 
 
 MIN_PRICE = float(os.getenv("MIN_PRICE", "5"))
-MIN_VOLUME = float(os.getenv("MIN_VOLUME", "500000"))
+MIN_DOLLAR_VOLUME = float(os.getenv("MIN_DOLLAR_VOLUME", "10000000"))  # $10M/日
 MIN_MARKET_CAP = float(os.getenv("MIN_MARKET_CAP", "300000000"))
 MIN_TRADING_DAYS = 5   # 近5日至少有5筆數據（排除停牌）
 EARNINGS_BLACKOUT_DAYS = 3
@@ -24,8 +24,8 @@ def apply_filters(
 
     篩選條件：
     - 最新收盤價 > MIN_PRICE
-    - 近 30 日平均成交量 > MIN_VOLUME
-    - 市值 > MIN_MARKET_CAP
+    - 近 30 日平均日成交額 > MIN_DOLLAR_VOLUME（股數 × 收盤價）
+    - 市值 > MIN_MARKET_CAP；市值 None（API 缺失）視同不足直接排除
     - 近 5 日有交易（至少 5 筆有效數據）
     """
     passed: list[str] = []
@@ -46,17 +46,21 @@ def apply_filters(
         latest_close = float(close.iloc[-1])
         recent_5 = close.tail(5)
         avg_vol_30 = float(volume.tail(30).mean()) if len(volume) >= 30 else float(volume.mean())
+        avg_dollar_vol_30 = avg_vol_30 * latest_close
         market_cap = (info_data.get(sym) or {}).get("market_cap")
 
         if latest_close <= MIN_PRICE:
             reasons[sym] = f"股價偏低(${latest_close:.2f})"
             continue
 
-        if avg_vol_30 < MIN_VOLUME:
-            reasons[sym] = f"成交量不足({avg_vol_30:,.0f})"
+        if avg_dollar_vol_30 < MIN_DOLLAR_VOLUME:
+            reasons[sym] = f"日成交額不足(${avg_dollar_vol_30/1e6:.1f}M)"
             continue
 
-        if market_cap is not None and market_cap < MIN_MARKET_CAP:
+        if market_cap is None:
+            reasons[sym] = "市值數據缺失"
+            continue
+        if market_cap < MIN_MARKET_CAP:
             reasons[sym] = f"市值偏小(${market_cap/1e6:.0f}M)"
             continue
 

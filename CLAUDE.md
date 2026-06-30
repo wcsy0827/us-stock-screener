@@ -40,7 +40,7 @@ S&P 500 (~503 支)
                               回傳 (regime, breadth_pct, vix_value)，供 Step 5.5 複用
   ↓ Step 3   fetcher.py      抓基本面（7 日快取），順帶提取 earningsDate 欄位
   ↓ Step 3.5 earnings.py     財報日查詢（Tier 1+2）→ earnings_registry.json（30 日快取）
-  ↓ Step 4   filter.py       L1 流動性硬篩（股價/均量/市值/交易天數）
+  ↓ Step 4   filter.py       L1 流動性硬篩（股價/日成交額/市值/交易天數）
   ↓ Step 4.5 earnings.py     Tier 3 精準補抓（僅對流動性篩選後倖存個股）
              filter.py       財報防禦牆（排除 3 天內有財報的個股）
   ↓ Step 5   scorer.py       L2 技術評分（動態門檻；量能 K_pos 綁定；ATR 倍數動能）
