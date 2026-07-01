@@ -118,6 +118,8 @@ S&P 500 (~503 支)
 
 15. **廣度遲滯帶防邊界翻轉（market.py DD-5）**：`fetch_regime_quick()` 讀取前一日 `last_run.json` 的 `regime`，廣度在邊界 ±2%（60% 或 35%）內時維持前日 Regime；VIX 跨越結構邊界（高 VIX 組 PANIC/CONSOLIDATION_VOLATILE ↔ 低 VIX 組）時強制放行，不套用遲滯。`last_market_date < current_market_date` 嚴格校驗，防止同日重複執行污染。→ 詳見 `specs/market.md`
 
+16. **動能策略買進區間結構化（ranker.py DD-12）**：候選池表格新增 `EMA5`/`EMA10`/`EMA20`（美元原始價位）與 `Vol_vs_5DAvg`（當日量 ÷ 5日均量）四欄，解決 AI 過去只有 `MA_Trend` 文字標籤、無實際 EMA 數值可用而把 `buy_zone` 上限退化成收盤價的問題。動能策略 Prompt 改為三段式規則：標準回檔進場設在 `EMA20~EMA10` 且 `Vol_vs_5DAvg < 0.7`（量縮確認）；極端強勢例外可用 `EMA5` 附近（5MA 探針帶）；股價距 `EMA5` 超過 +5% 視為過度延伸禁止追價。`buy_zone` 仍由 AI 自行輸出字串，不改為 Python 端確定性計算。→ 詳見 `specs/ranker.md`
+
 12. **報告日期與防重複執行皆錨定 UTC（main.py / tracker.py）**：CI 在 UTC 時區執行；台灣時間 7/1 08:00 = UTC 6/30 24:00，yfinance 此時拿到的最後數據仍是 6/30——報告正確標示 6/30 是預期行為，不是 bug。規則如下：
     - **`main.py`**：`stats["date"]` 必須用 `datetime.strptime(market_date_str, "%Y-%m-%d")`（`market_date_str` 來自 `summary["market_date"]` = `price_data["SPY"].index[-1].date()`），**不得用 `datetime.now()`**。`datetime.now()` 在非 UTC 時區執行時，與 market_date 不一致，會產生「報告標題 7/1、數據內容 6/30」的誤導標籤。
     - **`tracker.py`**：`check_already_run_today()` 使用 `datetime.utcnow().date()` 而非 `date.today()`，確保台灣本地執行時防重複邏輯與 CI 時區一致。`run_tracker()` 內的 `today` 繼續由 `market_date` 注入（DD-11 不變）。
