@@ -11,7 +11,7 @@
 | Step | 模組 | 輸入 | 輸出 | 快取 |
 |------|------|------|------|------|
 | 1 | universe.py | — | symbols: list[str] | 無 |
-| 2 | fetcher.py | symbols | price_data: dict | `.cache/price_YYYYMMDD.pkl`（當日） |
+| 2 | fetcher.py | symbols + ETF tickers | price_data: dict（含板塊 ETF 及 SPY） | `.cache/price_YYYYMMDD.pkl`（當日） |
 | 2.5 | market.py | price_data | regime_quick: str | 無 |
 | 3 | fetcher.py | symbols | info_data: dict | `.cache/info_YYYYMMDD.json`（7 日） |
 | 3.5 | earnings.py | symbols, info_data | earnings_data: dict | `.cache/earnings_registry.json`（30 日） |
@@ -29,10 +29,10 @@
 
 | 資料類型 | 快取機制 | 失效條件 |
 |----------|----------|----------|
-| 日 K 數據 | `price_YYYYMMDD.pkl`，日期不符即重下 | 跨日 |
+| 日 K 數據（含板塊 ETF） | `price_YYYYMMDD.pkl`，日期不符即重下；若快取中缺少 SPY 也視為無效 | 跨日或 SPY 缺失 |
 | 基本面資訊 | 掃描 7 日內最新 `info_*.json` | 超過 7 日無任何快取 |
 | 財報日期 | `earnings_registry.json`，per-symbol TTL 判斷 | 各股 cached_at 超過 30 天 |
-| ETF / 大盤 | 無快取 | 每次執行都重新下載 |
+| ETF / 大盤（AI Prompt 用） | 無快取 | 每次 Step 5.5 都重新下載，確保 AI 看到最新數據 |
 
 - `--no-cache` 旗標：跳過所有快取，強制重下
 - `clear_old_cache()`：執行前清除超過 7 日的 `.cache/` 檔案
@@ -90,6 +90,21 @@ def run(
 - **選擇**：`candidate_sectors = {info_data.get(c["symbol"], {}).get("sector") for c in candidates}`，只取候選股所在產業
 - **原因**：下載 11 個 ETF 增加耗時。L2 篩完後候選通常來自 3-5 個產業，只下載這幾支 ETF 夠用。
 - **捨棄**：下載全部 11 個 ETF（多餘網路請求，ETF 不在候選產業中也無助 AI 推理）
+
+### DD-4: 板塊 ETF 納入 Step 2 全域下載
+
+- **選擇**：`pipeline.py` 在 Step 2 下載 S&P 500 股票時，同步將 11 支板塊 ETF（XLK/XLV/XLF 等）與 SPY 一併加入批次，存入 `.cache/price_YYYYMMDD.pkl`
+- **原因**：scorer.py 在 Step 5 計算 L2 相對強度（RS）分數需要板塊 ETF 的日 K 數據，但 Step 5.5 尚未執行，ETF 尚未下載。將 ETF 納入 Step 2 讓 `price_data` 在 Step 5 時就包含 ETF 資料，避免 scorer.py 內部觸發臨時 I/O（違反「集中下載、快取複用」原則）。
+- **與 Step 5.5 的區別**：Step 5.5 的 `fetch_market_context()` 仍然對 SPY 和板塊 ETF 發出新的網路請求，確保 AI Prompt 使用的是最新數據（含完整 60 日歷史及最新漲跌）。Step 2 快取的 ETF 數據供 scorer.py 使用，Step 5.5 的結果供 AI 使用，兩者用途不同。
+- **快取有效性**：若現有快取缺少 SPY，視同無效快取並強制重新下載（避免舊快取導致 RS 計算缺失 ETF 數據）。
+- **廣度計算保護**：`calculate_market_breadth()` 必須排除 ETF tickers（見 DD-5），確保板塊 ETF 不計入 S&P 500 廣度分母。
+- **捨棄**：在 Step 2.5 另行下載 ETF（需改動 `fetch_regime_quick()` 接口，且 VIX Gate 邏輯複雜化）；在 scorer.py 內部觸發即時下載（破壞模組職責邊界，且 scorer 不應有 I/O 副作用）
+
+### DD-5: 市場廣度計算排除板塊 ETF
+
+- **選擇**：`calculate_market_breadth()` 內部以 `_BREADTH_EXCLUDED` frozenset 過濾，跳過 11 支板塊 ETF 及 SPY
+- **原因**：DD-4 將 ETF 加入 `price_data` 後，若不過濾，ETF 會被計入廣度分母。板塊 ETF 是追蹤工具，不是 S&P 500 成分股，不應影響廣度百分比。
+- **捨棄**：在 `pipeline.py` 傳入篩選後的 `price_data`（增加額外資料結構，且 `fetch_market_context` 的廣度計算也需同步修改）
 
 ### DD-3: L3 失敗降級至 L2 前 top_n
 

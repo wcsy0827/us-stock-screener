@@ -90,6 +90,12 @@ def fetch_earnings_dates(
 - **原因**：yfinance `.info` 的 `earningsDate` 欄位填充率約 60-70%，空值不代表「無財報」，可能只是 yfinance 未填充
 - **捨棄**：Tier 2 null 直接快取為「無財報」（漏報率高，防禦牆失效）
 
+### DD-E4: 財報防禦窗口設為 5 天（而非 3 天）
+
+- **選擇**：`EARNINGS_BLACKOUT_DAYS = 5`，排除未來 5 個自然日內有已知財報的個股
+- **原因**：實務觀察，大型機構通常在財報前 3~5 天開始調倉，隱含波動率（IV）顯著上升，期权溢價膨脹；若停留在 3 天窗口，可能在 IV 高位進場，實際風險報酬比已被壓縮。擴大至 5 天可涵蓋多數 pre-earnings 波動開始的時間點。
+- **捨棄**：維持 3 天（仍可能在 IV 高點進場）；擴大至 7 天（超過一個自然週，邊際效益低且排除過多標的）
+
 ### DD-E3: registry TTL 獨立設定為 30 天
 
 - **選擇**：不跟隨 `info_*.json` 的 7 天清理機制
@@ -102,5 +108,5 @@ def fetch_earnings_dates(
 - [ ] 第二次執行（同日）：所有 liq_filtered 個股命中 Tier 1 → Tier 3 不觸發（print 不出現 "Tier 3 補抓"）
 - [ ] registry 某股 tier=2 且 next_earnings=null → 第二次執行（該股在 liq_filtered 中）→ Tier 3 觸發
 - [ ] registry 某股 tier=3 且 next_earnings=null → 第二次執行 → Tier 1 命中，Tier 3 不觸發
-- [ ] next_earnings 距今 <= 3 天 → `apply_earnings_filter()` 排除該股
+- [ ] next_earnings 距今 <= 5 天 → `apply_earnings_filter()` 排除該股
 - [ ] next_earnings 為 None → 視為「無已知財報」，通過防禦牆

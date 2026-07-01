@@ -6,17 +6,30 @@ import json
 import os
 import re
 import time
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 from openai import OpenAI
+
+from market import SECTOR_ETF_MAP
 
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
 DEEPSEEK_BASE_URL = "https://api.deepseek.com/v1"
 DEEPSEEK_MODEL = "deepseek-chat"
 MAX_CANDIDATES_TO_AI = 40   # 最多送給 AI 的候選股數量（已按 L2 分排序，取前 N）
+MAX_SECTOR_CANDIDATES = 8   # 每產業最多保留支數（_diversify_candidates，DD-11）
 MAX_RETRIES = 3
+
+# CONSOLIDATION_VOLATILE Regime 的額外 Prompt 指引（D5）
+_REGIME_EXTRA_HINT: dict[str, str] = {
+    "CONSOLIDATION_VOLATILE": (
+        "⚠️ 注意：當前為【高 VIX 整理期】，策略應採保守突破，"
+        "要求更顯著的確認訊號（VTF_Score >= 2.0、MACD POS_INC、RSI 在 50~65 之間），"
+        "訊號不夠明確的標的一律跳過。"
+    ),
+}
 
 _CACHE_DIR = Path(__file__).parent.parent / ".cache"
 
@@ -26,7 +39,7 @@ def _ranked_cache_path(market_date: str) -> Path:
     return _CACHE_DIR / f"ranked_{date_str}.json"
 
 
-# ── 指標計算（純 pandas） ────────────────────────────────────────
+# ── 指標計算（純 pandas / numpy）────────────────────────────────
 
 def _ema(series: pd.Series, span: int) -> float:
     return float(series.ewm(span=span, adjust=False).mean().iloc[-1])
@@ -50,37 +63,80 @@ def _macd_hist(series: pd.Series) -> float:
     return float(hist.iloc[-1]) if not hist.empty else float("nan")
 
 
-def compute_indicators(sym: str, df: pd.DataFrame) -> dict:
-    """從 OHLCV DataFrame 計算送給 AI 的原始指標數值。"""
+def compute_indicators(
+    sym: str,
+    df: pd.DataFrame,
+    r_spy_global: pd.Series | None = None,
+    earnings_days_left: int | None = 99,
+) -> dict:
+    """
+    計算單支股票指標供 Markdown 表格使用。
+    r_spy_global 由呼叫端預計算一次傳入（不在函式內重複計算），None 時 beta_60d 回傳 None。
+    earnings_days_left 由外層依財報快取計算後傳入（架構解耦）。
+    """
     close = df["Close"].dropna()
     volume = df["Volume"].dropna()
+    high = df["High"].dropna()
+    low = df["Low"].dropna()
 
     price_now  = float(close.iloc[-1])
     price_prev = float(close.iloc[-2])  if len(close) >= 2  else price_now
     price_5d   = float(close.iloc[-5])  if len(close) >= 5  else price_now
     price_20d  = float(close.iloc[-20]) if len(close) >= 20 else price_now
 
-    change_1d  = (price_now - price_prev) / price_prev * 100 if price_prev else 0.0
-    change_5d  = (price_now - price_5d)   / price_5d   * 100 if price_5d   else 0.0
-    change_20d = (price_now - price_20d)  / price_20d  * 100 if price_20d  else 0.0
+    change_1d = (price_now - price_prev) / price_prev * 100 if price_prev else 0.0
+    change_5d = (price_now - price_5d)   / price_5d   * 100 if price_5d   else 0.0
 
-    avg_vol_30 = float(volume.tail(30).mean()) if len(volume) >= 30 else float(volume.mean())
-    today_vol = float(volume.iloc[-1])
-    vol_ratio = today_vol / avg_vol_30 if avg_vol_30 else 0.0
-
-    ema5 = _ema(close, 5) if len(close) >= 5 else float("nan")
+    # EMA
+    ema5  = _ema(close, 5)  if len(close) >= 5  else float("nan")
     ema10 = _ema(close, 10) if len(close) >= 10 else float("nan")
     ema20 = _ema(close, 20) if len(close) >= 20 else float("nan")
     ema50 = _ema(close, 50) if len(close) >= 50 else float("nan")
-    rsi = _rsi(close) if len(close) >= 14 else float("nan")
-    macd_h = _macd_hist(close) if len(close) >= 35 else float("nan")
+    rsi   = _rsi(close)     if len(close) >= 14 else float("nan")
 
-    # 突破策略：20 日整理區間
+    # VTF_Score（量能推進因子，DD-9）
+    avg_vol_30 = float(volume.tail(30).mean()) if len(volume) >= 30 else (float(volume.mean()) if len(volume) > 0 else 0.0)
+    vol_ratio  = float(volume.iloc[-1]) / avg_vol_30 if avg_vol_30 > 0 else 1.0
+    h_last = float(high.iloc[-1]) if len(high) >= 1 else price_now
+    l_last = float(low.iloc[-1])  if len(low)  >= 1 else price_now
+    k_pos = 0.5 if h_last == l_last else (price_now - l_last) / (h_last - l_last)
+    vtf_score: float | None = round(max(-5.0, vol_ratio * (2 * k_pos - 1)), 2)
+
+    # ATR14
+    atr14: float | None = None
+    if len(close) >= 15 and len(high) >= 15 and len(low) >= 15:
+        prev_close = close.shift(1)
+        tr = pd.concat([
+            high - low,
+            (high - prev_close).abs(),
+            (low - prev_close).abs(),
+        ], axis=1).max(axis=1)
+        atr_series = tr.ewm(alpha=1 / 14, adjust=False).mean().dropna()
+        if not atr_series.empty:
+            atr14 = float(atr_series.iloc[-1])
+
+    # Momentum_ATR（ATR 標準化 20 日動能）
+    momentum_atr: float | None = None
+    if len(close) >= 20 and atr14 is not None and atr14 > 0:
+        momentum_atr = round((price_now - price_20d) / atr14, 2)
+
+    # Beta_60D（需 r_spy_global）
+    beta_60d: float | None = None
+    if r_spy_global is not None and len(close) >= 31:
+        r_stock = close.pct_change().dropna()
+        r_s_aln, r_spy_aln = r_stock.align(r_spy_global, join="inner")
+        clean = pd.concat([r_s_aln, r_spy_aln], axis=1).dropna()
+        clean_60 = clean.tail(60)
+        if len(clean_60) >= 30:
+            cov = np.cov(clean_60.iloc[:, 0], clean_60.iloc[:, 1])
+            if cov[1, 1] != 0:
+                beta_60d = round(float(cov[0, 1] / cov[1, 1]), 2)
+
+    # Strategy_Tag 所需欄位（保留）
+    macd_h = _macd_hist(close) if len(close) >= 35 else float("nan")
     high_20d = float(df["High"].tail(20).max()) if len(df) >= 20 else price_now
     low_20d  = float(df["Low"].tail(20).min())  if len(df) >= 20 else price_now
     dist_from_20d_high_pct = round((price_now - high_20d) / high_20d * 100, 2) if high_20d else 0.0
-
-    # 反轉策略：RSI 方向 + Stochastic + EMA50 距離
     rsi_5d_ago = _rsi(close.iloc[:-5]) if len(close) >= 19 else float("nan")
     low14  = float(df["Low"].tail(14).min())  if len(df) >= 14 else price_now
     high14 = float(df["High"].tail(14).max()) if len(df) >= 14 else price_now
@@ -95,20 +151,21 @@ def compute_indicators(sym: str, df: pd.DataFrame) -> dict:
         "price": round(price_now, 2),
         "change_1d_pct":  round(change_1d, 2),
         "change_5d_pct":  round(change_5d, 2),
-        "change_20d_pct": round(change_20d, 2),
-        "avg_volume_30d": int(avg_vol_30),
-        "volume_ratio": round(vol_ratio, 2),
         "ema5": _fmt(ema5),
         "ema10": _fmt(ema10),
         "ema20": _fmt(ema20),
         "ema50": _fmt(ema50),
         "rsi": _fmt(rsi),
         "macd_hist": _fmt(macd_h, 4),
-        # 突破策略
+        "vtf_score": vtf_score,
+        "momentum_atr": momentum_atr,
+        "beta_60d": beta_60d,
+        "earnings_days_left": earnings_days_left,
+        # 供 _strategy_tag 使用
+        "volume_ratio": round(vol_ratio, 2),
         "high_20d": round(high_20d, 2),
         "low_20d":  round(low_20d, 2),
         "dist_from_20d_high_pct": dist_from_20d_high_pct,
-        # 反轉策略
         "rsi_5d_ago":          _fmt(rsi_5d_ago),
         "stoch_k":             stoch_k,
         "dist_from_ema50_pct": dist_from_ema50_pct,
@@ -150,9 +207,9 @@ def _macd_hist_tag(close: pd.Series) -> str:
 
 def _strategy_tag(indic: dict) -> str:
     """根據技術指標推薦最可能適用的策略標籤（MOMENTUM / BREAKOUT / REVERSAL / NEUTRAL）。"""
-    rsi     = indic.get("rsi") or 0.0
-    vol     = indic.get("volume_ratio") or 0.0
-    stoch   = indic.get("stoch_k") or 50.0
+    rsi      = indic.get("rsi") or 0.0
+    vol      = indic.get("volume_ratio") or 0.0
+    stoch    = indic.get("stoch_k") or 50.0
     dist_20d = indic.get("dist_from_20d_high_pct") or -99.0
     rsi_prev = indic.get("rsi_5d_ago")
     ema5, ema20, ema50 = indic.get("ema5"), indic.get("ema20"), indic.get("ema50")
@@ -166,32 +223,94 @@ def _strategy_tag(indic: dict) -> str:
     return "NEUTRAL"
 
 
+def _calc_rs_vs_sector(
+    sym: str,
+    df: pd.DataFrame,
+    sector: str,
+    price_data: dict,
+) -> float | None:
+    """
+    計算個股 5 日報酬率 − 板塊 ETF 5 日報酬率（DD-10）。
+    板塊未知或 ETF 缺資料 → fallback SPY；ETF 數據不足 5 日 → None。
+    """
+    close = df["Close"].dropna()
+    if len(close) < 5:
+        return None
+    p_start = float(close.iloc[-5])
+    if p_start == 0:
+        return None
+    stock_5d = (float(close.iloc[-1]) - p_start) / p_start * 100
+
+    etf_ticker = SECTOR_ETF_MAP.get(sector, "") if sector else ""
+    if not etf_ticker or etf_ticker not in price_data:
+        etf_ticker = "SPY"
+    etf_df = price_data.get(etf_ticker)
+    if etf_df is None or etf_df.empty:
+        return None
+    etf_close = etf_df["Close"].dropna()
+    if len(etf_close) < 5:
+        return None
+    etf_start = float(etf_close.iloc[-5])
+    if etf_start == 0:
+        return None
+    etf_5d = (float(etf_close.iloc[-1]) - etf_start) / etf_start * 100
+
+    return round(stock_5d - etf_5d, 1)
+
+
+def _calc_earnings_days(
+    sym: str,
+    earnings_data: dict | None,
+    current_date: date,
+) -> int | None:
+    """
+    從 earnings_data 計算距下次財報的日曆天數。
+    None = 數據斷裂（AI 排除）；99 = 安全。
+    """
+    if earnings_data is None:
+        return 99
+    ed_str = earnings_data.get(sym)
+    if ed_str is None:
+        return 99
+    try:
+        ed_date = date.fromisoformat(str(ed_str)[:10])
+        days = (ed_date - current_date).days
+        return min(days, 99) if days >= 0 else 99
+    except Exception:
+        return None  # 日期格式異常 = 數據斷裂
+
+
 def _generate_candidates_markdown_table(
     candidates: list[dict],
     price_data: dict[str, pd.DataFrame],
     info_data: dict[str, dict],
+    earnings_data: dict | None = None,
+    current_date: date | None = None,
 ) -> str:
     """
-    將 L2 候選股清單轉換為高密度 Markdown 表格，節省 Token 並便於 AI 橫縱向對比推理。
-
-    各欄位均為預處理後的標籤或數值：
-      MA_Trend      — 均線排列編碼（BULL_1/BULL_2/MIXED/BEAR）
-      MACD_Hist     — 直方圖狀態編碼（POS_INC/POS_DEC/NEG_INC/NEG_DEC）
-      Vol_Ratio     — 當日成交量 ÷ 30 日均量
-      Price_20D_Pct — 近 20 日價格漲跌幅
-      52W_High_Dist — 距 52 週最高點百分比
+    將 L2 候選股清單轉換為 15 欄 Markdown 表格（含 RS_vs_Sector，DD-10）。
     """
     _SECTOR_ABBR = {
         " Services": "", " Cyclical": "", " Defensive": "",
     }
 
+    # SPY 報酬率序列在迴圈外預計算一次（Beta_60D 用）
+    r_spy_global: pd.Series | None = None
+    spy_df = price_data.get("SPY")
+    if spy_df is not None and not spy_df.empty:
+        r_spy_global = spy_df["Close"].pct_change().dropna()
+
+    ref_date = current_date or date.today()
+
     header = (
         "| Ticker | Close_Price | Sector | L2_Score | Strategy_Tag | MA_Trend"
-        " | RSI | MACD_Hist | Vol_Ratio | Price_5D_Pct | Price_20D_Pct | 52W_High_Dist |"
+        " | RSI | MACD_Hist | VTF_Score | Price_5D_Pct | Momentum_ATR"
+        " | RS_vs_Sector | 52W_High_Dist | Beta_60D | Earnings_Days_Left |"
     )
     sep = (
         "|--------|-------------|--------|----------|--------------|----------"
-        "|-----|-----------|-----------|--------------|---------------|---------------|"
+        "|-----|-----------|-----------|--------------|-------------|"
+        "--------------|---------------|----------|-------------------|"
     )
     rows = [header, sep]
 
@@ -201,10 +320,12 @@ def _generate_candidates_markdown_table(
         if df is None:
             continue
 
-        indic = compute_indicators(sym, df)
+        ed_left = _calc_earnings_days(sym, earnings_data, ref_date)
+        indic = compute_indicators(sym, df, r_spy_global=r_spy_global, earnings_days_left=ed_left)
         info  = info_data.get(sym, {})
         close = df["Close"].dropna()
 
+        # 欄位計算
         ma_trend  = _ma_trend_tag(indic.get("ema5"), indic.get("ema10"), indic.get("ema20"), indic.get("ema50"))
         macd_tag  = _macd_hist_tag(close)
         strategy  = _strategy_tag(indic)
@@ -213,25 +334,63 @@ def _generate_candidates_markdown_table(
         rsi_val = indic.get("rsi")
         rsi_str = f"{rsi_val:.1f}" if rsi_val is not None else "N/A"
 
-        vol_ratio = indic.get("volume_ratio", 0.0)
-        p5d_str   = f"{indic.get('change_5d_pct', 0.0):+.1f}%"
-        p20d_str  = f"{indic.get('change_20d_pct', 0.0):+.1f}%"
+        vtf = indic.get("vtf_score")
+        vtf_str = f"{vtf:.2f}" if vtf is not None else "N/A"
+
+        p5d_str = f"{indic.get('change_5d_pct', 0.0):+.1f}%"
+
+        mom = indic.get("momentum_atr")
+        mom_str = f"{mom:.2f}" if mom is not None else "N/A"
+
+        # RS_vs_Sector（DD-10）
+        sector_raw = c.get("sector") or info.get("sector", "")
+        rs = _calc_rs_vs_sector(sym, df, sector_raw, price_data)
+        rs_str = f"{rs:+.1f}%" if rs is not None else "N/A"
 
         fw_high  = info.get("fifty_two_week_high")
         dist_52w = round((indic["price"] - fw_high) / fw_high * 100, 1) if fw_high else None
         dist_str = f"{dist_52w:+.1f}%" if dist_52w is not None else "N/A"
 
-        sector = info.get("sector", "Unknown")
+        beta = indic.get("beta_60d")
+        beta_str = f"{beta:.2f}" if beta is not None else "N/A"
+
+        ed = indic.get("earnings_days_left")
+        ed_str = "N/A" if ed is None else str(ed)
+
+        sector_display = sector_raw or "Unknown"
         for k, v in _SECTOR_ABBR.items():
-            sector = sector.replace(k, v)
+            sector_display = sector_display.replace(k, v)
 
         rows.append(
-            f"| {sym} | {price_str} | {sector} | {c['total_score']:.0f} | {strategy}"
-            f" | {ma_trend} | {rsi_str} | {macd_tag} | {vol_ratio:.2f}"
-            f" | {p5d_str} | {p20d_str} | {dist_str} |"
+            f"| {sym} | {price_str} | {sector_display} | {c['total_score']:.0f} | {strategy}"
+            f" | {ma_trend} | {rsi_str} | {macd_tag} | {vtf_str}"
+            f" | {p5d_str} | {mom_str} | {rs_str} | {dist_str} | {beta_str} | {ed_str} |"
         )
 
     return "\n".join(rows)
+
+
+# ── 產業多樣性保護 ───────────────────────────────────────────────
+
+def _diversify_candidates(
+    candidates: list[dict],
+    regime: str = "",
+    max_per_sector: int = MAX_SECTOR_CANDIDATES,
+) -> list[dict]:
+    """
+    對候選池做每產業上限截斷，防止同一板塊霸榜（DD-11）。
+    PANIC_REVERSAL 環境下，total_score < 40 的強制放行反轉股不受產業配額限制。
+    """
+    sector_counts: dict[str, int] = {}
+    result: list[dict] = []
+    for c in sorted(candidates, key=lambda x: x["total_score"], reverse=True):
+        sector = c.get("sector", "Unknown") or "Unknown"
+        is_panic_force = (regime == "PANIC_REVERSAL" and c["total_score"] < 40.0)
+        if is_panic_force or sector_counts.get(sector, 0) < max_per_sector:
+            result.append(c)
+            if not is_panic_force:
+                sector_counts[sector] = sector_counts.get(sector, 0) + 1
+    return result
 
 
 # ── Prompt 建構 ──────────────────────────────────────────────────
@@ -241,9 +400,12 @@ def _build_prompt(
     price_data: dict[str, pd.DataFrame],
     info_data: dict[str, dict],
     market_context: dict | None = None,
+    earnings_data: dict | None = None,
+    current_date: date | None = None,
 ) -> str:
     """以 XML 標籤包裹三大區塊，組裝結構化 Prompt 送給 DeepSeek。"""
     mc = market_context or {}
+    regime_code = mc.get("regime", "")
 
     # ── <Market_Regime> ───────────────────────────────────────────
     regime_hint = mc.get("ai_prompt_hint", "")
@@ -256,6 +418,11 @@ def _build_prompt(
     regime_lines = []
     if regime_hint:
         regime_lines.append(regime_hint)
+
+    # D5：CONSOLIDATION_VOLATILE 的額外保守提示
+    extra_hint = _REGIME_EXTRA_HINT.get(regime_code, "")
+    if extra_hint:
+        regime_lines.append(extra_hint)
 
     stats = []
     if breadth is not None:
@@ -280,15 +447,21 @@ def _build_prompt(
     regime_block = "\n".join(regime_lines)
 
     # ── <Candidate_Pool> ──────────────────────────────────────────
-    table = _generate_candidates_markdown_table(candidates, price_data, info_data)
+    table = _generate_candidates_markdown_table(
+        candidates, price_data, info_data,
+        earnings_data=earnings_data, current_date=current_date,
+    )
     field_defs = (
         "欄位定義：\n"
         "- MA_Trend: BULL_1=EMA5>EMA10>EMA20>EMA50完美多頭｜BULL_2=EMA5>EMA20>EMA50標準多頭｜MIXED=混合｜BEAR=空頭\n"
         "- MACD_Hist: POS_INC=正且遞增(最強)｜POS_DEC=正但遞減｜NEG_INC=負但回升｜NEG_DEC=負且下降(最弱)\n"
-        "- Vol_Ratio: 當日量÷30日均量（>=1.5放量，>=2.0顯著放量）\n"
+        "- VTF_Score: 量能推進因子=量比×(2×K線位置-1)，正值=帶量推進，負值=高檔出貨；>5.0=史詩級機構建倉\n"
         "- Price_5D_Pct: 近5日漲跌幅（短線爆發力）\n"
-        "- Price_20D_Pct: 近20日漲跌幅（中線趨勢）\n"
+        "- Momentum_ATR: 20日價格位移÷ATR14（跨行業標準化動能）；>=2.0強勢；<=-2.0超賣\n"
+        "- RS_vs_Sector: 個股5日報酬率-板塊ETF5日報酬率；>+2%=板塊領頭羊優先加分；<-2%=板塊落後者需額外確認\n"
         "- 52W_High_Dist: 距52週高點（-2%=接近高點，-30%=遠離高點）\n"
+        "- Beta_60D: 60日Beta vs SPY；N/A=數據不足，不排除，改用Momentum_ATR判斷\n"
+        "- Earnings_Days_Left: 距下次財報曆天數；N/A=數據斷裂請排除；99=安全；<=5請排除\n"
         "- Strategy_Tag: 系統預判策略（MOMENTUM/BREAKOUT/REVERSAL/NEUTRAL），僅供參考"
     )
     pool_block = f"{table}\n\n{field_defs}"
@@ -321,10 +494,11 @@ SYSTEM_PROMPT = """你是一位經驗豐富的美股量化分析師，擅長技�
 
 選股原則：
 1. 優先選擇均線多頭排列完整、RSI 健康（50~70）、MACD 向上的個股
-2. 量能放大（volume_ratio >= 1.5）代表主力進場，加分
-3. 避免過度集中於同一產業
-4. 考量整體市場環境
-5. 若候選股明顯超買（RSI > 80）或技術面混亂，排名靠後
+2. VTF_Score > 1.0 代表帶量推進（主力進場），VTF_Score < 0 代表高檔出貨，後者應大幅降權
+3. RS_vs_Sector > +2%：板塊領頭羊，同等條件下優先選擇；RS_vs_Sector < -2%：板塊落後者，需額外確認
+4. Momentum_ATR 為跨行業標準化動能（ATR 倍數），比絕對漲跌幅更公平；>=2.0 代表強勢動能
+5. 避免過度集中於同一產業（已由系統做初步分散，但 AI 可進一步考量）
+6. 若候選股 Earnings_Days_Left <= 5 或 = N/A（數據斷裂），一律排除
 
 市場背景判斷原則：
 - 大盤（S&P 500）：若大盤 5 日跌幅 > 2% 或處於 EMA20 之下，整體提高警覺，傾向「觀望」
@@ -332,40 +506,28 @@ SYSTEM_PROMPT = """你是一位經驗豐富的美股量化分析師，擅長技�
 - 產業 ETF：個股所屬產業 ETF 若近 5 日下跌，即使個股技術面佳也需提示風險；ETF 強勢則加分
 - 產業 ETF 的趨勢應反映在 reason 中，說明產業走勢對個股的支撐或壓制
 
-選股標準：
-- 只輸出你認為現在值得買進的股票（訊號明確、時機合適）
-- 若技術面混亂、訊號不明確、RSI 過熱（> 75）、或大盤環境不佳，直接跳過該股，不列入輸出
-- buy_zone、target、stop_loss 每支都要給出具體數值
+【動能策略（momentum）】：
+- 條件：均線多頭排列（EMA5>EMA10>EMA20>EMA50）、RSI 50~70、VTF_Score >= 1.0
+- 優先：Momentum_ATR >= 2.0 且 RS_vs_Sector > +1%（板塊內領頭羊動能延續）
+- 買入：當前股價或小幅回調至 EMA10；目標：+10%~20%；止損：跌破 EMA20
+- 持有：1~4 週
 
-【可選策略與操作邏輯】
-請根據每支股票的技術指標特徵，選擇最合適的策略，並依對應邏輯計算操作建議：
+【突破策略（breakout）】：
+- 條件：VTF_Score >= 1.5、股價在 20 日高點附近（dist_from_20d_high_pct 在 -2%~+2%）
+- VTF_Score < 0 一律視為假突破派發陷阱，禁止入選
+- 買入：突破點附近前後 1%；目標：+10%~20%；止損：跌回突破點下方 2%
+- 持有：1~2 週
 
-動能策略（momentum）：
-- 操作方式：趨勢延續，隨勢買進
-- 買入區間：當前股價附近或小幅回調至 EMA10 附近
-- 目標價：當前股價 +10%~20%
-- 止損：跌破 EMA20 以下
-- 持有週期：1～4週
-- 適用條件：均線多頭排列（EMA5 > EMA10 > EMA20 > EMA50）、RSI 50~70、volume_ratio >= 1.5
-- 關鍵指標：dist_from_52w_high_pct 在 -15% 以內代表接近歷史高點，動能強；超過 -30% 則動能偏弱
+【反轉策略（oversold_reversal）】：
+- 條件：Momentum_ATR <= -2.0（超賣）且 VTF_Score 由負轉正或向 0 軸收斂（拋壓衰竭）
+- stoch_k < 25 且 RSI 從低位回升（rsi > rsi_5d_ago）為底背離確認
+- PANIC_REVERSAL 環境下，帶有 REVERSAL 標籤的個股 L2_Score 偏低是正常的，忽略低分偏見
+- 買入：EMA50 附近支撐區；目標：+8%~15%；止損：近期低點下方
 
-突破策略（breakout）：
-- 操作方式：突破關鍵壓力位當日或次日買進
-- 買入區間：突破點（high_20d）附近，前後 1%
-- 目標價：當前股價 +10%~20%
-- 止損：跌回 high_20d 下方 2%
-- 持有週期：1～2週
-- 適用條件：volume_ratio >= 2（量能明顯放大）、dist_from_20d_high_pct 在 -2%~+2%（股價在突破位附近）
-- 關鍵指標：high_20d 為突破參考關卡，low_20d 為整理區間下緣；dist_from_20d_high_pct 接近 0 或為正值代表已突破或即將突破
-
-反轉策略（oversold_reversal）：
-- 操作方式：超賣後確認反彈訊號買進
-- 買入區間：確認反彈當日或次日開盤，EMA50 附近支撐區
-- 目標價：當前股價 +8%~15%
-- 止損：跌破近期最低點（low_20d 下方）
-- 持有週期：1～3週
-- 適用條件：stoch_k < 25（超賣）、rsi_5d_ago < rsi（RSI 從低位回升中）、dist_from_ema50_pct 在 -10%~0%（靠近 EMA50 支撐）
-- 關鍵指標：macd_hist 由負轉正為底背離確認訊號；rsi_5d_ago 與 rsi 的差值為正代表 RSI 回升中
+N/A 差異化處理：
+- Earnings_Days_Left = N/A → 直接排除（財報時間未知，黑天鵝風險無法評估）
+- Momentum_ATR = N/A 或 VTF_Score = N/A → 直接排除（技術數據不足）
+- Beta_60D = N/A → 不排除，以 Momentum_ATR 和 VTF_Score 作為核心多空判斷
 
 請以如下 JSON 格式輸出（根節點為物件，陣列放在 "selections" key 中），不要其他說明文字：
 {"selections": [ {...}, {...}, ... ]}
@@ -381,8 +543,8 @@ SYSTEM_PROMPT = """你是一位經驗豐富的美股量化分析師，擅長技�
 - stop_loss: 止損價，格式如 "$180"
 - hold_period: 預期持有的美股交易日天數，純整數（例如 10），不得含任何非數字字元
 - strategy: 套用的選股策略，只能是「動能策略」、「突破策略」、「反轉策略」三者之一
-- strategy_reason: 繁體中文，說明選擇此策略的具體依據，需引用指標數值（例如：RSI=62、EMA5>EMA10>EMA20）（50字以內）
-- confidence_reason: 繁體中文，說明信心分數給分原因，需具體說明加分或扣分的主因（例如：成交量放大、大盤偏弱）（50字以內）"""
+- strategy_reason: 繁體中文，說明選擇此策略的具體依據，需引用指標數值（例如：RSI=62、VTF=2.3、RS=+3.1%）（50字以內）
+- confidence_reason: 繁體中文，說明信心分數給分原因，需具體說明加分或扣分的主因（50字以內）"""
 
 
 # ── DeepSeek API 呼叫 ────────────────────────────────────────────
@@ -409,7 +571,6 @@ def _call_deepseek(user_content: str) -> list[dict]:
             if finish_reason == "length":
                 print("[ranker] 警告：回應因 max_tokens 截斷，考慮再調高 max_tokens")
 
-            # 解析 JSON：AI 可能回傳 {"selections": [...]} 或直接 [...]
             parsed = json.loads(raw)
             if isinstance(parsed, list):
                 return parsed
@@ -421,7 +582,6 @@ def _call_deepseek(user_content: str) -> list[dict]:
 
         except json.JSONDecodeError as e:
             print(f"[ranker] JSON 解析失敗（第{attempt}次）：{e}")
-            # 嘗試用 regex 提取陣列
             match = re.search(r"\[.*\]", raw, re.DOTALL)
             if match:
                 try:
@@ -453,7 +613,7 @@ def _enrich_fallback(
             **c,
             "rank": i + 1,
             "name": info.get("name", sym),
-            "sector": info.get("sector", "Unknown"),
+            "sector": c.get("sector") or info.get("sector", "Unknown"),
             "reason": "L2 技術指標評分排名",
             "risk": "請手動確認各項指標",
             "confidence": 5,
@@ -477,6 +637,7 @@ def rank_candidates(
     market_context: dict | None = None,
     market_date: str | None = None,
     use_ai_cache: bool = True,
+    earnings_data: dict | None = None,
 ) -> list[dict]:
     """
     接收 L2 候選股，呼叫 DeepSeek AI 排序，回傳 Top N 結果。
@@ -493,12 +654,16 @@ def rank_candidates(
         return _enrich_fallback(candidates[:top_n], info_data, price_data)
 
     market_context = market_context or {}
-
-    # BEAR_DISTRIBUTION 防禦機制：直接回傳空列表，不呼叫 AI，不 fallback
     regime = market_context.get("regime", "")
+
+    # BEAR_DISTRIBUTION 防禦機制：直接回傳空列表，不送 AI 請求
     if regime == "BEAR_DISTRIBUTION":
         print("[ranker] 大盤進入【陰跌熊市 BEAR_DISTRIBUTION】，系統全面防禦，不輸出買入標的")
         return []
+
+    # 產業多樣性保護（P5，DD-11）：送給 AI 前先截斷同產業霸榜
+    diversified = _diversify_candidates(candidates, regime=regime)
+    print(f"[ranker] 候選池：{len(candidates)} → 產業分散後 {len(diversified)} 支")
 
     cache_path = _ranked_cache_path(market_date or date.today().isoformat())
 
@@ -514,15 +679,26 @@ def rank_candidates(
         except Exception as e:
             print(f"[ranker] AI 快取讀取失敗，重新呼叫 DeepSeek：{e}")
 
-    print(f"[ranker] 送出 {min(len(candidates), MAX_CANDIDATES_TO_AI)} 支候選股給 DeepSeek AI...")
-    prompt_content = _build_prompt(candidates, price_data, info_data, market_context)
+    # 取得 current_date 供 Earnings_Days_Left 計算
+    current_date: date | None = None
+    if market_date:
+        try:
+            current_date = date.fromisoformat(market_date)
+        except Exception:
+            pass
+
+    print(f"[ranker] 送出 {min(len(diversified), MAX_CANDIDATES_TO_AI)} 支候選股給 DeepSeek AI...")
+    prompt_content = _build_prompt(
+        diversified, price_data, info_data, market_context,
+        earnings_data=earnings_data, current_date=current_date,
+    )
 
     ranked_raw = _call_deepseek(prompt_content)
     if not ranked_raw:
         print("[ranker] AI 排序失敗，改用 L2 分數直接輸出 Top N")
         return _enrich_fallback(candidates[:top_n], info_data, price_data)
 
-    # 建立 L2 資料查詢表
+    # 建立 L2 資料查詢表（原始 candidates，含全部通過 L2 的個股）
     l2_map = {c["symbol"]: c for c in candidates}
 
     ranked: list[dict] = []
@@ -533,7 +709,7 @@ def rank_candidates(
             "rank": int(item.get("rank", len(ranked) + 1)),
             "symbol": ticker,
             "name": info_data.get(ticker, {}).get("name", ticker),
-            "sector": info_data.get(ticker, {}).get("sector", "Unknown"),
+            "sector": l2.get("sector") or info_data.get(ticker, {}).get("sector", "Unknown"),
             "price": l2.get("price", 0.0),
             "total_score": l2.get("total_score", 0.0),
             "reason": str(item.get("reason", "")),

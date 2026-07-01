@@ -271,11 +271,11 @@ details[open] summary::before { transform: rotate(90deg); }
     <div class="pipe-flow">
       <div class="pipe-step"><span class="pipe-badge">L0</span>S&amp;P 500 約 503 支成份股</div>
       <div class="pipe-arrow">↓</div>
-      <div class="pipe-step"><span class="pipe-badge">L1</span>硬條件篩選：股價 &gt; $5、30 日均量 &gt; 50 萬、市值 &gt; 3 億；財報防禦牆：排除 3 天內有財報的個股</div>
+      <div class="pipe-step"><span class="pipe-badge">L1</span>硬條件篩選：股價 &gt; $5、30 日均量 &gt; 50 萬、市值 &gt; 3 億；財報防禦牆：排除 5 天內有財報的個股</div>
       <div class="pipe-arrow">↓</div>
       <div class="pipe-step"><span class="pipe-badge">L2</span>技術評分 100 分制，門檻 60 分；恐慌超跌環境（見右側）降至 40 分，RSI &lt; 35 且 20 日跌幅 &gt; 15% 的超賣股強制放行</div>
       <div class="pipe-arrow">↓</div>
-      <div class="pipe-step"><span class="pipe-badge">L3</span>DeepSeek AI 依當日大盤環境（Regime）的主推策略精選，最多 5 支；輸入矩陣含 ATR 標準化動能（Momentum_ATR）、量能推進因子（VTF_Score，正值=帶量上攻，負值=高檔出貨）、60 日 Beta 與財報剩餘天數（≤3 天自動排除），跨行業公平評比、避免高 Beta 偏見；陰跌熊市環境下全面防禦，不輸出任何建議（詳見右側 Regime 表）</div>
+      <div class="pipe-step"><span class="pipe-badge">L3</span>DeepSeek AI 依當日大盤環境（Regime）的主推策略精選，最多 5 支；輸入矩陣含 ATR 標準化動能（Momentum_ATR）、量能推進因子（VTF_Score，正值=帶量上攻，負值=高檔出貨）、60 日 Beta 與財報剩餘天數（≤5 天自動排除），跨行業公平評比、避免高 Beta 偏見；陰跌熊市環境下全面防禦，不輸出任何建議（詳見右側 Regime 表）</div>
     </div>
   </div>
 
@@ -283,11 +283,12 @@ details[open] summary::before { transform: rotate(90deg); }
     <h3>🌐 大盤環境（Market Regime）</h3>
     <p style="font-size:0.72rem;color:var(--muted);margin-bottom:8px">市場廣度 = S&amp;P 500 中收盤價高於 50 日 SMA 的股票比例；VIX 為芝加哥期權交易所恐慌指數</p>
     <table class="info-table">
-      <tr><th>環境名稱</th><th>判斷條件</th><th>主推策略</th></tr>
-      <tr><td style="color:var(--active)">📈 牛市趨勢</td><td>廣度 ≥ 60% 且 VIX &lt; 20</td><td>動能策略</td></tr>
-      <tr><td style="color:var(--watch)">⚖️ 震盪整理</td><td>廣度 35～60%（VIX 不限）</td><td>突破策略</td></tr>
-      <tr><td style="color:#f97316">🔥 恐慌超跌</td><td>廣度 &lt; 35% 且 VIX ≥ 25</td><td>反轉策略</td></tr>
-      <tr><td style="color:var(--invalid)">🐻 陰跌熊市</td><td>廣度 &lt; 35% 且 VIX &lt; 25</td><td>⛔ 全面防禦</td></tr>
+      <tr><th>環境名稱</th><th>判斷條件</th><th>主推策略</th><th>L2 門檻</th></tr>
+      <tr><td style="color:var(--active)">📈 牛市趨勢</td><td>廣度 ≥ 60% 且 VIX &lt; 20</td><td>動能策略</td><td>60 分</td></tr>
+      <tr><td style="color:var(--watch)">⚖️ 震盪整理</td><td>廣度 35～60% 且 VIX &lt; 20</td><td>突破策略（積極）</td><td>60 分</td></tr>
+      <tr><td style="color:#f59e0b">⚡ 高波動整理</td><td>廣度 35～60% 且 VIX ≥ 20</td><td>突破策略（保守）</td><td><strong>65 分</strong></td></tr>
+      <tr><td style="color:#f97316">🔥 恐慌超跌</td><td>廣度 &lt; 35% 且 VIX ≥ 25</td><td>反轉策略</td><td>40 分</td></tr>
+      <tr><td style="color:var(--invalid)">🐻 陰跌熊市</td><td>廣度 &lt; 35% 且 VIX &lt; 25</td><td>⛔ 全面防禦</td><td>—</td></tr>
     </table>
   </div>
 
@@ -295,11 +296,12 @@ details[open] summary::before { transform: rotate(90deg); }
     <h3>📊 L2 技術評分（100 分制）</h3>
     <table class="info-table">
       <tr><th>指標</th><th>滿分</th><th>評分說明</th></tr>
-      <tr><td>MA 多頭排列</td><td>25</td><td>EMA5&gt;10&gt;20&gt;50，每條件 +8.33 分</td></tr>
-      <tr><td>RSI 健康區間</td><td>20</td><td>50～70 滿分；40～50 或 70～80 半分；其餘 0；RSI&gt;80 超買直接排除（全維度歸零）</td></tr>
-      <tr><td>MACD 柱狀體</td><td>20</td><td>正且遞增滿分；正遞減半分；負 0</td></tr>
-      <tr><td>量能放大</td><td>20</td><td>≥ 1.5x 均量且收盤位於振幅上 60% 以上（多頭推進量）滿分；≥ 1.0x 半分；出貨型爆量（收盤偏低）歸零</td></tr>
-      <tr><td>20 日動能</td><td>15</td><td>ATR 倍數法：≥ 2.0 ATR 滿分；≥ 1.0 ATR 半分；&gt;0 為 1/4 分（跨行業公平評比）</td></tr>
+      <tr><td>MA 多頭排列</td><td>20</td><td>EMA5&gt;10&gt;20&gt;50，每條件 +6.67 分</td></tr>
+      <tr><td>RSI 健康區間</td><td>18</td><td>50～70 滿分；40～50 或 70～80 半分；其餘 0（RSI&gt;80 軟過濾，不驅逐，BULL_TREND 下 50～80 均為滿分）</td></tr>
+      <tr><td>MACD 柱狀體</td><td>17</td><td>正且遞增滿分；正遞減半分；負 0</td></tr>
+      <tr><td>量能放大（含趨勢）</td><td>15</td><td>VTF 基礎分（量比 × K_pos 阻斷） × 5 日量能趨勢係數（持續放量 ×1.0、平穩 ×0.85、縮量 ×0.65）</td></tr>
+      <tr><td>多週期動能</td><td>15</td><td>20 日 ATR 倍數主趨勢 × 5 日方向確認：中短線一致滿分（≥2ATR+5日確認），短線反轉減半</td></tr>
+      <tr><td>相對強度 RS</td><td>15</td><td>個股 5 日報酬率 − 板塊 ETF 5 日報酬率：≥+2% 滿分；+0.5%～+2% 得 8 分；-0.5%～+0.5% 得 3 分；&lt;-0.5% 得 0 分</td></tr>
     </table>
   </div>
 

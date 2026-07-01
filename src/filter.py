@@ -12,7 +12,7 @@ MIN_PRICE = float(os.getenv("MIN_PRICE", "5"))
 MIN_DOLLAR_VOLUME = float(os.getenv("MIN_DOLLAR_VOLUME", "10000000"))  # $10M/日
 MIN_MARKET_CAP = float(os.getenv("MIN_MARKET_CAP", "300000000"))
 MIN_TRADING_DAYS = 5   # 近5日至少有5筆數據（排除停牌）
-EARNINGS_BLACKOUT_DAYS = 3
+EARNINGS_BLACKOUT_DAYS = 5
 
 
 def apply_filters(

@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import json
+import os
+
 import pandas as pd
 import yfinance as yf
 
@@ -22,6 +25,9 @@ SECTOR_ETF_MAP: dict[str, str] = {
     "Utilities": "XLU",
     "Communication Services": "XLC",
 }
+
+# 廣度計算排除的 tickers（DD-5）：板塊 ETF + SPY 不計入 S&P 500 廣度分母
+_BREADTH_EXCLUDED: frozenset[str] = frozenset(SECTOR_ETF_MAP.values()) | {"SPY"}
 
 
 def _ema(series: pd.Series, span: int) -> float:
@@ -104,6 +110,8 @@ def calculate_market_breadth(
     def _breadth_for_offset(offset: int) -> float | None:
         above, total = 0, 0
         for sym, df in all_stocks_data.items():
+            if sym in _BREADTH_EXCLUDED:  # 板塊 ETF 及 SPY 不計入廣度（DD-5）
+                continue
             close = df["Close"].dropna()
             if len(close) < 50 + offset:
                 continue
@@ -140,11 +148,12 @@ def determine_market_regime(breadth_pct: float, vix_value: float) -> dict:
     根據市場廣度與 VIX 判定市場環境模式（Regime）。
     回傳含 regime、primary_strategy、ai_prompt_hint 的字典。
 
-    分類矩陣：
-      breadth >= 60% + VIX < 20  → BULL_TREND       → 動能策略
-      breadth 35~60%（任何 VIX） → CONSOLIDATION    → 突破策略
-      breadth < 35% + VIX >= 25  → PANIC_REVERSAL   → 反轉策略
-      breadth < 35% + VIX < 25   → BEAR_DISTRIBUTION → 全面防禦
+    五象限分類矩陣（DD-4）：
+      breadth >= 60% + VIX < 20          → BULL_TREND               → 動能策略
+      breadth 35~60% + VIX < 20          → CONSOLIDATION            → 突破策略（積極）
+      breadth 35~60% + VIX >= 20         → CONSOLIDATION_VOLATILE   → 突破策略（保守）
+      breadth < 35% + VIX >= 25          → PANIC_REVERSAL           → 反轉策略
+      breadth < 35% + VIX < 25           → BEAR_DISTRIBUTION        → 全面防禦
     """
     if breadth_pct >= 60 and vix_value < 20:
         return {
@@ -156,14 +165,26 @@ def determine_market_regime(breadth_pct: float, vix_value: float) -> dict:
                 f"忽略左側反轉訊號。"
             ),
         }
-    elif breadth_pct >= 35:
+    elif breadth_pct >= 35 and vix_value < 20:
         return {
             "regime": "CONSOLIDATION",
-            "primary_strategy": "突破策略",
+            "primary_strategy": "突破策略（積極）",
             "ai_prompt_hint": (
                 f"目前大盤環境為【震盪整理】，市場廣度中性（{breadth_pct}% 股票站上50SMA），"
-                f"走勢不明確。請嚴格執行【突破策略】，只選帶量突破關鍵壓力位的個股，"
-                f"嚴防假突破，等確認訊號再進場。"
+                f"VIX={vix_value:.1f} 波動正常。請執行【突破策略（積極型）】，"
+                f"優先選帶量突破關鍵壓力位的個股，確認訊號後積極進場。"
+            ),
+        }
+    elif breadth_pct >= 35:
+        # 廣度 35~60% 且 VIX >= 20 → 高波動整理期，策略保守（DD-4）
+        return {
+            "regime": "CONSOLIDATION_VOLATILE",
+            "primary_strategy": "突破策略（保守）",
+            "ai_prompt_hint": (
+                f"目前大盤環境為【高波動整理】，市場廣度中性（{breadth_pct}% 股票站上50SMA），"
+                f"VIX={vix_value:.1f} 波動偏高。請執行【突破策略（保守型）】，"
+                f"要求 VTF_Score >= 2.0、MACD POS_INC 且 RSI 50~65 才考慮進場；"
+                f"訊號不明確一律跳過。"
             ),
         }
     elif vix_value >= 25:
@@ -190,16 +211,40 @@ def determine_market_regime(breadth_pct: float, vix_value: float) -> dict:
 
 # ── 輕量 Regime 快速判定（L2 評分前使用）────────────────────────────
 
-def fetch_regime_quick(all_stocks_data: dict) -> tuple[str, float, float, bool]:
+_HIGH_VIX_REGIMES = frozenset({"PANIC_REVERSAL", "CONSOLIDATION_VOLATILE"})
+
+
+def fetch_regime_quick(
+    all_stocks_data: dict,
+    last_run_path: str = "docs/data/last_run.json",
+) -> tuple[str, float, float, bool]:
     """
     快速判定大盤 Regime，只下載 VIX，搭配已有 price_data 計算廣度。
     回傳 (regime, breadth_pct, vix_value, vix_ok)。
     vix_ok=False 表示下載失敗，pipeline 應在 L3 前中斷。
     在 pipeline Step 2.5 呼叫，比 fetch_market_context 早執行，
     讓 scorer 能根據 regime 動態調整 L2 門檻。
+    廣度邊界附近啟用遲滯帶，防止 Regime 每日翻轉（DD-5）。
     """
+    # 1. 從 last_run.json 讀取前一日 Regime（嚴格校驗 market_date，DD-5）
+    prev_regime: str | None = None
+    try:
+        if os.path.exists(last_run_path):
+            with open(last_run_path, "r", encoding="utf-8") as f:
+                last = json.load(f)
+            last_market_date = last.get("market_date", "")
+            spy_df = all_stocks_data.get("SPY")
+            current_market_date = str(spy_df.index[-1].date()) if spy_df is not None and not spy_df.empty else ""
+            if last_market_date and current_market_date and last_market_date < current_market_date:
+                prev_regime = last.get("regime")
+    except Exception as e:
+        print(f"[market] 讀取 last_run.json 失敗，不啟用遲滯帶：{e}")
+
+    # 2. 計算廣度
     breadth_pct = calculate_market_breadth(all_stocks_data)
-    vix_value = 20.0  # 下載失敗時使用中性值
+
+    # 3. 下載 VIX
+    vix_value = 20.0
     vix_ok = False
     try:
         raw = yf.download(
@@ -214,11 +259,28 @@ def fetch_regime_quick(all_stocks_data: dict) -> tuple[str, float, float, bool]:
             vix_ok = True
     except Exception as e:
         print(f"[market] fetch_regime_quick VIX 下載失敗，使用預設值 20.0：{e}")
+
+    # 4. 計算基本 Regime
     regime_dict = determine_market_regime(breadth_pct, vix_value)
-    regime = regime_dict["regime"]
+    new_regime = regime_dict["regime"]
+
+    # 5. 遲滯帶：廣度在邊界 ±2% 且 VIX 未跨越結構邊界時，維持前日 Regime（DD-5）
+    HYSTERESIS = 2.0
+    if prev_regime:
+        old_vix_high = prev_regime in _HIGH_VIX_REGIMES
+        new_vix_high = new_regime in _HIGH_VIX_REGIMES
+        vix_changed_structure = (old_vix_high != new_vix_high)
+
+        if not vix_changed_structure:
+            near_bull  = abs(breadth_pct - 60.0) <= HYSTERESIS
+            near_panic = abs(breadth_pct - 35.0) <= HYSTERESIS
+            if near_bull or near_panic:
+                print(f"[market] 遲滯帶生效：廣度={breadth_pct}% 在邊界附近，維持前日 Regime={prev_regime}")
+                new_regime = prev_regime
+
     vix_status = f"VIX={vix_value:.1f}" if vix_ok else f"VIX=20.0（fallback）"
-    print(f"[market] 快速 Regime：{regime}（廣度={breadth_pct}%，{vix_status}）")
-    return regime, breadth_pct, vix_value, vix_ok
+    print(f"[market] 快速 Regime：{new_regime}（廣度={breadth_pct}%，{vix_status}）")
+    return new_regime, breadth_pct, vix_value, vix_ok
 
 
 # ── 主函式 ───────────────────────────────────────────────────────────
