@@ -8,5 +8,15 @@
     "new": 5,
     "reset": 0,
     "removed": 0
+  },
+  {
+    "date": "2026-07-01",
+    "weekday": "三",
+    "active": 0,
+    "watch": 5,
+    "invalid": 3,
+    "new": 4,
+    "reset": 1,
+    "removed": 0
   }
 ]

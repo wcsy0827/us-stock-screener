@@ -11,13 +11,14 @@
     "hold_period": "15",
     "strategy": "動能策略",
     "tracked_dates": [
-      "2026-06-30"
+      "2026-06-30",
+      "2026-07-01"
     ],
-    "status": "watch",
-    "invalid_reason": null,
+    "status": "invalid",
+    "invalid_reason": "跌破止損價 $285.00，錯過買點",
     "watch_days": 0,
     "active_days": 0,
-    "signal_date_close": null,
+    "signal_date_close": 283.51,
     "active_entry_price": null,
     "active_start_date": null,
     "date_added": "2026-06-30",
@@ -26,7 +27,8 @@
     "vix_value": 16.92,
     "l2_score": 97.75,
     "ai_confidence": 9,
-    "ai_strategy_reason": "均線多頭排列，RSI=70.9，VTF=0.91，Momentum_ATR=5.52，RS_vs_Sector=+21.4%，符合動能策略條件。"
+    "ai_strategy_reason": "均線多頭排列，RSI=70.9，VTF=0.91，Momentum_ATR=5.52，RS_vs_Sector=+21.4%，符合動能策略條件。",
+    "current_price": 283.51
   },
   {
     "symbol": "AMAT",
@@ -40,13 +42,14 @@
     "hold_period": "15",
     "strategy": "動能策略",
     "tracked_dates": [
-      "2026-06-30"
+      "2026-06-30",
+      "2026-07-01"
     ],
-    "status": "watch",
-    "invalid_reason": null,
+    "status": "invalid",
+    "invalid_reason": "跌破止損價 $690.00，錯過買點",
     "watch_days": 0,
     "active_days": 0,
-    "signal_date_close": null,
+    "signal_date_close": 689.07,
     "active_entry_price": null,
     "active_start_date": null,
     "date_added": "2026-06-30",
@@ -55,21 +58,22 @@
     "vix_value": 16.92,
     "l2_score": 97.75,
     "ai_confidence": 8,
-    "ai_strategy_reason": "均線多頭排列，RSI=72.4，Momentum_ATR=5.63，RS_vs_Sector=+18.7%，符合動能策略。"
+    "ai_strategy_reason": "均線多頭排列，RSI=72.4，Momentum_ATR=5.63，RS_vs_Sector=+18.7%，符合動能策略。",
+    "current_price": 689.07
   },
   {
     "symbol": "PANW",
     "name": "Palo Alto Networks, Inc.",
     "sector": "Technology",
-    "buy_zone": "$335～$341",
-    "buy_zone_lower": 335.0,
-    "buy_zone_upper": 341.0,
-    "target": "$375",
-    "stop_loss": "$325",
-    "hold_period": "12",
+    "buy_zone": "$326～$330",
+    "buy_zone_lower": 326.0,
+    "buy_zone_upper": 330.0,
+    "target": "$380",
+    "stop_loss": "$294",
+    "hold_period": "20",
     "strategy": "動能策略",
     "tracked_dates": [
-      "2026-06-30"
+      "2026-07-01"
     ],
     "status": "watch",
     "invalid_reason": null,
@@ -78,13 +82,14 @@
     "signal_date_close": null,
     "active_entry_price": null,
     "active_start_date": null,
-    "date_added": "2026-06-30",
+    "date_added": "2026-07-01",
     "entry_regime": "BULL_TREND",
-    "market_breadth_pct": 64.0,
-    "vix_value": 16.92,
-    "l2_score": 91.38,
+    "market_breadth_pct": 64.2,
+    "vix_value": 17.24,
+    "l2_score": 85.0,
     "ai_confidence": 7,
-    "ai_strategy_reason": "均線多頭排列，RSI=79.4，Momentum_ATR=3.30，RS_vs_Sector=+15.5%，符合動能策略。"
+    "ai_strategy_reason": "均線多頭排列，RSI=80，Momentum_ATR=4.93，RS_vs_Sector=+15.9%領先板塊",
+    "current_price": 345.59
   },
   {
     "symbol": "AXON",
@@ -98,13 +103,14 @@
     "hold_period": "15",
     "strategy": "動能策略",
     "tracked_dates": [
-      "2026-06-30"
+      "2026-06-30",
+      "2026-07-01"
     ],
     "status": "watch",
     "invalid_reason": null,
-    "watch_days": 0,
+    "watch_days": 1,
     "active_days": 0,
-    "signal_date_close": null,
+    "signal_date_close": 580.91,
     "active_entry_price": null,
     "active_start_date": null,
     "date_added": "2026-06-30",
@@ -113,7 +119,8 @@
     "vix_value": 16.92,
     "l2_score": 91.38,
     "ai_confidence": 8,
-    "ai_strategy_reason": "均線多頭排列，RSI=73.3，VTF=1.23，Momentum_ATR=2.23，RS_vs_Sector=+20.0%，符合動能策略。"
+    "ai_strategy_reason": "均線多頭排列，RSI=73.3，VTF=1.23，Momentum_ATR=2.23，RS_vs_Sector=+20.0%，符合動能策略。",
+    "current_price": 580.91
   },
   {
     "symbol": "LRCX",
@@ -127,13 +134,14 @@
     "hold_period": "15",
     "strategy": "動能策略",
     "tracked_dates": [
-      "2026-06-30"
+      "2026-06-30",
+      "2026-07-01"
     ],
-    "status": "watch",
-    "invalid_reason": null,
+    "status": "invalid",
+    "invalid_reason": "跌破止損價 $415.00，錯過買點",
     "watch_days": 0,
     "active_days": 0,
-    "signal_date_close": null,
+    "signal_date_close": 407.55,
     "active_entry_price": null,
     "active_start_date": null,
     "date_added": "2026-06-30",
@@ -142,6 +150,123 @@
     "vix_value": 16.92,
     "l2_score": 91.38,
     "ai_confidence": 7,
-    "ai_strategy_reason": "均線多頭排列，RSI=67.1，Momentum_ATR=3.91，RS_vs_Sector=+11.5%，符合動能策略。"
+    "ai_strategy_reason": "均線多頭排列，RSI=67.1，Momentum_ATR=3.91，RS_vs_Sector=+11.5%，符合動能策略。",
+    "current_price": 407.55
+  },
+  {
+    "symbol": "MRNA",
+    "name": "Moderna, Inc.",
+    "sector": "Healthcare",
+    "buy_zone": "$64～$66",
+    "buy_zone_lower": 64.0,
+    "buy_zone_upper": 66.0,
+    "target": "$80",
+    "stop_loss": "$60",
+    "hold_period": "20",
+    "strategy": "動能策略",
+    "tracked_dates": [
+      "2026-07-01"
+    ],
+    "status": "watch",
+    "invalid_reason": null,
+    "watch_days": 0,
+    "active_days": 0,
+    "signal_date_close": null,
+    "active_entry_price": null,
+    "active_start_date": null,
+    "date_added": "2026-07-01",
+    "entry_regime": "BULL_TREND",
+    "market_breadth_pct": 64.2,
+    "vix_value": 17.24,
+    "l2_score": 85.0,
+    "ai_confidence": 7,
+    "ai_strategy_reason": "均線多頭排列，RSI=75.7，Momentum_ATR=5.35，RS_vs_Sector=+19.0%"
+  },
+  {
+    "symbol": "AJG",
+    "name": "Arthur J. Gallagher & Co.",
+    "sector": "Financial Services",
+    "buy_zone": "$224～$228",
+    "buy_zone_lower": 224.0,
+    "buy_zone_upper": 228.0,
+    "target": "$260",
+    "stop_loss": "$219",
+    "hold_period": "20",
+    "strategy": "動能策略",
+    "tracked_dates": [
+      "2026-07-01"
+    ],
+    "status": "watch",
+    "invalid_reason": null,
+    "watch_days": 0,
+    "active_days": 0,
+    "signal_date_close": null,
+    "active_entry_price": null,
+    "active_start_date": null,
+    "date_added": "2026-07-01",
+    "entry_regime": "BULL_TREND",
+    "market_breadth_pct": 64.2,
+    "vix_value": 17.24,
+    "l2_score": 85.0,
+    "ai_confidence": 8,
+    "ai_strategy_reason": "均線多頭排列，RSI=70.4，Momentum_ATR=5.32，RS_vs_Sector=+6.9%"
+  },
+  {
+    "symbol": "ACGL",
+    "name": "Arch Capital Group Ltd.",
+    "sector": "Financial Services",
+    "buy_zone": "$95.5～$97",
+    "buy_zone_lower": 95.5,
+    "buy_zone_upper": 97.0,
+    "target": "$110",
+    "stop_loss": "$94",
+    "hold_period": "20",
+    "strategy": "動能策略",
+    "tracked_dates": [
+      "2026-07-01"
+    ],
+    "status": "watch",
+    "invalid_reason": null,
+    "watch_days": 0,
+    "active_days": 0,
+    "signal_date_close": null,
+    "active_entry_price": null,
+    "active_start_date": null,
+    "date_added": "2026-07-01",
+    "entry_regime": "BULL_TREND",
+    "market_breadth_pct": 64.2,
+    "vix_value": 17.24,
+    "l2_score": 85.0,
+    "ai_confidence": 7,
+    "ai_strategy_reason": "均線多頭排列，RSI=66.1，Momentum_ATR=5.38，RS_vs_Sector=+3.2%"
+  },
+  {
+    "symbol": "CB",
+    "name": "Chubb Limited",
+    "sector": "Financial Services",
+    "buy_zone": "$337～$341",
+    "buy_zone_lower": 337.0,
+    "buy_zone_upper": 341.0,
+    "target": "$380",
+    "stop_loss": "$332",
+    "hold_period": "20",
+    "strategy": "動能策略",
+    "tracked_dates": [
+      "2026-07-01"
+    ],
+    "status": "watch",
+    "invalid_reason": null,
+    "watch_days": 0,
+    "active_days": 0,
+    "signal_date_close": null,
+    "active_entry_price": null,
+    "active_start_date": null,
+    "date_added": "2026-07-01",
+    "entry_regime": "BULL_TREND",
+    "market_breadth_pct": 64.2,
+    "vix_value": 17.24,
+    "l2_score": 85.0,
+    "ai_confidence": 7,
+    "ai_strategy_reason": "均線多頭排列，RSI=67.6，Momentum_ATR=5.28，RS_vs_Sector=+3.9%"
   }
 ]
