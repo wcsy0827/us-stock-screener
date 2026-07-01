@@ -19,8 +19,11 @@ python main.py --dry-run
 # CI 模式（跳過今日重複執行確認）
 python main.py --dry-run --yes
 
-# 強制忽略快取，重新下載所有數據
+# 強制忽略快取，重新下載所有數據（同時略過 AI 快取）
 python main.py --dry-run --no-cache
+
+# 僅略過 AI 快取，重新問 DeepSeek（price/info 快取仍複用）
+python main.py --dry-run --yes --no-ai-cache
 
 # 正式執行（生成並 push 至 GitHub Pages）
 $env:PYTHONUTF8=1; python main.py
@@ -127,14 +130,15 @@ S&P 500 (~503 支)
 
 ## 快取說明
 
-| 快取類型 | 路徑 | 有效期 |
-|----------|------|--------|
-| 日 K 數據 | `.cache/price_YYYYMMDD.pkl` | 當日 |
-| 基本面資訊 | `.cache/info_YYYYMMDD.json` | 7 日（取最近一份） |
-| 財報日期 | `.cache/earnings_registry.json` | 30 日（per-symbol TTL，獨立管理） |
-| 追蹤清單 | `data/watchlist.json` | 永久（持久化） |
-| 歷史績效 | `data/performance_history.json` | 永久（只增不刪） |
-| 執行記錄 | `docs/data/last_run.json` | 每次 publish() 覆寫；前端 fetch 用於顯示「上次執行時間」與資料核實 |
+| 快取類型 | 路徑 | 有效期 | 略過方式 |
+|----------|------|--------|----------|
+| 日 K 數據 | `.cache/price_YYYYMMDD.pkl` | 當日 | `--no-cache` |
+| 基本面資訊 | `.cache/info_YYYYMMDD.json` | 7 日（取最近一份） | `--no-cache` |
+| AI 精選結果 | `.cache/ranked_YYYYMMDD.json` | 當日 | `--no-ai-cache` 或 `--no-cache` |
+| 財報日期 | `.cache/earnings_registry.json` | 30 日（per-symbol TTL，獨立管理） | — |
+| 追蹤清單 | `data/watchlist.json` | 永久（持久化） | 手動刪除 |
+| 歷史績效 | `data/performance_history.json` | 永久（只增不刪） | 手動刪除 |
+| 執行記錄 | `docs/data/last_run.json` | 每次 publish() 覆寫；前端 fetch 用於顯示「上次執行時間」與資料核實 | — |
 
 ## GitHub Actions
 

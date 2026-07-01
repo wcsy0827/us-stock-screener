@@ -31,6 +31,7 @@ def run(
     top_n: int = 10,
     dry_run: bool = False,
     use_cache: bool = True,
+    use_ai_cache: bool = True,
 ) -> dict:
     """
     執行完整選股流程。
@@ -192,7 +193,12 @@ def run(
     print("\n[pipeline] ── Step 6/6：L3 AI 排序 ──")
     t = time.time()
     try:
-        ranked = rank_candidates(candidates, price_data, info_data, top_n=top_n, market_context=market_context)
+        ranked = rank_candidates(
+            candidates, price_data, info_data,
+            top_n=top_n, market_context=market_context,
+            market_date=summary.get("market_date"),
+            use_ai_cache=use_ai_cache,
+        )
         summary["ranked"] = ranked
         print(f"[pipeline] AI 排序完成 ({_elapsed(t)})｜{len(ranked)} 支買入候選")
     except Exception as e:

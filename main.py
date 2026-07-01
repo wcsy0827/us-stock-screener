@@ -46,7 +46,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--no-cache",
         action="store_true",
-        help="忽略快取，強制重新下載所有數據",
+        help="忽略快取，強制重新下載所有數據（同時略過 AI 快取）",
+    )
+    parser.add_argument(
+        "--no-ai-cache",
+        action="store_true",
+        help="忽略 AI 快取，強制重新呼叫 DeepSeek（price/info 快取仍複用）",
     )
     parser.add_argument(
         "--yes",
@@ -80,6 +85,7 @@ if __name__ == "__main__":
         top_n=args.top,
         dry_run=args.dry_run,
         use_cache=not args.no_cache,
+        use_ai_cache=not args.no_cache and not args.no_ai_cache,
     )
 
     if not summary.get("success"):
