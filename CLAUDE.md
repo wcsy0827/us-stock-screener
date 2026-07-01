@@ -31,6 +31,12 @@ $env:PYTHONUTF8=1; python main.py
 # Windows 包裝腳本
 .\run.ps1 --dry-run
 .\run.ps1 --top 10
+
+# 前端完整預覽（含 last_run.json，模擬 GitHub Pages 行為）
+# --dry-run 後 docs/data/last_run.json 已寫入，但直接開 file:// 會因瀏覽器安全限制導致 fetch 失敗
+# 用本地 server 才能完整預覽「上次執行時間」與「資料核實面板」
+python main.py --dry-run --yes
+cd docs && python -m http.server 8080   # 瀏覽器開 http://localhost:8080
 ```
 
 ## 架構速覽

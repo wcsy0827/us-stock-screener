@@ -208,6 +208,17 @@ $env:PYTHONUTF8=1; python main.py
 
 生成的報告位於 `docs/reports/YYYY-MM-DD.html`。
 
+### 前端完整預覽（含 last_run.json）
+
+`--dry-run` 執行後，`docs/data/last_run.json` 會同步寫入（記錄執行時間與掃描統計）。若直接用瀏覽器開 `file://`，`fetch()` 受瀏覽器安全限制會靜默失敗。啟動本地 server 可完整模擬 GitHub Pages 行為：
+
+```powershell
+python main.py --dry-run --yes
+cd docs
+python -m http.server 8080
+# 瀏覽器開 http://localhost:8080
+```
+
 ---
 
 ## 本機測試工作流程
