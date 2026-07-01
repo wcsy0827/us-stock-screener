@@ -156,13 +156,15 @@ details[open] summary::before { transform: rotate(90deg); }
 .tip-wrap:hover .tip-box { display: block; }
 
 /* Data freshness indicator */
-.date-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+.date-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 4px; }
 .date-label { font-size: 0.8rem; color: var(--muted); }
 .date-val { font-size: 1rem; color: var(--text); font-weight: 600; }
-.freshness-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 0.75rem; padding: 2px 9px; border-radius: 10px; font-weight: 600; }
+.freshness-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 0.75rem; padding: 2px 9px; border-radius: 10px; font-weight: 600; cursor: pointer; }
 .freshness-ok    { background: rgba(34,197,94,0.15);  color: var(--active); }
 .freshness-stale { background: rgba(234,179,8,0.12);  color: var(--watch); }
 .tz-note { font-size: 0.8rem; color: var(--muted); margin-top: 6px; min-height: 1.3em; }
+.run-info { font-size: 0.75rem; color: var(--muted); margin-bottom: 12px; padding: 6px 10px; background: rgba(255,255,255,0.04); border-radius: 6px; display: none; line-height: 1.8; }
+.run-info.visible { display: block; }
 
 @media (max-width: 600px) {
   .scan-bar { flex-direction: column; align-items: flex-start; gap: 2px; }
@@ -182,26 +184,47 @@ details[open] summary::before { transform: rotate(90deg); }
     <h1>📈 美股 AI 選股系統</h1>
     <p>每日選股報告 · 訊號追蹤 · S&amp;P 500</p>
     <p class="tz-note" id="index-freshness"></p>
+    <p class="tz-note" id="index-lastrun" style="font-size:0.75rem;"></p>
   </div>
 <script>
 (function() {
+  // ── 時間狀態訊息（依 UTC 時段）────────────────────────────────
   var el = document.getElementById('index-freshness');
-  if (!el) return;
-  var now = new Date();
-  var day = now.getUTCDay();   // 0=日, 6=六
-  var h   = now.getUTCHours();
-  var m   = now.getUTCMinutes();
-  var msg;
-  if (day === 0 || day === 6) {
-    msg = '週末無新報告，下一份報告於週一 05:30（台灣時間）產生';
-  } else if (h > 21 || (h === 21 && m >= 30)) {
-    msg = '今日報告已產生（UTC 21:30）· 請點選最新報告查看';
-  } else if (h >= 20) {
-    msg = '美股已收盤，報告正在產生中，將於台灣時間 05:30 發布';
-  } else {
-    msg = '美股尚未收盤（UTC 13:30–20:00）· 今日報告將於台灣時間 05:30 更新';
+  if (el) {
+    var now = new Date();
+    var day = now.getUTCDay();   // 0=日, 6=六
+    var h   = now.getUTCHours();
+    var m   = now.getUTCMinutes();
+    var msg;
+    if (day === 0 || day === 6) {
+      msg = '週末無新報告，下一份報告於週一 05:30（台灣時間）產生';
+    } else if (h > 21 || (h === 21 && m >= 30)) {
+      msg = '今日報告已產生（CI UTC 21:30 執行）· 請點選最新報告查看';
+    } else if (h >= 20) {
+      msg = '美股已收盤（UTC 20:00），報告正在產生中，將於台灣時間 05:30 發布';
+    } else if (h > 13 || (h === 13 && m >= 30)) {
+      msg = '美股交易中（UTC 13:30–20:00）· 今日報告將於台灣時間 05:30 更新';
+    } else {
+      msg = '美股市場尚未開盤（UTC 13:30 開盤）· 今日報告將於台灣時間 05:30 更新';
+    }
+    el.textContent = msg;
   }
-  el.textContent = msg;
+
+  // ── 顯示上次實際執行時間（從 last_run.json）────────────────────
+  var lr = document.getElementById('index-lastrun');
+  if (lr) {
+    fetch('data/last_run.json?_=' + Date.now())
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (!d.run_at_utc) return;
+        var dt = new Date(d.run_at_utc);
+        var twStr = dt.toLocaleString('zh-TW', {timeZone:'Asia/Taipei', hour12:false,
+          year:'numeric', month:'2-digit', day:'2-digit',
+          hour:'2-digit', minute:'2-digit'});
+        lr.textContent = '上次執行：' + twStr + '（台灣時間）· 資料截止 ' + (d.market_date || '—');
+      })
+      .catch(function() {});  // 靜默失敗，首次部署前 last_run.json 不存在
+  }
 })();
 </script>
   
