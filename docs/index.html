@@ -188,7 +188,7 @@ details[open] summary::before { transform: rotate(90deg); }
   var el = document.getElementById('index-freshness');
   if (!el) return;
   var now = new Date();
-  var day = now.getUTCDay();
+  var day = now.getUTCDay();   // 0=日, 6=六
   var h   = now.getUTCHours();
   var m   = now.getUTCMinutes();
   var msg;
@@ -204,7 +204,7 @@ details[open] summary::before { transform: rotate(90deg); }
   el.textContent = msg;
 })();
 </script>
-
+  
 <details open>
 <summary>📖 系統說明</summary>
 <div class="info-grid">
@@ -263,6 +263,14 @@ details[open] summary::before { transform: rotate(90deg); }
   <div class="report-section-title">📋 歷史報告</div>
   <div class="report-list">
     
+<a class="report-entry" href="reports/2026-07-01.html">
+  <div>
+    <div class="report-date">2026-07-01</div>
+    <div class="report-weekday">（三）</div>
+  </div>
+  <div class="report-chips"><span class="chip active">2 有效</span><span class="chip watch">4 留意</span><span class="chip new">3 新增</span><span class="chip reset">2 重置</span></div>
+  <span class="arrow-icon">›</span>
+</a>
 <a class="report-entry" href="reports/2026-06-30.html">
   <div>
     <div class="report-date">2026-06-30</div>
