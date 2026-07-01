@@ -23,7 +23,7 @@
 </Output_Constraint>
 ```
 
-### Markdown 候選池表格欄位（19 欄）
+### Markdown 候選池表格欄位（25 欄）
 
 | 欄位 | 說明 |
 |------|------|
@@ -37,11 +37,17 @@
 | EMA10 | 10 日指數移動均線價位（美元）；動能策略標準回檔買進區間上緣；DD-12 |
 | EMA20 | 20 日指數移動均線價位（美元）；動能策略標準回檔買進區間下緣；DD-12 |
 | Vol_vs_5DAvg | 當日成交量 ÷ 5 日均量；`.round(2)`；<0.7 代表回檔量縮確認；DD-12 |
+| High_20D | 20 日最高價（美元）；突破策略的壓力位/回測支撐基準；DD-13 |
+| Vol_vs_20DAvg | 當日成交量 ÷ 20 日均量；`.round(2)`；>=1.5 代表攻擊量確認突破，<1.2 假突破機率高；DD-13 |
 | RSI | RSI 數值 |
 | MACD_Hist | POS_INC/POS_DEC/NEG_INC/NEG_DEC |
 | VTF_Score | 量能推進因子：`max(-5.0, Vol_Ratio × (2×K_pos − 1))`，下限 -5.0、上限不設；`.round(2)`；分母為零時安全降級 `vol_ratio = 1.0`；正值=帶量推進（> 5.0 為史詩級機構建倉），負值=高檔派發；缺值填 `N/A` |
 | Price_5D_Pct | 5 日漲跌幅（短線爆發力） |
 | Momentum_ATR | ATR 標準化動能：20 日價格位移 ÷ 14 日 ATR；`.round(2)`；缺值填 `N/A` |
+| EMA50 | 50 日均線價位（美元）；反轉策略的支撐區判斷基準；DD-13 |
+| Low_20D | 20 日最低價（美元）；反轉策略的左側關鍵支撐與止損基準；DD-13 |
+| Stoch_K | 隨機指標 KD 的 K 值；`.round(1)`；<25 代表超賣區；DD-13 |
+| RSI_5D_Ago | 5 日前的 RSI 數值；`.round(1)`；RSI > RSI_5D_Ago 代表底背離訊號；DD-13 |
 | RS_vs_Sector | 個股 5 日報酬率 − 板塊 ETF 5 日報酬率（百分比）；`.round(1)`；板塊 ETF 來自 `SECTOR_ETF_MAP`，缺資料 fallback SPY；ETF 數據不足 5 日填 `N/A` |
 | 52W_High_Dist | 距 52 週高點百分比 |
 | Beta_60D | 個股 60 日 Beta vs SPY；完整序列 inner join + NaN 清洗後取末 60 日計算；`.round(2)`；**缺值填 `N/A`，不觸發 AI 排除** |
@@ -51,9 +57,9 @@
 
 **動能策略（Momentum）**：優先挑選 `Momentum_ATR >= 2.0` 且 `VTF_Score > 1.0` 的標的，跨行業公平挑選，不以絕對漲幅百分比作為依據。買入區間依 `EMA5`/`EMA10`/`EMA20`/`Vol_vs_5DAvg` 三段式判斷（DD-12）：標準回檔進場設在 `EMA20~EMA10` 且需 `Vol_vs_5DAvg < 0.7`；極端強勢例外可設在 `EMA5` 附近（5MA 探針帶）；股價距 `EMA5` 超過 +5% 視為過度延伸，禁止以收盤價設定買入區間上限。
 
-**突破策略（Breakout）**：強烈關注 `VTF_Score >= 1.5` 且股價在 20 日高點附近的標的。`VTF_Score < 0` 一律視為假突破派發陷阱，禁止入選。
+**突破策略（Breakout）**：強烈關注 `VTF_Score >= 1.5` 且 `Close_Price` 距 `High_20D` 在 -2%~+2% 內的標的。買入區間依 `High_20D`/`Vol_vs_20DAvg` 四段式判斷（DD-13）：優先選回測確認（曾站上 `High_20D` 後回落至 `High_20D~High_20D×1.02` 企穩）；次選標準突破緩衝（`High_20D` 之上 +0.5%~+1.5%）；距 `High_20D` 超過 +3% 視為追高；`Vol_vs_20DAvg >= 1.5` 才視為攻擊量確認。`VTF_Score < 0` 一律視為假突破派發陷阱，禁止入選。
 
-**反轉策略（Oversold Reversal）**：優先挑選 `Momentum_ATR <= -2.0`（代表個股跌幅跨越 2 個標準真實波幅，極端超賣）且 `VTF_Score` 由負轉正或向 0 軸收斂（拋壓衰竭或低檔主力承接信號）的標的。
+**反轉策略（Oversold Reversal）**：優先挑選 `Momentum_ATR <= -2.0`（代表個股跌幅跨越 2 個標準真實波幅，極端超賣）且 `VTF_Score` 由負轉正或向 0 軸收斂（拋壓衰竭或低檔主力承接信號）的標的。底背離確認依 `Stoch_K`/`RSI_5D_Ago` 判斷（DD-13）：`Stoch_K < 25` 且 `RSI > RSI_5D_Ago`。買入區間優先設在 `EMA50` 附近（±3%），且 `Close_Price` 須明顯高於 `Low_20D`（代表右側反彈已確立）；止損設在 `Low_20D` 下方，不得設在 `EMA50` 之上。
 
 **VTF_Score 解讀**：VTF_Score 無上限，數值越大代表機構推進力越強；`> 5.0` 應視為史詩級建倉訊號，必須認真對待。
 
@@ -133,13 +139,18 @@ def compute_indicators(
 
     回傳 dict 含：
       price, ema5/10/20/50, rsi
-      momentum_atr  (float | None)   ATR 標準化 20 日動能
-      vtf_score     (float | None)   量能推進因子，下限 -5.0、上限不設
-      vol_vs_5d_avg (float)          當日量 ÷ 5日均量（動能策略回檔量縮確認，DD-12）；分母為零時降級為 1.0
-      beta_60d      (float | None)   60 日 Beta；共同交易日不足 30 時 None
+      momentum_atr   (float | None)  ATR 標準化 20 日動能
+      vtf_score      (float | None)  量能推進因子，下限 -5.0、上限不設
+      vol_vs_5d_avg  (float)         當日量 ÷ 5日均量（動能策略回檔量縮確認，DD-12）；分母為零時降級為 1.0
+      vol_vs_20d_avg (float)         當日量 ÷ 20日均量（突破策略攻擊量確認，DD-13）；分母為零時降級為 1.0
+      high_20d       (float)         20 日最高價（突破策略壓力位/回測支撐基準，DD-13）；已曝露於候選池表格
+      low_20d        (float)         20 日最低價（反轉策略左側支撐與止損基準，DD-13）；已曝露於候選池表格
+      stoch_k        (float)         隨機指標 K 值（反轉策略超賣確認，DD-13）；已曝露於候選池表格
+      rsi_5d_ago     (float | None)  5 日前 RSI（反轉策略底背離確認，DD-13）；已曝露於候選池表格
+      beta_60d       (float | None)  60 日 Beta；共同交易日不足 30 時 None
       earnings_days_left (int | None)
       change_1d_pct, change_5d_pct
-      （以及供 _strategy_tag 使用的 stoch_k、rsi_5d_ago、dist_from_20d_high_pct 等）
+      （以及供 _strategy_tag 使用的 dist_from_20d_high_pct、dist_from_ema50_pct 等）
     """
 
 def _diversify_candidates(
@@ -249,6 +260,17 @@ vtf_score = round(max(-5.0, vol_ratio * (2 * k_pos - 1)), 2)           # 下限�
 - **範圍**：本次僅處理動能策略；突破策略、反轉策略的買進區間同樣缺乏數字依據（如反轉策略引用 EMA50 附近支撐區，但表格未提供 EMA50 數值），列為後續獨立任務，不在本次變更範圍
 - **不變**：`buy_zone` 仍由 AI 自行輸出最終字串（格式 `$X~$Y`），不改為 Python 端確定性計算；`tracker.py` 的 `_parse_buy_zone()` 解析邏輯與格式需求不變
 - **捨棄**：Python 端直接算出確定性 buy_zone（偏離現有「AI 給出完整交易計畫」的架構精神，且需大改 tracker.py 假設）；只給 `Dist_EMA5_Pct` 衍生百分比而不給原始 EMA 價位（AI 無法據此寫出具體美元買進區間）
+- → 詳見 `plans/2026-07-01-momentum-buy-zone-ema-anchor.md`
+
+### DD-13: 突破/反轉策略買進區間結構化（High_20D 回測帶、EMA50/Low_20D 右側支撐）
+
+- **選擇**：候選池表格新增 `High_20D`、`Vol_vs_20DAvg`（突破策略）與 `EMA50`、`Low_20D`、`Stoch_K`、`RSI_5D_Ago`（反轉策略）共六欄；System Prompt 對應段落改寫：
+  - 突破策略四段式規則：優先回測確認（曾站上 `High_20D` 後回落至 `High_20D~High_20D×1.02` 企穩）；次選標準突破緩衝（`High_20D` 之上 +0.5%~+1.5%）；距 `High_20D` 超過 +3% 視為追高降信心；`Vol_vs_20DAvg >= 1.5` 才視為攻擊量確認，`< 1.2` 假突破機率高
+  - 反轉策略三段式規則：`Close_Price` 落在 `EMA50` 附近（±3%）且 `Stoch_K < 25` 且 `RSI > RSI_5D_Ago`（底背離）才進場；`Close_Price` 須明顯高於 `Low_20D`（右側反彈已確立）；仍貼近或跌破 `Low_20D` 則維持觀望；止損設在 `Low_20D` 下方，不得設在 `EMA50` 之上
+- **原因**：程式碼稽核發現這兩個策略比動能策略（DD-12）問題更嚴重——`stoch_k`、`rsi_5d_ago`、`ema50`、`high_20d`、`low_20d` 全部只用於 `_strategy_tag()` 內部判斷，Prompt 卻直接引用這些指標名稱（如「`stoch_k < 25`」「買入：EMA50 附近支撐區」）要求 AI 判斷，但 AI 在候選池表格裡完全看不到這些數字，等於是在憑空回答 Prompt 裡點名的條件。規則來源：使用者提供的《股票操作高勝率買進區間策略指南》突破策略章節（回測確認區優於當日追單、20 日均量 1.5~2 倍攻擊量確認）與反轉策略章節（右側結構確認，本次僅取現有指標可表達的「EMA50 支撐 + 底背離 + Low_20D 止損」子集，完整的 W 底/BOS/斐波那契回撤形態辨識超出範圍，見下方捨棄）
+- **不變**：`buy_zone` 仍由 AI 自行輸出最終字串（格式 `$X~$Y`），`tracker.py` 的 `_parse_buy_zone()` 解析邏輯與格式需求不變
+- **捨棄**：套牢量檢查（需額外歷史成交量峰值追蹤邏輯，改動範圍超出「曝露既有指標」的最小化原則）；反轉策略完整形態辨識（W 底第二腳、BOS、50%~61.8% 斐波那契回撤——需偵測「第一波反彈」的高低點，現有資料模型是單筆技術指標快照，無法表達多筆歷史事件的形態序列）；Python 端直接算出確定性 buy_zone（偏離現有「AI 給出完整交易計畫」的架構精神）
+- → 詳見 `plans/2026-07-01-breakout-reversal-buy-zone-anchor.md`
 
 ## Acceptance Criteria
 
@@ -267,3 +289,6 @@ vtf_score = round(max(-5.0, vol_ratio * (2 * k_pos - 1)), 2)           # 下限�
 - [ ] 表格 header 含 `EMA5`、`EMA10`、`EMA20`、`Vol_vs_5DAvg`
 - [ ] `compute_indicators()` 回傳 dict 含 `vol_vs_5d_avg` key
 - [ ] `avg_vol_5 = 0`（新股或數據不足）→ `vol_vs_5d_avg` 不崩潰，降級為 1.0
+- [ ] 表格 header 含 `High_20D`、`Vol_vs_20DAvg`、`EMA50`、`Low_20D`、`Stoch_K`、`RSI_5D_Ago`
+- [ ] `compute_indicators()` 回傳 dict 含 `vol_vs_20d_avg` key
+- [ ] `avg_vol_20 = 0`（新股或數據不足）→ `vol_vs_20d_avg` 不崩潰，降級為 1.0
