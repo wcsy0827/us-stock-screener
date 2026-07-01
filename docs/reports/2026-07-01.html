@@ -190,8 +190,8 @@ details[open] summary::before { transform: rotate(90deg); }
     <div class="run-info" id="run-info">載入中…</div>
     <div class="scan-bar">
       掃描 <strong>S&amp;P500 503支</strong>
-      <span class="arrow">→</span> L1 <strong>500支</strong>
-      <span class="arrow">→</span> L2 <strong>180支</strong>
+      <span class="arrow">→</span> L1 <strong>499支</strong>
+      <span class="arrow">→</span> L2 <strong>179支</strong>
       <span class="arrow">→</span> AI精選 <strong>5支</strong>
     </div>
     <a class="back-link" href="../index.html">← 返回首頁</a>
@@ -261,7 +261,7 @@ function toggleRunInfo() {
   <div class="regime-metrics">
     <div class="regime-metric">
       <div class="regime-metric-label">市場廣度</div>
-      <div class="regime-metric-val">63.9%</div>
+      <div class="regime-metric-val">63.8%</div>
     </div>
     <div class="regime-metric">
       <div class="regime-metric-label">VIX</div>
@@ -290,17 +290,7 @@ function toggleRunInfo() {
     <span class="strategy-tag">動能策略</span>
   </div>
   <div class="track-status">第 1 天（等待回落至買入區間）</div>
-  <div class="track-prices">買入區間 $290～$294｜目標 $337｜止損 $285</div>
-</div>
-
-<div class="track-item watch">
-  <div class="track-header">
-    <span class="track-symbol">KHC</span>
-    <span class="track-name">The Kraft Heinz Company</span>
-    <span class="strategy-tag">動能策略</span>
-  </div>
-  <div class="track-status">第 1 天（等待回落至買入區間）</div>
-  <div class="track-prices">買入區間 $23.5～$23.8｜目標 $27.5｜止損 $23.15</div>
+  <div class="track-prices">買入區間 $285～$290｜目標 $337｜止損 $284</div>
 </div>
 
 <div class="track-item watch">
@@ -320,7 +310,7 @@ function toggleRunInfo() {
     <span class="strategy-tag">動能策略</span>
   </div>
   <div class="track-status">第 1 天（等待回落至買入區間）</div>
-  <div class="track-prices">買入區間 $337～$342｜目標 $387｜止損 $332</div>
+  <div class="track-prices">買入區間 $337～$343｜目標 $387｜止損 $332</div>
 </div>
 
 <div class="track-item watch">
@@ -330,7 +320,17 @@ function toggleRunInfo() {
     <span class="strategy-tag">動能策略</span>
   </div>
   <div class="track-status">第 1 天（等待回落至買入區間）</div>
-  <div class="track-prices">買入區間 $519～$522｜目標 $587｜止損 $509</div>
+  <div class="track-prices">買入區間 $519～$522｜目標 $587｜止損 $515</div>
+</div>
+
+<div class="track-item watch">
+  <div class="track-header">
+    <span class="track-symbol">KHC</span>
+    <span class="track-name">The Kraft Heinz Company</span>
+    <span class="strategy-tag">動能策略</span>
+  </div>
+  <div class="track-status">第 1 天（等待回落至買入區間）</div>
+  <div class="track-prices">買入區間 $23.7～$24.1｜目標 $27.5｜止損 $23.5</div>
 </div>
 </div>
 <div class="section">
@@ -402,11 +402,11 @@ function toggleRunInfo() {
     <span class="badge">📋 動能策略</span>
   </div>
   <div class="reason-box">🤖 均線多頭排列，RSI=67.3健康，VTF=1.37帶量推進，Momentum_ATR=2.6強勢動能，RS_vs_Sector=+11%板塊領頭羊。</div>
-  <div class="detail-box">📋 策略依據：均線多頭排列，RSI=67.3，VTF=1.37，Momentum_ATR=2.6，RS=+11%，符合動能策略條件。</div>
+  <div class="detail-box">📋 策略依據：均線多頭排列(EMA5&gt;EMA10&gt;EMA20&gt;EMA50)，RSI=67.3，VTF=1.37&gt;1.0，Momentum_ATR=2.6&gt;=2.0，RS_vs_Sector=+11%&gt;+1%。</div>
   <div class="trade-grid">
     <div class="trade-cell">
       <div class="trade-label">買入區間</div>
-      <div class="trade-val buy">$290～$294</div>
+      <div class="trade-val buy">$285～$290</div>
     </div>
     <div class="trade-cell">
       <div class="trade-label">目標價</div>
@@ -414,62 +414,20 @@ function toggleRunInfo() {
     </div>
     <div class="trade-cell">
       <div class="trade-label">止損</div>
-      <div class="trade-val stop">$285</div>
+      <div class="trade-val stop">$284</div>
     </div>
     <div class="trade-cell">
       <div class="trade-label">持有週期</div>
       <div class="trade-val">20</div>
     </div>
   </div>
-  <div class="risk-box">⚠️ 股價距EMA5已+5.5%過度延伸，且Basic Materials產業ETF近5日-1.6%弱勢。</div>
-  <div class="detail-box">💡 信心評分依據：技術面全面強勢，但股價過度延伸且產業ETF偏弱，扣分至8分。</div>
+  <div class="risk-box">⚠️ 股價距EMA5達+5.5%，短線過度延伸，需等待回檔至EMA20~EMA10區間。</div>
+  <div class="detail-box">💡 信心評分依據：完美多頭排列且動能強勁，但股價距EMA5過遠，需等待回檔，扣2分。</div>
 </div>
 
 <div class="stock-card ">
   <div class="card-header">
     <div class="card-rank">2</div>
-    <div class="card-title">
-      <div class="card-symbol">KHC</div>
-      <div class="card-company">The Kraft Heinz Company</div>
-    </div>
-    <div class="card-price">
-      <span class="price-val">$25.01</span>
-      <span class="price-chg up">▲5.88%</span>
-    </div>
-  </div>
-  <div class="card-badges">
-    <span class="badge">📊 評分 91</span>
-    <span class="badge">信心 7/10</span>
-    <span class="badge">🏭 Consumer Defensive</span>
-    <span class="badge">📋 動能策略</span>
-  </div>
-  <div class="reason-box">🤖 均線多頭排列，RSI=63.3健康，VTF=1.07帶量，Momentum_ATR=3.88強勁動能，RS_vs_Sector=+7.3%領先板塊。</div>
-  <div class="detail-box">📋 策略依據：均線多頭排列，RSI=63.3，VTF=1.07，Momentum_ATR=3.88，RS=+7.3%，符合動能策略。</div>
-  <div class="trade-grid">
-    <div class="trade-cell">
-      <div class="trade-label">買入區間</div>
-      <div class="trade-val buy">$23.5～$23.8</div>
-    </div>
-    <div class="trade-cell">
-      <div class="trade-label">目標價</div>
-      <div class="trade-val tgt">$27.5</div>
-    </div>
-    <div class="trade-cell">
-      <div class="trade-label">止損</div>
-      <div class="trade-val stop">$23.15</div>
-    </div>
-    <div class="trade-cell">
-      <div class="trade-label">持有週期</div>
-      <div class="trade-val">20</div>
-    </div>
-  </div>
-  <div class="risk-box">⚠️ Consumer Defensive產業ETF近5日-0.8%偏弱，且股價距EMA5已+3.9%略高。</div>
-  <div class="detail-box">💡 信心評分依據：動能強勁且領先板塊，但產業ETF偏弱且股價略高，給7分。</div>
-</div>
-
-<div class="stock-card ">
-  <div class="card-header">
-    <div class="card-rank">3</div>
     <div class="card-title">
       <div class="card-symbol">IQV</div>
       <div class="card-company">IQVIA Holdings, Inc.</div>
@@ -481,12 +439,12 @@ function toggleRunInfo() {
   </div>
   <div class="card-badges">
     <span class="badge">📊 評分 91</span>
-    <span class="badge">信心 6/10</span>
+    <span class="badge">信心 7/10</span>
     <span class="badge">🏭 Healthcare</span>
     <span class="badge">📋 動能策略</span>
   </div>
-  <div class="reason-box">🤖 均線多頭排列，RSI=71.5健康，VTF=0.52偏低但Momentum_ATR=2.85強勢，RS_vs_Sector=+6.5%領先Healthcare板塊。</div>
-  <div class="detail-box">📋 策略依據：均線多頭排列，RSI=71.5，Momentum_ATR=2.85，RS=+6.5%，符合動能策略。</div>
+  <div class="reason-box">🤖 均線多頭排列，RSI=71.5，VTF=0.52略低但MACD正增，Momentum_ATR=2.85強勢，RS_vs_Sector=+6.5%領先板塊。</div>
+  <div class="detail-box">📋 策略依據：均線多頭排列，RSI=71.5，Momentum_ATR=2.85&gt;=2.0，RS_vs_Sector=+6.5%&gt;+1%。</div>
   <div class="trade-grid">
     <div class="trade-cell">
       <div class="trade-label">買入區間</div>
@@ -505,13 +463,13 @@ function toggleRunInfo() {
       <div class="trade-val">20</div>
     </div>
   </div>
-  <div class="risk-box">⚠️ VTF=0.52偏低，量能不足；股價距EMA5已+4.9%接近過度延伸。</div>
-  <div class="detail-box">💡 信心評分依據：動能強勢且領先板塊，但VTF偏低且股價略高，給6分。</div>
+  <div class="risk-box">⚠️ VTF=0.52偏低，量能未明顯放大，需觀察後續量能跟進。</div>
+  <div class="detail-box">💡 信心評分依據：技術面強勢但VTF偏低，量能不足扣1分，整體仍屬優質標的。</div>
 </div>
 
 <div class="stock-card ">
   <div class="card-header">
-    <div class="card-rank">4</div>
+    <div class="card-rank">3</div>
     <div class="card-title">
       <div class="card-symbol">CB</div>
       <div class="card-company">Chubb Limited</div>
@@ -527,12 +485,12 @@ function toggleRunInfo() {
     <span class="badge">🏭 Financial Services</span>
     <span class="badge">📋 動能策略</span>
   </div>
-  <div class="reason-box">🤖 均線多頭排列，RSI=70.1健康，VTF=1.03帶量，Momentum_ATR=5.61極強動能，RS_vs_Sector=+3.8%領先Financial板塊。</div>
-  <div class="detail-box">📋 策略依據：均線多頭排列，RSI=70.1，VTF=1.03，Momentum_ATR=5.61，RS=+3.8%，符合動能策略。</div>
+  <div class="reason-box">🤖 均線多頭排列，RSI=70.1，VTF=1.03帶量，Momentum_ATR=5.61極強，RS_vs_Sector=+3.8%領先板塊。</div>
+  <div class="detail-box">📋 策略依據：均線多頭排列，RSI=70.1，VTF=1.03&gt;1.0，Momentum_ATR=5.61&gt;=2.0，RS_vs_Sector=+3.8%&gt;+1%。</div>
   <div class="trade-grid">
     <div class="trade-cell">
       <div class="trade-label">買入區間</div>
-      <div class="trade-val buy">$337～$342</div>
+      <div class="trade-val buy">$337～$343</div>
     </div>
     <div class="trade-cell">
       <div class="trade-label">目標價</div>
@@ -547,13 +505,13 @@ function toggleRunInfo() {
       <div class="trade-val">20</div>
     </div>
   </div>
-  <div class="risk-box">⚠️ 股價距EMA5已+2.6%尚可，但Financial Services產業ETF近5日+2.5%強勢，風險較低。</div>
-  <div class="detail-box">💡 信心評分依據：動能極強，量價配合，產業ETF強勢，給8分。</div>
+  <div class="risk-box">⚠️ 股價距EMA5約+2.6%，尚在合理範圍，但RSI接近70，短線可能過熱。</div>
+  <div class="detail-box">💡 信心評分依據：動能極強且量價配合，RSI略高但未過熱，給8分。</div>
 </div>
 
 <div class="stock-card ">
   <div class="card-header">
-    <div class="card-rank">5</div>
+    <div class="card-rank">4</div>
     <div class="card-title">
       <div class="card-symbol">LIN</div>
       <div class="card-company">Linde plc</div>
@@ -565,12 +523,12 @@ function toggleRunInfo() {
   </div>
   <div class="card-badges">
     <span class="badge">📊 評分 91</span>
-    <span class="badge">信心 6/10</span>
+    <span class="badge">信心 7/10</span>
     <span class="badge">🏭 Basic Materials</span>
     <span class="badge">📋 動能策略</span>
   </div>
-  <div class="reason-box">🤖 均線多頭排列，RSI=63.2健康，VTF=0.59偏低但Momentum_ATR=2.4強勢，RS_vs_Sector=+3.7%領先Basic Materials板塊。</div>
-  <div class="detail-box">📋 策略依據：均線多頭排列，RSI=63.2，Momentum_ATR=2.4，RS=+3.7%，符合動能策略。</div>
+  <div class="reason-box">🤖 均線多頭排列，RSI=63.2健康，VTF=0.59偏低但MACD正增，Momentum_ATR=2.4強勢，RS_vs_Sector=+3.7%領先。</div>
+  <div class="detail-box">📋 策略依據：均線多頭排列，RSI=63.2，Momentum_ATR=2.4&gt;=2.0，RS_vs_Sector=+3.7%&gt;+1%。</div>
   <div class="trade-grid">
     <div class="trade-cell">
       <div class="trade-label">買入區間</div>
@@ -582,15 +540,57 @@ function toggleRunInfo() {
     </div>
     <div class="trade-cell">
       <div class="trade-label">止損</div>
-      <div class="trade-val stop">$509</div>
+      <div class="trade-val stop">$515</div>
     </div>
     <div class="trade-cell">
       <div class="trade-label">持有週期</div>
       <div class="trade-val">20</div>
     </div>
   </div>
-  <div class="risk-box">⚠️ VTF=0.59偏低，量能不足；Basic Materials產業ETF近5日-1.6%弱勢。</div>
-  <div class="detail-box">💡 信心評分依據：動能強勢但VTF偏低且產業ETF弱勢，給6分。</div>
+  <div class="risk-box">⚠️ VTF=0.59偏低，量能不足，需確認後續買盤進場。</div>
+  <div class="detail-box">💡 信心評分依據：技術面穩健但VTF偏低，量能未跟上，扣1分。</div>
+</div>
+
+<div class="stock-card ">
+  <div class="card-header">
+    <div class="card-rank">5</div>
+    <div class="card-title">
+      <div class="card-symbol">KHC</div>
+      <div class="card-company">The Kraft Heinz Company</div>
+    </div>
+    <div class="card-price">
+      <span class="price-val">$25.01</span>
+      <span class="price-chg up">▲5.88%</span>
+    </div>
+  </div>
+  <div class="card-badges">
+    <span class="badge">📊 評分 91</span>
+    <span class="badge">信心 7/10</span>
+    <span class="badge">🏭 Consumer Defensive</span>
+    <span class="badge">📋 動能策略</span>
+  </div>
+  <div class="reason-box">🤖 均線多頭排列，RSI=63.3健康，VTF=1.07帶量推進，Momentum_ATR=3.88強勢，RS_vs_Sector=+7.3%領先板塊。</div>
+  <div class="detail-box">📋 策略依據：均線多頭排列，RSI=63.3，VTF=1.07&gt;1.0，Momentum_ATR=3.88&gt;=2.0，RS_vs_Sector=+7.3%&gt;+1%。</div>
+  <div class="trade-grid">
+    <div class="trade-cell">
+      <div class="trade-label">買入區間</div>
+      <div class="trade-val buy">$23.7～$24.1</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">目標價</div>
+      <div class="trade-val tgt">$27.5</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">止損</div>
+      <div class="trade-val stop">$23.5</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">持有週期</div>
+      <div class="trade-val">20</div>
+    </div>
+  </div>
+  <div class="risk-box">⚠️ 股價距EMA5約+3.9%，略高但仍在可接受範圍，注意回檔風險。</div>
+  <div class="detail-box">💡 信心評分依據：動能強勁且量能配合，但股價略高於EMA5，扣1分。</div>
 </div>
 </div>
 
