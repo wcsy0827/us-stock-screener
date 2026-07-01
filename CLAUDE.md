@@ -134,6 +134,7 @@ S&P 500 (~503 支)
 | 財報日期 | `.cache/earnings_registry.json` | 30 日（per-symbol TTL，獨立管理） |
 | 追蹤清單 | `data/watchlist.json` | 永久（持久化） |
 | 歷史績效 | `data/performance_history.json` | 永久（只增不刪） |
+| 執行記錄 | `docs/data/last_run.json` | 每次 publish() 覆寫；前端 fetch 用於顯示「上次執行時間」與資料核實 |
 
 ## GitHub Actions
 

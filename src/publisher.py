@@ -14,6 +14,7 @@ _DOCS = _ROOT / "docs"
 _REPORTS_DIR = _DOCS / "reports"
 _DATA_DIR = _DOCS / "data"
 _INDEX_JSON = _DATA_DIR / "reports-index.json"
+_LAST_RUN_JSON = _DATA_DIR / "last_run.json"
 _INDEX_HTML = _DOCS / "index.html"
 _PERF_PATH = _ROOT / "data" / "performance_history.json"
 
@@ -289,13 +290,15 @@ details[open] summary::before { transform: rotate(90deg); }
 .tip-wrap:hover .tip-box { display: block; }
 
 /* Data freshness indicator */
-.date-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+.date-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 4px; }
 .date-label { font-size: 0.8rem; color: var(--muted); }
 .date-val { font-size: 1rem; color: var(--text); font-weight: 600; }
-.freshness-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 0.75rem; padding: 2px 9px; border-radius: 10px; font-weight: 600; }
+.freshness-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 0.75rem; padding: 2px 9px; border-radius: 10px; font-weight: 600; cursor: pointer; }
 .freshness-ok    { background: rgba(34,197,94,0.15);  color: var(--active); }
 .freshness-stale { background: rgba(234,179,8,0.12);  color: var(--watch); }
 .tz-note { font-size: 0.8rem; color: var(--muted); margin-top: 6px; min-height: 1.3em; }
+.run-info { font-size: 0.75rem; color: var(--muted); margin-bottom: 12px; padding: 6px 10px; background: rgba(255,255,255,0.04); border-radius: 6px; display: none; line-height: 1.8; }
+.run-info.visible { display: block; }
 
 @media (max-width: 600px) {
   .scan-bar { flex-direction: column; align-items: flex-start; gap: 2px; }
@@ -655,8 +658,9 @@ def _build_daily_report(
     <div class="date-meta">
       <span class="date-label">美股資料截止日</span>
       <span class="date-val">📅 {date_str}（{weekday}）</span>
-      <span class="freshness-badge" id="freshness-badge"></span>
+      <span class="freshness-badge" id="freshness-badge" onclick="toggleRunInfo()" title="點擊查看資料來源詳情"></span>
     </div>
+    <div class="run-info" id="run-info">載入中…</div>
     <div class="scan-bar">
       掃描 <strong>S&amp;P500 {total}支</strong>
       <span class="arrow">→</span> L1 <strong>{l1}支</strong>
@@ -676,16 +680,49 @@ def _build_daily_report(
   var badge = document.getElementById('freshness-badge');
   if (!badge) return;
   if (diffDays <= 0) {{
-    badge.textContent = '✓ 今日最新數據';
+    badge.textContent = '✓ 今日最新數據 ▸';
     badge.className = 'freshness-badge freshness-ok';
   }} else {{
     var next = new Date(reportDay + 86400000);
     var mo = next.getUTCMonth() + 1;
     var dy = next.getUTCDate();
-    badge.textContent = '↻ ' + mo + '/' + dy + ' 05:30（台灣時間）更新';
+    badge.textContent = '↻ ' + mo + '/' + dy + ' 05:30（台灣時間）更新 ▸';
     badge.className = 'freshness-badge freshness-stale';
   }}
 }})();
+
+function toggleRunInfo() {{
+  var info = document.getElementById('run-info');
+  if (!info) return;
+  if (info.classList.contains('visible')) {{
+    info.classList.remove('visible');
+    return;
+  }}
+  info.classList.add('visible');
+  if (info._loaded) return;
+  info._loaded = true;
+  fetch('../data/last_run.json?_=' + Date.now())
+    .then(function(r) {{ return r.json(); }})
+    .then(function(d) {{
+      var utc = d.run_at_utc || '—';
+      // 轉換為台灣時間顯示
+      var dt = new Date(utc);
+      var twStr = dt.toLocaleString('zh-TW', {{timeZone:'Asia/Taipei', hour12:false,
+        year:'numeric', month:'2-digit', day:'2-digit',
+        hour:'2-digit', minute:'2-digit'}});
+      info.innerHTML =
+        '<strong>資料來源核實</strong><br>' +
+        '執行時間（UTC）：' + utc + '<br>' +
+        '執行時間（台灣）：' + twStr + '<br>' +
+        '資料截止日：' + (d.market_date || '—') + '<br>' +
+        '掃描：S&amp;P500 ' + (d.total_scanned || '—') + ' 支 → L1 ' +
+        (d.l1_count || '—') + ' → L2 ' + (d.l2_count || '—') +
+        ' → AI精選 ' + (d.ai_count || '—') + ' 支';
+    }})
+    .catch(function() {{
+      info.textContent = '⚠ 無法載入 last_run.json（本地預覽時正常，GitHub Pages 上才有此檔案）';
+    }});
+}}
 </script>
 
   {dashboard_html}
@@ -820,26 +857,47 @@ def _build_index(report_index: list[dict]) -> str:
     <h1>📈 美股 AI 選股系統</h1>
     <p>每日選股報告 · 訊號追蹤 · S&amp;P 500</p>
     <p class="tz-note" id="index-freshness"></p>
+    <p class="tz-note" id="index-lastrun" style="font-size:0.75rem;"></p>
   </div>
 <script>
 (function() {{
+  // ── 時間狀態訊息（依 UTC 時段）────────────────────────────────
   var el = document.getElementById('index-freshness');
-  if (!el) return;
-  var now = new Date();
-  var day = now.getUTCDay();   // 0=日, 6=六
-  var h   = now.getUTCHours();
-  var m   = now.getUTCMinutes();
-  var msg;
-  if (day === 0 || day === 6) {{
-    msg = '週末無新報告，下一份報告於週一 05:30（台灣時間）產生';
-  }} else if (h > 21 || (h === 21 && m >= 30)) {{
-    msg = '今日報告已產生（UTC 21:30）· 請點選最新報告查看';
-  }} else if (h >= 20) {{
-    msg = '美股已收盤，報告正在產生中，將於台灣時間 05:30 發布';
-  }} else {{
-    msg = '美股尚未收盤（UTC 13:30–20:00）· 今日報告將於台灣時間 05:30 更新';
+  if (el) {{
+    var now = new Date();
+    var day = now.getUTCDay();   // 0=日, 6=六
+    var h   = now.getUTCHours();
+    var m   = now.getUTCMinutes();
+    var msg;
+    if (day === 0 || day === 6) {{
+      msg = '週末無新報告，下一份報告於週一 05:30（台灣時間）產生';
+    }} else if (h > 21 || (h === 21 && m >= 30)) {{
+      msg = '今日報告已產生（CI UTC 21:30 執行）· 請點選最新報告查看';
+    }} else if (h >= 20) {{
+      msg = '美股已收盤（UTC 20:00），報告正在產生中，將於台灣時間 05:30 發布';
+    }} else if (h > 13 || (h === 13 && m >= 30)) {{
+      msg = '美股交易中（UTC 13:30–20:00）· 今日報告將於台灣時間 05:30 更新';
+    }} else {{
+      msg = '美股市場尚未開盤（UTC 13:30 開盤）· 今日報告將於台灣時間 05:30 更新';
+    }}
+    el.textContent = msg;
   }}
-  el.textContent = msg;
+
+  // ── 顯示上次實際執行時間（從 last_run.json）────────────────────
+  var lr = document.getElementById('index-lastrun');
+  if (lr) {{
+    fetch('data/last_run.json?_=' + Date.now())
+      .then(function(r) {{ return r.json(); }})
+      .then(function(d) {{
+        if (!d.run_at_utc) return;
+        var dt = new Date(d.run_at_utc);
+        var twStr = dt.toLocaleString('zh-TW', {{timeZone:'Asia/Taipei', hour12:false,
+          year:'numeric', month:'2-digit', day:'2-digit',
+          hour:'2-digit', minute:'2-digit'}});
+        lr.textContent = '上次執行：' + twStr + '（台灣時間）· 資料截止 ' + (d.market_date || '—');
+      }})
+      .catch(function() {{}});  // 靜默失敗，首次部署前 last_run.json 不存在
+  }}
 }})();
 </script>
   {_INFO_HTML}
@@ -887,6 +945,23 @@ def _git_push(date_str: str) -> None:
             print(f"[publisher] git 錯誤（{' '.join(cmd)}）：{stderr}")
             raise RuntimeError(f"git 指令失敗：{' '.join(cmd)}")
     print(f"[publisher] 已推送至 GitHub")
+
+
+def _write_last_run(stats: dict, date_str: str) -> None:
+    """寫入 docs/data/last_run.json，記錄本次實際執行時間（UTC）與掃描統計。
+    run_at_utc 使用 datetime.utcnow()——此欄位記錄執行時刻，與報告日期錨定規則無關。"""
+    _DATA_DIR.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "run_at_utc":    datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "market_date":   date_str,
+        "total_scanned": stats.get("total", 0),
+        "l1_count":      stats.get("l1_count", 0),
+        "l2_count":      stats.get("l2_count", 0),
+        "ai_count":      stats.get("ai_count", 0),
+    }
+    with open(_LAST_RUN_JSON, "w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False, indent=2)
+    print(f"[publisher] last_run.json 已更新：{payload['run_at_utc']}")
 
 
 def _check_git_remote() -> bool:
@@ -943,6 +1018,9 @@ def publish(
     index_html = _build_index(index)
     _INDEX_HTML.write_text(index_html, encoding="utf-8")
     print(f"[publisher] 首頁已更新：{_INDEX_HTML}")
+
+    # 寫入執行記錄（供前端核實資料新鮮度）
+    _write_last_run(stats, date_str)
 
     if dry_run:
         print(f"[publisher] Dry-run 模式，略過 git push")
