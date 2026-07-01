@@ -88,6 +88,15 @@ S&P 500 (~503 支)
 - 若需求與現有規格衝突，**先更新規格**，說明為何改變，再動程式碼
 - 規格的 Design Decisions 節是已解決的設計爭議，不得在未取得用戶同意前繞過
 
+## Plan 文件化規則
+
+任何經 Plan Mode 核准並執行完成的 plan，必須文件化保存，不能只留在使用者本機的暫存 plan 檔案（`~/.claude/plans/`，不在版控範圍內，無法跨 session 保存）。同一個 commit 需同時完成以下兩份文件：
+
+1. **完整記錄**：把核准當下的 plan 全文（含 Context、探索過程、考慮過但捨棄的方案）存成 `plans/YYYY-MM-DD-<slug>.md`（repo 根目錄的 `plans/` 資料夾，檔名用當日日期 + 簡短英文 slug）
+2. **精簡摘要**：在對應模組的 `specs/<module>.md` 補上一個新的 Design Decision（DD-N），只留最終選擇、原因、捨棄方案的濃縮版本（不含探索過程），並在該 DD 段落結尾加上 `→ 詳見 plans/YYYY-MM-DD-<slug>.md` 互相連結
+
+不得只做其中一份——`plans/` 是完整歷史軌跡（給未來想知道「當初為什麼這樣選」的人），`specs/` 是給日常開發參考的精簡權威版本（DD 段落本身已符合現有慣例）。
+
 ## 十五個最重要的設計決策（摘要）
 
 1. **EMA50 悖論（tracker.py DD-1）**：反轉策略進場點本就在 EMA50 之下，不能以跌破 EMA50 作為失效門檻。反轉股失效條件改用 AI 設定的 `stop_loss` 絕對價。→ 詳見 `specs/tracker.md`
@@ -119,6 +128,8 @@ S&P 500 (~503 支)
 15. **廣度遲滯帶防邊界翻轉（market.py DD-5）**：`fetch_regime_quick()` 讀取前一日 `last_run.json` 的 `regime`，廣度在邊界 ±2%（60% 或 35%）內時維持前日 Regime；VIX 跨越結構邊界（高 VIX 組 PANIC/CONSOLIDATION_VOLATILE ↔ 低 VIX 組）時強制放行，不套用遲滯。`last_market_date < current_market_date` 嚴格校驗，防止同日重複執行污染。→ 詳見 `specs/market.md`
 
 16. **動能策略買進區間結構化（ranker.py DD-12）**：候選池表格新增 `EMA5`/`EMA10`/`EMA20`（美元原始價位）與 `Vol_vs_5DAvg`（當日量 ÷ 5日均量）四欄，解決 AI 過去只有 `MA_Trend` 文字標籤、無實際 EMA 數值可用而把 `buy_zone` 上限退化成收盤價的問題。動能策略 Prompt 改為三段式規則：標準回檔進場設在 `EMA20~EMA10` 且 `Vol_vs_5DAvg < 0.7`（量縮確認）；極端強勢例外可用 `EMA5` 附近（5MA 探針帶）；股價距 `EMA5` 超過 +5% 視為過度延伸禁止追價。`buy_zone` 仍由 AI 自行輸出字串，不改為 Python 端確定性計算。→ 詳見 `specs/ranker.md`
+
+17. **突破/反轉策略買進區間結構化（ranker.py DD-13）**：候選池表格新增 `High_20D`/`Vol_vs_20DAvg`（突破策略）與 `EMA50`/`Low_20D`/`Stoch_K`/`RSI_5D_Ago`（反轉策略）共六欄。根因比 DD-12 更嚴重：Prompt 原本就直接引用 `stoch_k`、`rsi_5d_ago`、`ema50` 等指標名稱要求 AI 判斷，但這些值只用於 `_strategy_tag()` 內部計算，AI 在表格裡完全看不到。突破策略 Prompt 改為四段式規則（回測確認優先於當日追單、`Vol_vs_20DAvg >= 1.5` 攻擊量確認）；反轉策略改為三段式規則（`EMA50` 支撐 + `Stoch_K`/`RSI_5D_Ago` 底背離確認 + `Low_20D` 止損基準）。完整的 W 底/BOS/斐波那契回撤形態辨識超出「單筆技術指標快照」的資料設計範疇，本次不做。→ 詳見 `specs/ranker.md`
 
 12. **報告日期與防重複執行皆錨定 UTC（main.py / tracker.py）**：CI 在 UTC 時區執行；台灣時間 7/1 08:00 = UTC 6/30 24:00，yfinance 此時拿到的最後數據仍是 6/30——報告正確標示 6/30 是預期行為，不是 bug。規則如下：
     - **`main.py`**：`stats["date"]` 必須用 `datetime.strptime(market_date_str, "%Y-%m-%d")`（`market_date_str` 來自 `summary["market_date"]` = `price_data["SPY"].index[-1].date()`），**不得用 `datetime.now()`**。`datetime.now()` 在非 UTC 時區執行時，與 market_date 不一致，會產生「報告標題 7/1、數據內容 6/30」的誤導標籤。
