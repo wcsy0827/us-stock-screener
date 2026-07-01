@@ -816,33 +816,7 @@ _INFO_HTML = """
 """
 
 
-def _build_index(report_index: list[dict]) -> str:
-    entries_html = ""
-    for entry in sorted(report_index, key=lambda x: x["date"], reverse=True):
-        d = entry["date"]
-        wd = entry.get("weekday", "")
-        chips = (
-            _chip(entry.get("active", 0), "有效", "active") +
-            _chip(entry.get("watch", 0), "留意", "watch") +
-            _chip(entry.get("invalid", 0), "失效", "invalid") +
-            _chip(entry.get("new", 0), "新增", "new") +
-            _chip(entry.get("reset", 0), "重置", "reset")
-        )
-        if not chips:
-            chips = '<span class="chip neutral">無追蹤</span>'
-        entries_html += f"""
-<a class="report-entry" href="reports/{d}.html">
-  <div>
-    <div class="report-date">{d}</div>
-    <div class="report-weekday">（{wd}）</div>
-  </div>
-  <div class="report-chips">{chips}</div>
-  <span class="arrow-icon">›</span>
-</a>"""
-
-    if not entries_html:
-        entries_html = '<div class="empty-state">尚無報告，請先執行選股系統</div>'
-
+def _build_index() -> str:
     return f"""<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -898,13 +872,45 @@ def _build_index(report_index: list[dict]) -> str:
       }})
       .catch(function() {{}});  // 靜默失敗，首次部署前 last_run.json 不存在
   }}
+
+  // ── 動態渲染歷史報告列表（從 reports-index.json）─────────────
+  // 讓首頁完全與索引 JSON 同步，不需要每次重新產生 index.html（DD-5）
+  var list = document.getElementById('report-list');
+  if (list) {{
+    fetch('data/reports-index.json?_=' + Date.now())
+      .then(function(r) {{ return r.json(); }})
+      .then(function(data) {{
+        if (!data || !data.length) {{
+          list.innerHTML = '<div class="empty-state">尚無報告，請先執行選股系統</div>';
+          return;
+        }}
+        data.sort(function(a, b) {{ return b.date.localeCompare(a.date); }});
+        var html = '';
+        data.forEach(function(entry) {{
+          var chips = '';
+          if (entry.active)  chips += '<span class="chip active">'  + entry.active  + ' 有效</span>';
+          if (entry.watch)   chips += '<span class="chip watch">'   + entry.watch   + ' 留意</span>';
+          if (entry.invalid) chips += '<span class="chip invalid">' + entry.invalid + ' 失效</span>';
+          if (entry.new)     chips += '<span class="chip new">'     + entry.new     + ' 新增</span>';
+          if (entry.reset)   chips += '<span class="chip reset">'   + entry.reset   + ' 重置</span>';
+          if (!chips) chips = '<span class="chip neutral">無追蹤</span>';
+          html += '<a class="report-entry" href="reports/' + entry.date + '.html">' +
+            '<div><div class="report-date">' + entry.date + '</div>' +
+            '<div class="report-weekday">（' + (entry.weekday || '') + '）</div></div>' +
+            '<div class="report-chips">' + chips + '</div>' +
+            '<span class="arrow-icon">›</span></a>';
+        }});
+        list.innerHTML = html;
+      }})
+      .catch(function() {{
+        list.innerHTML = '<div class="empty-state">尚無報告，請先執行選股系統</div>';
+      }});
+  }}
 }})();
 </script>
   {_INFO_HTML}
   <div class="report-section-title">📋 歷史報告</div>
-  <div class="report-list">
-    {entries_html}
-  </div>
+  <div class="report-list" id="report-list"></div>
 </div>
 </body>
 </html>"""
@@ -1014,8 +1020,8 @@ def publish(
         index.append(entry)
     _save_report_index(index)
 
-    # 生成首頁
-    index_html = _build_index(index)
+    # 生成首頁（報告列表由前端 fetch reports-index.json 動態渲染，DD-5）
+    index_html = _build_index()
     _INDEX_HTML.write_text(index_html, encoding="utf-8")
     print(f"[publisher] 首頁已更新：{_INDEX_HTML}")
 

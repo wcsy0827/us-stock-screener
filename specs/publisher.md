@@ -52,6 +52,13 @@ def publish(
 - **原因**：純靠「✓ 今日最新數據」文字無法核實；顯示「產生時間：2026-06-30 21:31 UTC · 掃描 503 支」讓使用者有具體數字可對照，大幅降低「是不是抓到舊資料」的疑慮。
 - **捨棄**：在 HTML 硬編碼統計數字（靜態，使用者查看時已過時）、不提供（體驗差）。
 
+### DD-5: 歷史報告列表由前端動態渲染，不寫死進 index.html
+
+- **選擇**：`_build_index()` 輸出固定的 `<div id="report-list">` 佔位元素，JS fetch `data/reports-index.json` 後動態生成報告連結。`_build_index` 不再接受 `report_index` 參數。
+- **原因**：舊做法將報告清單硬編碼進 HTML，導致手動重置 `reports-index.json` 後首頁仍顯示舊資料，必須同步手動修改 `index.html`。動態渲染後，`reports-index.json` 是唯一的真實來源，重置或新增報告只需更新 JSON，`index.html` 本身不需要跟著變動。
+- **`index.html` 何時需要重新生成**：只有 `_build_index()` 模板本身（CSS、佈局、script 邏輯）改變時才需要重新執行 `publish()` 或手動同步；報告清單新增/刪除不再需要。
+- **捨棄**：靜態 HTML 生成（index.html 與 JSON 雙重維護，手動重置時容易不同步）。
+
 ## Acceptance Criteria
 
 - [ ] 每日報告頁標題顯示「美股資料截止日：YYYY-MM-DD（週X）」

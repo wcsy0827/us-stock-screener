@@ -225,6 +225,40 @@ details[open] summary::before { transform: rotate(90deg); }
       })
       .catch(function() {});  // 靜默失敗，首次部署前 last_run.json 不存在
   }
+
+  // ── 動態渲染歷史報告列表（從 reports-index.json）─────────────
+  // 讓首頁完全與索引 JSON 同步，不需要每次重新產生 index.html（DD-5）
+  var list = document.getElementById('report-list');
+  if (list) {
+    fetch('data/reports-index.json?_=' + Date.now())
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (!data || !data.length) {
+          list.innerHTML = '<div class="empty-state">尚無報告，請先執行選股系統</div>';
+          return;
+        }
+        data.sort(function(a, b) { return b.date.localeCompare(a.date); });
+        var html = '';
+        data.forEach(function(entry) {
+          var chips = '';
+          if (entry.active)  chips += '<span class="chip active">'  + entry.active  + ' 有效</span>';
+          if (entry.watch)   chips += '<span class="chip watch">'   + entry.watch   + ' 留意</span>';
+          if (entry.invalid) chips += '<span class="chip invalid">' + entry.invalid + ' 失效</span>';
+          if (entry.new)     chips += '<span class="chip new">'     + entry.new     + ' 新增</span>';
+          if (entry.reset)   chips += '<span class="chip reset">'   + entry.reset   + ' 重置</span>';
+          if (!chips) chips = '<span class="chip neutral">無追蹤</span>';
+          html += '<a class="report-entry" href="reports/' + entry.date + '.html">' +
+            '<div><div class="report-date">' + entry.date + '</div>' +
+            '<div class="report-weekday">（' + (entry.weekday || '') + '）</div></div>' +
+            '<div class="report-chips">' + chips + '</div>' +
+            '<span class="arrow-icon">›</span></a>';
+        });
+        list.innerHTML = html;
+      })
+      .catch(function() {
+        list.innerHTML = '<div class="empty-state">尚無報告，請先執行選股系統</div>';
+      });
+  }
 })();
 </script>
   
@@ -284,9 +318,7 @@ details[open] summary::before { transform: rotate(90deg); }
 </details>
 
   <div class="report-section-title">📋 歷史報告</div>
-  <div class="report-list">
-
-  </div>
+  <div class="report-list" id="report-list"></div>
 </div>
 </body>
 </html>
