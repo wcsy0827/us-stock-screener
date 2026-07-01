@@ -155,6 +155,15 @@ details[open] summary::before { transform: rotate(90deg); }
 .tip-box { display: none; position: absolute; right: 0; top: calc(100% + 6px); background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 0.78rem; line-height: 1.65; color: var(--text); font-weight: 400; width: 230px; z-index: 20; box-shadow: 0 4px 16px rgba(0,0,0,0.5); white-space: normal; text-align: left; }
 .tip-wrap:hover .tip-box { display: block; }
 
+/* Data freshness indicator */
+.date-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+.date-label { font-size: 0.8rem; color: var(--muted); }
+.date-val { font-size: 1rem; color: var(--text); font-weight: 600; }
+.freshness-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 0.75rem; padding: 2px 9px; border-radius: 10px; font-weight: 600; }
+.freshness-ok    { background: rgba(34,197,94,0.15);  color: var(--active); }
+.freshness-stale { background: rgba(234,179,8,0.12);  color: var(--watch); }
+.tz-note { font-size: 0.8rem; color: var(--muted); margin-top: 6px; min-height: 1.3em; }
+
 @media (max-width: 600px) {
   .scan-bar { flex-direction: column; align-items: flex-start; gap: 2px; }
   .card-header { flex-wrap: wrap; }
@@ -172,8 +181,30 @@ details[open] summary::before { transform: rotate(90deg); }
   <div class="index-hero">
     <h1>📈 美股 AI 選股系統</h1>
     <p>每日選股報告 · 訊號追蹤 · S&amp;P 500</p>
+    <p class="tz-note" id="index-freshness"></p>
   </div>
-  
+<script>
+(function() {
+  var el = document.getElementById('index-freshness');
+  if (!el) return;
+  var now = new Date();
+  var day = now.getUTCDay();
+  var h   = now.getUTCHours();
+  var m   = now.getUTCMinutes();
+  var msg;
+  if (day === 0 || day === 6) {
+    msg = '週末無新報告，下一份報告於週一 05:30（台灣時間）產生';
+  } else if (h > 21 || (h === 21 && m >= 30)) {
+    msg = '今日報告已產生（UTC 21:30）· 請點選最新報告查看';
+  } else if (h >= 20) {
+    msg = '美股已收盤，報告正在產生中，將於台灣時間 05:30 發布';
+  } else {
+    msg = '美股尚未收盤（UTC 13:30–20:00）· 今日報告將於台灣時間 05:30 更新';
+  }
+  el.textContent = msg;
+})();
+</script>
+
 <details open>
 <summary>📖 系統說明</summary>
 <div class="info-grid">
