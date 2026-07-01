@@ -839,6 +839,8 @@ def _build_index() -> str:
   </div>
 <script>
 (function() {{
+  // report-list 等元素定義在此 script 標籤之後，必須等 DOMContentLoaded 才能 getElementById 取到
+  document.addEventListener('DOMContentLoaded', function() {{
   // ── 時間狀態訊息（依 UTC 時段）────────────────────────────────
   var el = document.getElementById('index-freshness');
   if (el) {{
@@ -910,6 +912,7 @@ def _build_index() -> str:
         list.innerHTML = '<div class="empty-state">尚無報告，請先執行選股系統</div>';
       }});
   }}
+  }});
 }})();
 </script>
   {_INFO_HTML}
