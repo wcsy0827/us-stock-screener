@@ -122,6 +122,7 @@ S&P 500 (~503 支)
     - **`main.py`**：`stats["date"]` 必須用 `datetime.strptime(market_date_str, "%Y-%m-%d")`（`market_date_str` 來自 `summary["market_date"]` = `price_data["SPY"].index[-1].date()`），**不得用 `datetime.now()`**。`datetime.now()` 在非 UTC 時區執行時，與 market_date 不一致，會產生「報告標題 7/1、數據內容 6/30」的誤導標籤。
     - **`tracker.py`**：`check_already_run_today()` 使用 `datetime.utcnow().date()` 而非 `date.today()`，確保台灣本地執行時防重複邏輯與 CI 時區一致。`run_tracker()` 內的 `today` 繼續由 `market_date` 注入（DD-11 不變）。
     - **何時才會出現次日報告**：美股 7/1 的完整收盤數據要等到 UTC 20:00+（台灣 7/2 04:00）才可用，自動 CI 在 UTC 21:30（台灣 7/2 05:30）抓取並產出 7/1 報告。在此之前觸發的任何手動執行，拿到的都是 6/30 數據，結果一樣是 6/30 報告。
+    - **`.github/workflows/daily-screener.yml` 的 commit 訊息必須取自 `market_date`，不得用 `date -u`（執行當下系統日期）**：若在 UTC 20:00 前手動觸發 workflow_dispatch，系統日期已經是隔天，但 `market_date` 仍是前一交易日，用系統日期當 commit 訊息會產生「commit 寫 7/1、內容卻是 6/30」的誤導標籤。commit 步驟改為讀取剛產出的 `docs/data/last_run.json` 裡的 `market_date` 欄位組成訊息，與報告內容日期保持一致。
 
 ## 程式碼慣例
 
