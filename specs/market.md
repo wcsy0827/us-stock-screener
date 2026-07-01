@@ -2,20 +2,22 @@
 
 ## Purpose
 
-計算市場廣度與 VIX，分類當日 Regime（四象限），並提供供 AI Prompt 使用的完整產業 ETF 背景資料。
+計算市場廣度與 VIX，分類當日 Regime（五象限），並提供供 AI Prompt 使用的完整產業 ETF 背景資料。
 
 ## Behavior
 
-### 四象限 Regime 分類矩陣
+### 五象限 Regime 分類矩陣
 
-| Regime | 廣度（S&P 500 > 50 SMA 比例） | VIX |
-|--------|-------------------------------|-----|
-| `BULL_TREND` | ≥ 60% | < 20 |
-| `CONSOLIDATION` | 35% ~ 60%（任意 VIX） | — |
-| `PANIC_REVERSAL` | < 35% | ≥ 25 |
-| `BEAR_DISTRIBUTION` | < 35% | < 25 |
+| Regime | 廣度（S&P 500 > 50 SMA 比例） | VIX | L2 門檻 | 主推策略 |
+|--------|-------------------------------|-----|---------|---------|
+| `BULL_TREND` | ≥ 60% | < 20 | 60 分 | 動能策略 |
+| `CONSOLIDATION` | 35% ~ 60% | **< 20** | 60 分 | 突破策略（積極） |
+| `CONSOLIDATION_VOLATILE` | 35% ~ 60% | **≥ 20** | **65 分** | 突破策略（保守） |
+| `PANIC_REVERSAL` | < 35% | ≥ 25 | 40 分 | 反轉策略 |
+| `BEAR_DISTRIBUTION` | < 35% | < 25 | — | 全面防禦 |
 
-- **CONSOLIDATION** 優先級高於另兩個廣度 < 35% 的象限（當廣度在 35-60% 時，不論 VIX 高低都是 CONSOLIDATION）
+- 廣度 35~60% 時，VIX < 20 → `CONSOLIDATION`；VIX ≥ 20 → `CONSOLIDATION_VOLATILE`
+- `CONSOLIDATION_VOLATILE` 的 L2 門檻已在 `scorer.py` 的 `score_all()` 中實作（65 分）
 - VIX 取最近交易日收盤價；下載失敗時預設 20.0，並設 `vix_ok=False` 通知 pipeline 跳過 L3
 
 ### 市場廣度計算
@@ -52,15 +54,21 @@ def calculate_market_breadth(all_stocks_data: dict) -> float:
 def determine_market_regime(breadth_pct: float, vix_value: float) -> dict:
     """
     回傳 {
-      "regime": str,               # BULL_TREND / CONSOLIDATION / PANIC_REVERSAL / BEAR_DISTRIBUTION
+      "regime": str,               # BULL_TREND / CONSOLIDATION / CONSOLIDATION_VOLATILE / PANIC_REVERSAL / BEAR_DISTRIBUTION
       "ai_prompt_hint": str,       # 給 AI 的文字說明
-      "primary_strategy": str,     # 動能策略 / 突破策略 / 反轉策略 / ""（防禦）
+      "primary_strategy": str,     # 動能策略 / 突破策略（積極）/ 突破策略（保守）/ 反轉策略 / ""（防禦）
     }
     """
 
-def fetch_regime_quick(all_stocks_data: dict) -> tuple[str, float, float, bool]:
-    """回傳 (regime, breadth_pct, vix_value, vix_ok)。只下載 VIX，廣度用 all_stocks_data。
-    vix_ok=False 表示下載失敗，pipeline 應在 L3 前中斷。"""
+def fetch_regime_quick(
+    all_stocks_data: dict,
+    last_run_path: str = "docs/data/last_run.json",
+) -> tuple[str, float, float, bool]:
+    """
+    回傳 (regime, breadth_pct, vix_value, vix_ok)。只下載 VIX，廣度用 all_stocks_data。
+    vix_ok=False 表示下載失敗，pipeline 應在 L3 前中斷。
+    讀取 last_run.json 取得前一日 Regime，在廣度邊界附近啟用遲滯帶（DD-4）。
+    """
 
 def fetch_market_context(
     candidate_sectors: set[str],
@@ -86,6 +94,25 @@ def fetch_market_context(
 - **原因**：VIX 20 是「正常波動」的中間值，20 以下 BULL，25 以上 PANIC。預設 20 讓 Regime 退化至由廣度主導（廣度高→BULL_TREND；廣度低→BEAR_DISTRIBUTION），是最保守的選擇。
 - **捨棄**：預設 0（誤判所有情境為 BULL）；預設 30（誤判為 PANIC，過度激進）
 
+### DD-4: CONSOLIDATION_VOLATILE — 高 VIX 整理期獨立象限
+
+- **選擇**：廣度 35~60% 且 VIX ≥ 20 時，不再歸類為 CONSOLIDATION，改為 `CONSOLIDATION_VOLATILE`
+- **原因**：原始 CONSOLIDATION 無視 VIX，導致在 VIX=28 的高恐慌整理期仍套用「積極突破」策略。高 VIX 代表市場波動性高，假突破風險大，應要求更嚴格的確認訊號（L2 門檻提高至 65 分、AI 指引更保守）
+- **L2 門檻影響**：scorer.py 的 `score_all()` 已實作：`CONSOLIDATION_VOLATILE → effective_min = 65.0`
+- **AI Prompt 影響**：ranker.py 的 `_REGIME_EXTRA_HINT` 在 CONSOLIDATION_VOLATILE 時注入額外保守提示
+- **邊界**：VIX = 20 為閾值（正常波動上限）；VIX 下降回 < 20 時，下一日自動恢復 CONSOLIDATION（若廣度未變）
+- **捨棄**：廣度 35~60% 全部歸入 CONSOLIDATION（VIX 高時策略過於激進）；以 VIX=25 為界（太寬鬆，VIX 20~25 的震盪期就應保守）
+
+### DD-5: Regime 廣度遲滯帶（Hysteresis）— 防止邊界翻轉
+
+- **選擇**：`fetch_regime_quick()` 讀取前一日 `last_run.json` 的 `regime`，在廣度邊界附近（±2%）維持前日 Regime，防止每日翻轉
+  - **校驗**：`last_run["market_date"] < current_market_date` 才生效（同日重複執行時忽略，防止污染）
+  - **VIX 結構性跨界例外**：若新舊 Regime 的 VIX 屬性不同（一個在高 VIX 組 PANIC/CONSOLIDATION_VOLATILE，另一個在低 VIX 組），則 VIX 已跨越結構邊界，不得維持舊 Regime
+  - **實作**：`HYSTERESIS = 2.0`；`abs(breadth - 60.0) <= 2.0 OR abs(breadth - 35.0) <= 2.0` 且 VIX 未跨界 → 沿用 `prev_regime`
+- **原因**：廣度在 58%~62% 之間震盪時，BULL/CONSOLIDATION 每日切換，L2 門檻（60 vs 65 分）和 AI 策略文字跟著變，選股邏輯不穩定。遲滯帶讓系統「等廣度明確離開邊界後才切換」
+- **last_run.json 新增欄位**：`publisher.py` 的 `publish()` 在每次執行結束後，在 `last_run.json` 內額外寫入 `regime`（str）與 `market_date`（str），供下次執行讀取
+- **捨棄**：每日重算（邊界抖動）；用獨立狀態檔（增加 I/O 複雜度）；N 日廣度均值（DD-3 已實作，但均值平滑不夠強，邊界 ±1-2% 仍可能觸發切換）
+
 ### DD-3: 廣度使用 N 日滾動平均，防止邊界震盪
 
 - **選擇**：`calculate_market_breadth()` 新增 `smoothing_days`（預設 `BREADTH_SMOOTHING_DAYS=3`），回傳近 N 個交易日廣度的算術平均，而非單日值
@@ -97,7 +124,9 @@ def fetch_market_context(
 ## Acceptance Criteria
 
 - [ ] 廣度=70%、VIX=15 → `BULL_TREND`
-- [ ] 廣度=50%、VIX=30 → `CONSOLIDATION`（廣度在 35-60% 區間，無視 VIX）
+- [ ] 廣度=50%、VIX=18 → `CONSOLIDATION`（廣度 35~60%、VIX < 20）
+- [ ] 廣度=50%、VIX=22 → `CONSOLIDATION_VOLATILE`（廣度 35~60%、VIX ≥ 20）
+- [ ] 廣度=50%、VIX=30 → `CONSOLIDATION_VOLATILE`（廣度 35~60%、VIX ≥ 20，即便 VIX 高也不切換到 PANIC）
 - [ ] 廣度=25%、VIX=28 → `PANIC_REVERSAL`
 - [ ] 廣度=25%、VIX=18 → `BEAR_DISTRIBUTION`
 - [ ] `fetch_regime_quick()` 不對廣度計算發出任何 yfinance 請求（廣度只用 price_data）
@@ -105,3 +134,6 @@ def fetch_market_context(
 - [ ] 廣度今日=34%、昨日=37%、前日=38% → 3日均=36.3% → Regime=CONSOLIDATION（不誤切換至 BEAR）
 - [ ] 廣度連續 3 日均 < 35% → Regime 切換至 BEAR_DISTRIBUTION 或 PANIC_REVERSAL（依 VIX）
 - [ ] print 訊息同時顯示今日原始廣度（含 above/total）與 N 日均值
+- [ ] 廣度=61%（前日 BULL_TREND）→ 廣度=59%（今日，落在遲滯帶 ±2%）→ 不切換，維持 BULL_TREND
+- [ ] 廣度=59%（前日 BULL_TREND）→ VIX 從 18 升至 28（跨越結構邊界）→ 不套用遲滯，重新計算 Regime
+- [ ] last_run.json 不存在或 market_date 非昨日 → prev_regime=None，不啟用遲滯

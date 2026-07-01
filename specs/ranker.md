@@ -23,7 +23,7 @@
 </Output_Constraint>
 ```
 
-### Markdown 候選池表格欄位（14 欄）
+### Markdown 候選池表格欄位（15 欄）
 
 | 欄位 | 說明 |
 |------|------|
@@ -38,6 +38,7 @@
 | VTF_Score | 量能推進因子：`max(-5.0, Vol_Ratio × (2×K_pos − 1))`，下限 -5.0、上限不設；`.round(2)`；分母為零時安全降級 `vol_ratio = 1.0`；正值=帶量推進（> 5.0 為史詩級機構建倉），負值=高檔派發；缺值填 `N/A` |
 | Price_5D_Pct | 5 日漲跌幅（短線爆發力） |
 | Momentum_ATR | ATR 標準化動能：20 日價格位移 ÷ 14 日 ATR；`.round(2)`；缺值填 `N/A` |
+| RS_vs_Sector | 個股 5 日報酬率 − 板塊 ETF 5 日報酬率（百分比）；`.round(1)`；板塊 ETF 來自 `SECTOR_ETF_MAP`，缺資料 fallback SPY；ETF 數據不足 5 日填 `N/A` |
 | 52W_High_Dist | 距 52 週高點百分比 |
 | Beta_60D | 個股 60 日 Beta vs SPY；完整序列 inner join + NaN 清洗後取末 60 日計算；`.round(2)`；**缺值填 `N/A`，不觸發 AI 排除** |
 | Earnings_Days_Left | 距下次財報日曆天數（基準日 = SPY 最後交易日）；安全無近期財報填 `99`；數據斷裂（完全查不到財報歷史）填 `N/A` |
@@ -101,11 +102,12 @@ AI 必須回傳 JSON array，每筆含：
 
 ```python
 def rank_candidates(
-    candidates: list[dict],       # scorer 輸出，含 total_score
+    candidates: list[dict],       # scorer 輸出，含 total_score、sector
     price_data: dict[str, pd.DataFrame],
     info_data: dict[str, dict],
     top_n: int = 5,
     market_context: dict | None = None,
+    earnings_data: dict | None = None,  # {sym: date_str | None}，供 Earnings_Days_Left 計算
 ) -> list[dict]:
     """回傳 AI 精選結果，BEAR_DISTRIBUTION 時回傳 []。"""
 
@@ -132,13 +134,30 @@ def compute_indicators(
       beta_60d      (float | None)   60 日 Beta；共同交易日不足 30 時 None
       earnings_days_left (int | None)
       change_1d_pct, change_5d_pct
+      （以及供 _strategy_tag 使用的 stoch_k、rsi_5d_ago、dist_from_20d_high_pct 等）
+    """
+
+def _diversify_candidates(
+    candidates: list[dict],
+    regime: str = "",
+    max_per_sector: int = 8,
+) -> list[dict]:
+    """
+    對候選池做每產業上限截斷，防止同一板塊霸榜使 AI 無法輸出分散選股。
+    PANIC_REVERSAL 環境下，得分 < 40 的強制放行反轉股不受產業上限限制。
     """
 
 def _build_prompt(...) -> str:
     """組裝 XML Prompt。"""
 
-def _generate_candidates_markdown_table(...) -> str:
-    """生成 14 欄 Markdown 表格字串。浮點數一律 .round(2)；None → 'N/A'（earnings_days_left None → 'N/A'，99 → '99'）。"""
+def _generate_candidates_markdown_table(
+    candidates: list[dict],
+    price_data: dict[str, pd.DataFrame],
+    info_data: dict[str, dict],
+    earnings_data: dict | None = None,
+    current_date: date | None = None,
+) -> str:
+    """生成 15 欄 Markdown 表格字串。浮點數一律 .round(2)；None → 'N/A'（earnings_days_left None → 'N/A'，99 → '99'）。"""
 ```
 
 ### price_data 傳入前置條件
@@ -193,6 +212,27 @@ vtf_score = round(max(-5.0, vol_ratio * (2 * k_pos - 1)), 2)           # 下限�
   - `Beta_60D`：提供 AI 評估板塊輪動風險；窗口設為 60 日（符合 90 日快取限制）；采先對齊後截斷策略防止停牌造成矩陣錯位
   - `Earnings_Days_Left`：AI 側雙重財報防禦（filter.py 為第一道）；基準日錨定 SPY 最後交易日確保時區冪等；99 與 N/A 語意嚴格區分防止數據斷裂繞過風控
 - **捨棄**：`Price_20D_Pct`（高 Beta 偏見）；`Vol_Ratio`（不含 K 線位置）；`Beta_120D`（超出 90 日快取窗口）；VTF 雙側裁切 `clip(-3, +3)`（壓制機構掃貨信號）；`date.today()`（時區依賴，非冪等）；Earnings 缺值一律填 99（掩蓋數據斷裂，風控漏洞）
+
+### DD-10: RS_vs_Sector 欄位
+
+- **選擇**：在 Markdown 候選池表格中新增 `RS_vs_Sector` 欄，插入於 `Momentum_ATR` 後
+  - 計算：`個股 5 日報酬率 − SECTOR_ETF_MAP 對應 ETF 5 日報酬率`
+  - 板塊 ETF 來自 market.py 的 `SECTOR_ETF_MAP`；板塊未知或 ETF 缺資料 → fallback SPY
+  - ETF 數據不足 5 日 → 填 `N/A`（不影響 AI 排除，僅缺少相對強度資訊）
+  - 格式：`.round(1)%`（保留一位小數）
+  - AI 指引：`RS_vs_Sector > +2% = 板塊領頭羊，優先加分；< -2% = 板塊落後者，需額外確認`
+- **原因**：AI 已有 VTF_Score（量能方向）和 Momentum_ATR（個股絕對動能），但缺少「相對板塊」的橫向比較維度。加入 RS_vs_Sector 後，AI 可以直接分辨「整個板塊都在漲但個股特別強」vs「個股只是被板塊帶動」，選股質量顯著提升。
+- **數據依賴**：需要 Batch 0 已將板塊 ETF 納入 `price_data`（pipeline Step 2）；`SECTOR_ETF_MAP` 已從 market.py import
+- **捨棄**：以個股對 SPY 計算 RS（忽略板塊輪動，無法辨識板塊領頭羊）；不加此欄（AI 缺少相對強度視角，板塊集中時難以分辨）
+
+### DD-11: _diversify_candidates() 產業上限保護
+
+- **選擇**：在候選池送給 AI 前，以每產業最多 `MAX_SECTOR_CANDIDATES=8` 支截斷
+  - 按 L2 分數降序掃描，優先保留高分股，達到上限後跳過同產業後續個股
+  - **PANIC_REVERSAL 強制放行例外**：`total_score < 40`（L2 典型強制放行分段）的個股不計入產業計數，直接加入（這些反轉股需要 AI 評估，不應被產業配額卡住）
+- **原因**：L2 評分無跨產業限制，若某板塊當日強勢，可能 20-30 支候選都來自同一產業。AI 在 40 支候選全是科技股時，很難輸出分散的選股（即使有意選防禦股，候選池裡根本沒有）。每產業 8 支上限確保 AI 有足夠多元候選可選。
+- **限制**：若候選池總數 < 24（3 個產業 × 8），此函式無任何效果，正常通過
+- **捨棄**：每產業 5 支（過緊，少數超強板塊的機會被壓縮）；不做截斷（同一板塊霸榜，AI 輸出集中度高）
 
 ## Acceptance Criteria
 

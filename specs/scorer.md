@@ -10,19 +10,21 @@
 
 | 項目 | 滿分 | 條件 |
 |------|------|------|
-| MA 多頭排列 | 25 | EMA5>EMA10>EMA20>EMA50，每條件 +8.33 分（3 條件） |
-| RSI 健康區間 | 20 | 50~70=滿；40~50 或 70~80=半分；其他=0 |
-| MACD 柱狀體 | 20 | 正且遞增=滿；正但遞減=半分；負=0 |
-| 量能放大 | 20 | ≥1.5x 均量 **且** K_pos≥0.6=滿；≥1.0x 且 K_pos≥0.6=半分；K_pos<0.6 爆量=0（出貨訊號） |
-| 20 日動能 | 15 | ATR 倍數法：≥2.0 ATR=滿；≥1.0 ATR=半分；>0 ATR=1/4 分 |
+| MA 多頭排列 | 20 | EMA5>EMA10>EMA20>EMA50，每條件 +6.67 分（3 條件） |
+| RSI 健康區間 | 18 | 50~70=滿；40~50 或 70~80=半分；其他=0（BULL_TREND 下 50~80=滿，>80=半分，見 DD-6） |
+| MACD 柱狀體 | 17 | 正且遞增=滿；正但遞減=半分；負=0 |
+| 量能放大（含趨勢） | 15 | VTF 基礎分數 × 量能趨勢係數（見 DD-4/DD-7） |
+| 多週期動能 | 15 | 20 日 ATR 倍數 × 5 日方向確認（見 DD-5/DD-8） |
+| 相對強度 RS | 15 | 個股 5 日報酬率 − 板塊 ETF 5 日報酬率（見 DD-9） |
 
-- **RSI > 80**：軟過濾，RSI 分數 = 0，但股票**不驅逐**（仍可憑其他項目過門檻）
+- **RSI > 80**：軟過濾，RSI 分數 = 0（或 BULL_TREND 下半分），但股票**不驅逐**（仍可憑其他項目過門檻）
 - **不得**：以 RSI > 80 作為硬條件把股票完全排除（見 DD-1）
 
 ### 動態門檻（依 Regime）
 
 - 預設門檻：`min_score`（CLI 參數，預設 60）
 - `PANIC_REVERSAL` 環境：門檻降至 **40 分**
+- `CONSOLIDATION_VOLATILE` 環境：門檻提高至 **max(min_score, 65) 分**（高 VIX 整理期至少 65 分，若 min_score 更高則以 min_score 為準）
 - `PANIC_REVERSAL` 環境額外：RSI < 35 **且** 20 日跌幅 > 15% 的股票**強制放行**（不受分數限制）
 
 ### 強制放行條件（`_is_oversold_reversal_candidate`）
@@ -43,21 +45,71 @@ def score_all(
     symbols: list[str],
     price_data: dict[str, pd.DataFrame],
     min_score: float = 60.0,
-    regime: str = "",          # 空字串 = 使用預設門檻
+    regime: str = "",                  # 空字串 = 使用預設門檻
+    sector_map: dict[str, str] | None = None,  # {symbol: sector}，供 RS 計算
 ) -> list[dict]:
     """
     回傳依總分降序排列的候選股列表。
-    每筆含 symbol, total_score, ma_score, rsi_score, macd_score, volume_score, momentum_score。
+    每筆含 symbol, price, sector, total_score, ma_score, rsi_score,
+           macd_score, volume_score, momentum_score, rs_score。
     """
 
-def score_stock(sym: str, df: pd.DataFrame) -> dict:
+def score_stock(
+    sym: str,
+    df: pd.DataFrame,
+    regime: str = "",
+    sector: str = "",
+    price_data: dict | None = None,
+) -> dict:
     """計算單支股票分數。df 需含至少 20 筆 Close 與 Volume。"""
 
 def _is_oversold_reversal_candidate(sym: str, df: pd.DataFrame) -> bool:
     """RSI < 35 且 20 日跌幅 > 15% → True。"""
+
+def _calc_rs_score(sym: str, df: pd.DataFrame, sector: str, price_data: dict) -> float:
+    """計算相對強度分數（個股 5 日報酬率 − 板塊 ETF 5 日報酬率）。"""
 ```
 
 ## Design Decisions
+
+### DD-6: BULL_TREND 下 RSI 健康區間擴大至 80
+
+- **選擇**：Regime = BULL_TREND 時，RSI 50~80 均給滿分（18 分）；RSI > 80 給半分（9 分，軟過濾維持）
+- **原因**：在 BULL_TREND 中，RSI 長期維持 70~80 是強勢多頭的健康表現（"momentum overbought"），並非超買警告。以半分懲罰會讓系統在牛市中過度排斥最強勢股票，違背動能策略的核心精神
+- **限制**：只在 BULL_TREND Regime 下生效；CONSOLIDATION/PANIC/BEAR 環境維持原有 70~80=半分邏輯，避免在不確定市場中放水
+- **捨棄**：所有 Regime 都擴大區間（非 BULL 環境下 RSI 70-80 確實是超買警告）
+
+### DD-7: 量能評分加入 5 日趨勢係數
+
+- **選擇**：量能分數 = VTF 基礎分數 × 量能趨勢係數（`vol_trend_5d`）
+  - `vol_trend_5d = np.polyfit(range(5), vol[-5:], 1)[0] / avg_vol_30d`，clip 至 [-1.0, 1.0]
+  - `vol_trend_5d > +0.2`（持續放量）→ × 1.0；`-0.1~0.2`（平穩）→ × 0.85；`< -0.1`（縮量）→ × 0.65
+  - 防禦：`len(vol[-5:]) < 5` 或 `avg_vol_30d == 0` → `vol_trend_5d = 0`（套用平穩係數 × 0.85）
+- **原因**：連續 5 日放量（機構累積模式）遠比單日爆量更能確認主力意圖。反過來，今日爆量但過去 5 天都在縮量，可能是末日衝量的前兆
+- **捨棄**：只用今日量 / 30 日均量（單日爆量雜訊高，縮量趨勢中的單日爆量尤其危險）
+
+### DD-8: 多週期動能（20 日 + 5 日方向確認）
+
+- **選擇**：`_score_momentum()` 加入 5 日短期動能（`momentum_5d_atr`）作為方向確認
+  - `momentum_20d_atr >= 2.0 AND momentum_5d_atr >= 0.5` → 15 分（中短線一致，最強）
+  - `momentum_20d_atr >= 2.0 AND momentum_5d_atr < 0` → 7.5 分（中期強但短線回調中）
+  - `1.0 <= momentum_20d_atr < 2.0 AND momentum_5d_atr >= 0.3` → 7.5 分
+  - `momentum_20d_atr >= 1.0 AND momentum_5d_atr < 0` → 3.75 分
+  - `0 < momentum_20d_atr < 1.0` → 3.75 分
+  - 其他（含負值）→ 0 分
+- **原因**：防止選到「20 日漲很多但最近 5 日已反轉」的標的。20 日動能強但 5 日動能轉負，代表股票已進入短線回調，此時買入風險明顯較高
+- **捨棄**：只用 20 日單一窗口（忽略近期方向）
+
+### DD-9: 相對強度 RS 維度
+
+- **選擇**：新增 15 分 RS 分項，計算公式：`rs_5d = 個股 5 日報酬率 − 板塊 ETF 5 日報酬率`
+  - `rs_5d >= +2%` → 15 分；`+0.5% ≤ rs_5d < +2%` → 8 分；`-0.5% ≤ rs_5d < +0.5%` → 3 分；`< -0.5%` → 0 分
+  - 板塊 ETF 從 `SECTOR_ETF_MAP`（market.py）查找；板塊未知或 ETF 缺資料 → fallback 至 SPY
+  - 需要 Batch 0 已將板塊 ETF 納入 `price_data`
+- **原因**：學術研究（Jegadeesh & Titman 1993）與 Fama-French 動能因子均支持相對強度是短線最強預測因子。板塊內的領頭羊比板塊平均表現更可能持續上漲，是比絕對動能更精準的訊號
+- **權重替換**：MA 25→20；RSI 20→18；MACD 20→17；Volume 20→15；Momentum 15→15；RS 0→15（合計維持 100 分）
+- **sector 欄位**：score_all() 回傳 dict 中必須包含 `sector`，供 ranker.py `_diversify_candidates()` 使用
+- **捨棄**：以個股對 SPY 計算 RS（忽略板塊輪動效果，無法區分「整個板塊都在漲」vs「板塊內個別強股」）
 
 ### DD-1: RSI > 80 改為軟過濾
 

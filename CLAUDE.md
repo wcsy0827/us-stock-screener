@@ -45,16 +45,20 @@ cd docs && python -m http.server 8080   # 瀏覽器開 http://localhost:8080
 S&P 500 (~503 支)
   ↓ Step 1   universe.py     爬取成份股
   ↓ Step 2   fetcher.py      下載 90 日日 K（.cache/ 快取）
+                              同批次下載 11 支板塊 ETF（XLK/XLV/XLF 等）及 SPY，供 scorer RS 計算用
   ↓ Step 2.5 market.py       快速 Regime 判定（近 3 日均廣度 + VIX）← 必須在 scorer 之前
-                              回傳 (regime, breadth_pct, vix_value)，供 Step 5.5 複用
+                              五象限：BULL_TREND / CONSOLIDATION / CONSOLIDATION_VOLATILE / PANIC_REVERSAL / BEAR_DISTRIBUTION
+                              回傳 (regime, breadth_pct, vix_value, vix_ok)，供 Step 5.5 複用
+                              廣度邊界遲滯帶 ±2%（讀取 last_run.json，VIX 跨越結構邊界時強制放行）
   ↓ Step 3   fetcher.py      抓基本面（7 日快取），順帶提取 earningsDate 欄位
   ↓ Step 3.5 earnings.py     財報日查詢（Tier 1+2）→ earnings_registry.json（30 日快取）
   ↓ Step 4   filter.py       L1 流動性硬篩（股價/日成交額/市值/交易天數）
   ↓ Step 4.5 earnings.py     Tier 3 精準補抓（僅對流動性篩選後倖存個股）
-             filter.py       財報防禦牆（排除 3 天內有財報的個股）
-  ↓ Step 5   scorer.py       L2 技術評分（動態門檻；量能 K_pos 綁定；ATR 倍數動能）
+             filter.py       財報防禦牆（排除 5 天內有財報的個股）
+  ↓ Step 5   scorer.py       L2 技術評分（六維度 100 分；動態門檻依 Regime；相對強度 RS 維度）
+                              CONSOLIDATION_VOLATILE 門檻 65 分，PANIC_REVERSAL 40 分
   ↓ Step 5.5 market.py       完整大盤 ETF 背景（直接複用 Step 2.5 的廣度與 VIX，不重算）
-  ↓ Step 6   ranker.py       L3 DeepSeek AI 精選（≤5 支）
+  ↓ Step 6   ranker.py       L3 DeepSeek AI 精選（≤5 支；15 欄 Markdown 表含 RS_vs_Sector；每產業 ≤8 支）
              tracker.py      訊號追蹤（watchlist.json）→ 結算歸檔（performance_history.json）
              publisher.py    HTML 報告 → GitHub Pages（個股浮損益、今日結算區段、策略 Tooltip、歷史績效儀表板）
 ```
@@ -84,7 +88,7 @@ S&P 500 (~503 支)
 - 若需求與現有規格衝突，**先更新規格**，說明為何改變，再動程式碼
 - 規格的 Design Decisions 節是已解決的設計爭議，不得在未取得用戶同意前繞過
 
-## 十二個最重要的設計決策（摘要）
+## 十五個最重要的設計決策（摘要）
 
 1. **EMA50 悖論（tracker.py DD-1）**：反轉策略進場點本就在 EMA50 之下，不能以跌破 EMA50 作為失效門檻。反轉股失效條件改用 AI 設定的 `stop_loss` 絕對價。→ 詳見 `specs/tracker.md`
 
@@ -107,6 +111,12 @@ S&P 500 (~503 支)
 10. **風控雙欄位（tracker.py DD-12）**：`planned_stop_loss`（float）為 AI 原始值，唯讀，專作 DD-3 拆股基底；`effective_stop_loss`（float）為動態止損，保本鎖定後上移至 `buy_zone_upper`；`is_breakeven_locked`（bool）為明示旗標，防止浮點抖動重複觸發。`highest_close_since_active` 以原生未拆股標尺存儲，避免逆向除法累積誤差。DD-3 縮放時所有風控欄位皆臨時縮放，但不寫回 watchlist。→ 詳見 `specs/tracker.md`
 
 11. **全自動保本鎖定與移動停利（tracker.py DD-13）**：進場後收盤達目標距離 50% 時，`effective_stop_loss` 自動上移至 `buy_zone_upper`，`is_breakeven_locked` 鎖定為 True。動能/突破策略若峰值浮盈超過 10% 後收盤回撤 5%，觸發 `CLOSED_TRAILING_STOP` 結算（出場價 = 收盤）。反轉策略精確比對排除。`is_win` 判定純用 `return_pct > 0`，與出場原因完全解耦。→ 詳見 `specs/tracker.md`
+
+13. **L2 新增相對強度 RS 維度（scorer.py DD-9）**：L2 由五維度升級為六維度（MA=20, RSI=18, MACD=17, Volume=15, Momentum=15, RS=15），個股 5 日報酬率 − 板塊 ETF 5 日報酬率 = `rs_5d`，≥+2%→15 分，≥+0.5%→8 分，≥-0.5%→3 分，否則 0 分；板塊 ETF 數據在 Step 2 批次下載，scorer 直接讀 price_data。BULL_TREND 環境 RSI 健康區間擴大至 80；量能評分加入 5 日斜率係數（polyfit）；動能改為 20 日主趨勢 × 5 日方向確認雙期同步。→ 詳見 `specs/scorer.md`
+
+14. **Regime 五象限：CONSOLIDATION_VOLATILE 獨立分區（market.py DD-4）**：廣度 35~60% 時依 VIX 細分：VIX < 20 → `CONSOLIDATION`（60 分門檻）；VIX ≥ 20 → `CONSOLIDATION_VOLATILE`（65 分門檻，AI 指引更保守）。`last_run.json` 新增 `regime`、`market_date` 欄位，供 `market.py` 的遲滯帶讀取。→ 詳見 `specs/market.md`
+
+15. **廣度遲滯帶防邊界翻轉（market.py DD-5）**：`fetch_regime_quick()` 讀取前一日 `last_run.json` 的 `regime`，廣度在邊界 ±2%（60% 或 35%）內時維持前日 Regime；VIX 跨越結構邊界（高 VIX 組 PANIC/CONSOLIDATION_VOLATILE ↔ 低 VIX 組）時強制放行，不套用遲滯。`last_market_date < current_market_date` 嚴格校驗，防止同日重複執行污染。→ 詳見 `specs/market.md`
 
 12. **報告日期與防重複執行皆錨定 UTC（main.py / tracker.py）**：CI 在 UTC 時區執行；台灣時間 7/1 08:00 = UTC 6/30 24:00，yfinance 此時拿到的最後數據仍是 6/30——報告正確標示 6/30 是預期行為，不是 bug。規則如下：
     - **`main.py`**：`stats["date"]` 必須用 `datetime.strptime(market_date_str, "%Y-%m-%d")`（`market_date_str` 來自 `summary["market_date"]` = `price_data["SPY"].index[-1].date()`），**不得用 `datetime.now()`**。`datetime.now()` 在非 UTC 時區執行時，與 market_date 不一致，會產生「報告標題 7/1、數據內容 6/30」的誤導標籤。
@@ -132,7 +142,7 @@ S&P 500 (~503 支)
 - **不要在 CI workflow 移除 `--dry-run`**（workflow 已設計成執行後自己 git push）
 - **不得用 `datetime.now()` 決定報告日期**：`main.py` 的 `stats["date"]` 必須來自 `market_date`（SPY 最後收盤日），而非執行時的系統時鐘。CI 在 UTC 時區，台灣本地在 UTC+8，兩者 `datetime.now()` 可能不同，唯有 `market_date` 才是數據的正確時間標籤。→ 詳見設計決策 12
 - **不要同時修改 `tracker.py` 和 `scorer.py`**（難以隔離問題，分次修改）
-- **不要繞過規格的 Design Decisions**（DD 是已解決的設計爭議，見上方十二大決策）
+- **不要繞過規格的 Design Decisions**（DD 是已解決的設計爭議，見上方十五大決策）
 
 ## 快取說明
 
@@ -144,7 +154,7 @@ S&P 500 (~503 支)
 | 財報日期 | `.cache/earnings_registry.json` | 30 日（per-symbol TTL，獨立管理） | — |
 | 追蹤清單 | `data/watchlist.json` | 永久（持久化） | 手動刪除 |
 | 歷史績效 | `data/performance_history.json` | 永久（只增不刪） | 手動刪除 |
-| 執行記錄 | `docs/data/last_run.json` | 每次 publish() 覆寫；前端 fetch 用於顯示「上次執行時間」與資料核實 | — |
+| 執行記錄 | `docs/data/last_run.json` | 每次 publish() 覆寫；含 `regime`、`market_date` 欄位供 market.py 遲滯帶讀取；前端 fetch 用於顯示「上次執行時間」與資料核實 | — |
 
 ## GitHub Actions
 

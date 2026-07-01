@@ -54,17 +54,23 @@ def run(
         traceback.print_exc()
         return summary
 
-    # ── Step 2: 批次下載日 K 數據 ───────────────────────────────
+    # ── Step 2: 批次下載日 K 數據（含板塊 ETF 及 SPY，供 scorer RS 計算用）──
     print("\n[pipeline] ── Step 2/6：下載 90 天日 K 數據 ──")
     t = time.time()
+    # 板塊 ETF + SPY 與 S&P 500 一起下載並快取（DD-4）
+    _etf_tickers = list(SECTOR_ETF_MAP.values()) + ["SPY"]
+    symbols_with_etf = list(set(symbols) | set(_etf_tickers))
     try:
+        # 若快取中缺少 SPY，視為無效快取並強制重下（DD-4）
         price_data = (use_cache and load_price_cache()) or None
-        if price_data is None:
-            price_data = fetch_batch(symbols)
+        if price_data is None or "SPY" not in price_data:
+            price_data = fetch_batch(symbols_with_etf)
             if use_cache:
                 save_price_cache(price_data)
-        summary["downloaded"] = len(price_data)
-        print(f"[pipeline] 完成 ({_elapsed(t)})｜成功 {len(price_data)} 支")
+        etf_set = set(_etf_tickers)
+        sp500_count = sum(1 for k in price_data if k not in etf_set)
+        summary["downloaded"] = sp500_count
+        print(f"[pipeline] 完成 ({_elapsed(t)})｜S&P 500 成功 {sp500_count} 支（+{len(price_data) - sp500_count} ETF）")
 
         # 提取 SPY 最後交易日，供 tracker 作為基準日（DD-11）
         spy_df = price_data.get("SPY")
@@ -146,7 +152,9 @@ def run(
     print("\n[pipeline] ── Step 5/6：L2 技術指標評分 ──")
     t = time.time()
     try:
-        candidates = score_all(l1_passed, price_data, min_score=min_score, regime=regime_quick)
+        # D1：info_data 可能缺失部分 sym（API 超時），用 .get() 防 KeyError
+        sector_map = {sym: info_data.get(sym, {}).get("sector", "") for sym in l1_passed}
+        candidates = score_all(l1_passed, price_data, min_score=min_score, regime=regime_quick, sector_map=sector_map)
         summary["l2_count"] = len(candidates)
         print(f"[pipeline] 完成 ({_elapsed(t)})｜{len(candidates)} 支 >= {min_score:.0f} 分")
 
@@ -198,6 +206,7 @@ def run(
             top_n=top_n, market_context=market_context,
             market_date=summary.get("market_date"),
             use_ai_cache=use_ai_cache,
+            earnings_data=earnings_data,
         )
         summary["ranked"] = ranked
         print(f"[pipeline] AI 排序完成 ({_elapsed(t)})｜{len(ranked)} 支買入候選")
