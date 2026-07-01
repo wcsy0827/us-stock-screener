@@ -189,8 +189,11 @@ python main.py --dry-run
 # CI 模式（跳過今日重複執行確認）
 python main.py --dry-run --yes
 
-# 強制忽略快取，重新下載所有數據
+# 強制忽略快取，重新下載所有數據（同時略過 AI 快取）
 python main.py --dry-run --no-cache
+
+# 僅略過 AI 快取，重新問 DeepSeek（price/info 快取仍複用）
+python main.py --dry-run --yes --no-ai-cache
 
 # 自訂輸出數量與最低評分
 python main.py --dry-run --top 10 --min-score 65
@@ -204,6 +207,50 @@ $env:PYTHONUTF8=1; python main.py
 ```
 
 生成的報告位於 `docs/reports/YYYY-MM-DD.html`。
+
+---
+
+## 本機測試工作流程
+
+### 快取機制一覽
+
+| 快取 | 路徑 | 略過方式 |
+|------|------|----------|
+| 日 K 數據 | `.cache/price_YYYYMMDD.pkl` | `--no-cache` |
+| 基本面資訊 | `.cache/info_YYYYMMDD.json` | `--no-cache` |
+| AI 精選結果 | `.cache/ranked_YYYYMMDD.json` | `--no-ai-cache` 或 `--no-cache` |
+| 追蹤清單 | `data/watchlist.json` | 手動刪除 |
+| 歷史績效 | `data/performance_history.json` | 手動刪除 |
+
+### 依場景選擇指令
+
+| 測試場景 | 建議指令 | 說明 |
+|----------|----------|------|
+| 調整 `scorer.py` / `filter.py` 邏輯 | `python main.py --dry-run --yes` | price/info/AI 快取全部複用，只重跑評分 |
+| 想讓 AI 重新選股（調整 prompt 或 regime 邊界） | `python main.py --dry-run --yes --no-ai-cache` | price/info 快取複用，DeepSeek 重新呼叫 |
+| 懷疑市場數據有問題 | `python main.py --dry-run --yes --no-cache` | 全部重新下載 + 重問 AI |
+| 完全重置今日狀態後重跑 | ① 刪 `data/watchlist.json`（選用）→ ② `python main.py --dry-run --yes` | watchlist 清空後重建 |
+
+### 今日 watchlist 的自動取代機制
+
+同一天重複執行時，`tracker.py` 會自動清除當日新增的 watch 股票（`date_added == today`），再以本次 AI 結果取代。**不需要手動清空 `watchlist.json`**——除非你想清掉跨日累積的所有追蹤記錄。
+
+### 重置追蹤記錄（測試初始化）
+
+```powershell
+# 清除所有追蹤狀態，從零開始
+Remove-Item data\watchlist.json -ErrorAction SilentlyContinue
+Remove-Item data\performance_history.json -ErrorAction SilentlyContinue
+python main.py --dry-run --yes
+```
+
+> **注意**：`performance_history.json` 刪除後，歷史績效數據無法還原。測試期間建議先備份。
+
+### 各模組對應的快取行為
+
+- **`scorer.py` / `filter.py`**：只影響 L1/L2 階段，price/info 快取照常複用，AI 快取也照常複用（L2 輸出相同候選池時）。若 L2 候選池改變太多，AI 快取仍會被讀取（快取是以市場日期為 key，不感知候選池內容）——此時應加 `--no-ai-cache` 讓 AI 重新評估。
+- **`ranker.py` prompt 或策略邏輯**：必須加 `--no-ai-cache`，否則讀到舊快取。
+- **`tracker.py` / `publisher.py`**：不涉及快取，直接重跑即可。
 
 ---
 

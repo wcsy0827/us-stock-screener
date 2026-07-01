@@ -6,6 +6,8 @@ import json
 import os
 import re
 import time
+from datetime import date
+from pathlib import Path
 
 import pandas as pd
 from openai import OpenAI
@@ -15,6 +17,13 @@ DEEPSEEK_BASE_URL = "https://api.deepseek.com/v1"
 DEEPSEEK_MODEL = "deepseek-chat"
 MAX_CANDIDATES_TO_AI = 40   # 最多送給 AI 的候選股數量（已按 L2 分排序，取前 N）
 MAX_RETRIES = 3
+
+_CACHE_DIR = Path(__file__).parent.parent / ".cache"
+
+
+def _ranked_cache_path(market_date: str) -> Path:
+    date_str = market_date.replace("-", "")
+    return _CACHE_DIR / f"ranked_{date_str}.json"
 
 
 # ── 指標計算（純 pandas） ────────────────────────────────────────
@@ -466,10 +475,14 @@ def rank_candidates(
     info_data: dict[str, dict],
     top_n: int = 10,
     market_context: dict | None = None,
+    market_date: str | None = None,
+    use_ai_cache: bool = True,
 ) -> list[dict]:
     """
     接收 L2 候選股，呼叫 DeepSeek AI 排序，回傳 Top N 結果。
     每個結果含原始 L2 資料 + AI 排名/理由/信心分數。
+    同日重複執行時，若 use_ai_cache=True 則複用 .cache/ranked_YYYYMMDD.json，
+    不重複呼叫 DeepSeek API。
     """
     if not candidates:
         print("[ranker] 無候選股，跳過 AI 排序")
@@ -486,6 +499,20 @@ def rank_candidates(
     if regime == "BEAR_DISTRIBUTION":
         print("[ranker] 大盤進入【陰跌熊市 BEAR_DISTRIBUTION】，系統全面防禦，不輸出買入標的")
         return []
+
+    cache_path = _ranked_cache_path(market_date or date.today().isoformat())
+
+    # 嘗試讀取 AI 快取（同日重複執行時避免重複呼叫 API）
+    if use_ai_cache and cache_path.exists():
+        try:
+            with open(cache_path, "r", encoding="utf-8") as f:
+                cached = json.load(f)
+            for item in cached:
+                item["_price_data"] = price_data.get(item["symbol"])
+            print(f"[ranker] 複用今日 AI 快取（{cache_path.name}），共 {len(cached)} 支")
+            return cached[:top_n]
+        except Exception as e:
+            print(f"[ranker] AI 快取讀取失敗，重新呼叫 DeepSeek：{e}")
 
     print(f"[ranker] 送出 {min(len(candidates), MAX_CANDIDATES_TO_AI)} 支候選股給 DeepSeek AI...")
     prompt_content = _build_prompt(candidates, price_data, info_data, market_context)
@@ -525,4 +552,15 @@ def rank_candidates(
     ranked.sort(key=lambda x: x["rank"])
     result = ranked[:top_n]
     print(f"[ranker] AI 排序完成，回傳 Top {len(result)}")
+
+    # 儲存 AI 結果至快取（_price_data 為 DataFrame，不序列化）
+    try:
+        _CACHE_DIR.mkdir(exist_ok=True)
+        serializable = [{k: v for k, v in item.items() if k != "_price_data"} for item in result]
+        with open(cache_path, "w", encoding="utf-8") as f:
+            json.dump(serializable, f, ensure_ascii=False, indent=2)
+        print(f"[ranker] AI 結果已快取：{cache_path.name}")
+    except Exception as e:
+        print(f"[ranker] AI 快取儲存失敗（不影響結果）：{e}")
+
     return result
