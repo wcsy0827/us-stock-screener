@@ -288,6 +288,15 @@ details[open] summary::before { transform: rotate(90deg); }
 .tip-box { display: none; position: absolute; right: 0; top: calc(100% + 6px); background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 0.78rem; line-height: 1.65; color: var(--text); font-weight: 400; width: 230px; z-index: 20; box-shadow: 0 4px 16px rgba(0,0,0,0.5); white-space: normal; text-align: left; }
 .tip-wrap:hover .tip-box { display: block; }
 
+/* Data freshness indicator */
+.date-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+.date-label { font-size: 0.8rem; color: var(--muted); }
+.date-val { font-size: 1rem; color: var(--text); font-weight: 600; }
+.freshness-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 0.75rem; padding: 2px 9px; border-radius: 10px; font-weight: 600; }
+.freshness-ok    { background: rgba(34,197,94,0.15);  color: var(--active); }
+.freshness-stale { background: rgba(234,179,8,0.12);  color: var(--watch); }
+.tz-note { font-size: 0.8rem; color: var(--muted); margin-top: 6px; min-height: 1.3em; }
+
 @media (max-width: 600px) {
   .scan-bar { flex-direction: column; align-items: flex-start; gap: 2px; }
   .card-header { flex-wrap: wrap; }
@@ -643,7 +652,11 @@ def _build_daily_report(
 <div class="container">
   <div class="page-header">
     <h1>📊 美股 AI 選股報告</h1>
-    <div class="date-line">📅 {date_str}（{weekday}）</div>
+    <div class="date-meta">
+      <span class="date-label">美股資料截止日</span>
+      <span class="date-val">📅 {date_str}（{weekday}）</span>
+      <span class="freshness-badge" id="freshness-badge"></span>
+    </div>
     <div class="scan-bar">
       掃描 <strong>S&amp;P500 {total}支</strong>
       <span class="arrow">→</span> L1 <strong>{l1}支</strong>
@@ -652,6 +665,28 @@ def _build_daily_report(
     </div>
     <a class="back-link" href="../index.html">← 返回首頁</a>
   </div>
+<script>
+(function() {{
+  var d = '{date_str}';
+  var parts = d.split('-');
+  var reportDay = Date.UTC(+parts[0], +parts[1]-1, +parts[2]);
+  var now = new Date();
+  var todayUTC = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  var diffDays = Math.round((todayUTC - reportDay) / 86400000);
+  var badge = document.getElementById('freshness-badge');
+  if (!badge) return;
+  if (diffDays <= 0) {{
+    badge.textContent = '✓ 今日最新數據';
+    badge.className = 'freshness-badge freshness-ok';
+  }} else {{
+    var next = new Date(reportDay + 86400000);
+    var mo = next.getUTCMonth() + 1;
+    var dy = next.getUTCDate();
+    badge.textContent = '↻ ' + mo + '/' + dy + ' 05:30（台灣時間）更新';
+    badge.className = 'freshness-badge freshness-stale';
+  }}
+}})();
+</script>
 
   {dashboard_html}
 
@@ -784,7 +819,29 @@ def _build_index(report_index: list[dict]) -> str:
   <div class="index-hero">
     <h1>📈 美股 AI 選股系統</h1>
     <p>每日選股報告 · 訊號追蹤 · S&amp;P 500</p>
+    <p class="tz-note" id="index-freshness"></p>
   </div>
+<script>
+(function() {{
+  var el = document.getElementById('index-freshness');
+  if (!el) return;
+  var now = new Date();
+  var day = now.getUTCDay();   // 0=日, 6=六
+  var h   = now.getUTCHours();
+  var m   = now.getUTCMinutes();
+  var msg;
+  if (day === 0 || day === 6) {{
+    msg = '週末無新報告，下一份報告於週一 05:30（台灣時間）產生';
+  }} else if (h > 21 || (h === 21 && m >= 30)) {{
+    msg = '今日報告已產生（UTC 21:30）· 請點選最新報告查看';
+  }} else if (h >= 20) {{
+    msg = '美股已收盤，報告正在產生中，將於台灣時間 05:30 發布';
+  }} else {{
+    msg = '美股尚未收盤（UTC 13:30–20:00）· 今日報告將於台灣時間 05:30 更新';
+  }}
+  el.textContent = msg;
+}})();
+</script>
   {_INFO_HTML}
   <div class="report-section-title">📋 歷史報告</div>
   <div class="report-list">

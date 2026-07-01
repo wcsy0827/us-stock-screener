@@ -64,6 +64,7 @@ S&P 500 (~503 支)
 | `src/fetcher.py` | `specs/pipeline.md`（快取節） |
 | `src/filter.py` | `specs/pipeline.md`（L1 節）、`specs/earnings.md`（財報防禦牆） |
 | `src/earnings.py` | `specs/earnings.md` |
+| `src/publisher.py` | `specs/publisher.md` |
 
 ## Spec-First 工作流
 
@@ -74,7 +75,7 @@ S&P 500 (~503 支)
 - 若需求與現有規格衝突，**先更新規格**，說明為何改變，再動程式碼
 - 規格的 Design Decisions 節是已解決的設計爭議，不得在未取得用戶同意前繞過
 
-## 十一個最重要的設計決策（摘要）
+## 十二個最重要的設計決策（摘要）
 
 1. **EMA50 悖論（tracker.py DD-1）**：反轉策略進場點本就在 EMA50 之下，不能以跌破 EMA50 作為失效門檻。反轉股失效條件改用 AI 設定的 `stop_loss` 絕對價。→ 詳見 `specs/tracker.md`
 
@@ -98,6 +99,11 @@ S&P 500 (~503 支)
 
 11. **全自動保本鎖定與移動停利（tracker.py DD-13）**：進場後收盤達目標距離 50% 時，`effective_stop_loss` 自動上移至 `buy_zone_upper`，`is_breakeven_locked` 鎖定為 True。動能/突破策略若峰值浮盈超過 10% 後收盤回撤 5%，觸發 `CLOSED_TRAILING_STOP` 結算（出場價 = 收盤）。反轉策略精確比對排除。`is_win` 判定純用 `return_pct > 0`，與出場原因完全解耦。→ 詳見 `specs/tracker.md`
 
+12. **報告日期與防重複執行皆錨定 UTC（main.py / tracker.py）**：CI 在 UTC 時區執行；台灣時間 7/1 08:00 = UTC 6/30 24:00，yfinance 此時拿到的最後數據仍是 6/30——報告正確標示 6/30 是預期行為，不是 bug。規則如下：
+    - **`main.py`**：`stats["date"]` 必須用 `datetime.strptime(market_date_str, "%Y-%m-%d")`（`market_date_str` 來自 `summary["market_date"]` = `price_data["SPY"].index[-1].date()`），**不得用 `datetime.now()`**。`datetime.now()` 在非 UTC 時區執行時，與 market_date 不一致，會產生「報告標題 7/1、數據內容 6/30」的誤導標籤。
+    - **`tracker.py`**：`check_already_run_today()` 使用 `datetime.utcnow().date()` 而非 `date.today()`，確保台灣本地執行時防重複邏輯與 CI 時區一致。`run_tracker()` 內的 `today` 繼續由 `market_date` 注入（DD-11 不變）。
+    - **何時才會出現次日報告**：美股 7/1 的完整收盤數據要等到 UTC 20:00+（台灣 7/2 04:00）才可用，自動 CI 在 UTC 21:30（台灣 7/2 05:30）抓取並產出 7/1 報告。在此之前觸發的任何手動執行，拿到的都是 6/30 數據，結果一樣是 6/30 報告。
+
 ## 程式碼慣例
 
 - `print()` 訊息用繁體中文，格式 `[module] 說明`
@@ -115,8 +121,9 @@ S&P 500 (~503 支)
 - **每次修改程式碼或規格後，必須同步更新 `CLAUDE.md` 與 `README.md`**：架構速覽、模組對照表、快取說明、L2 評分表、專案結構等章節若有變動，須在同一個 commit 內一併更新，不得遺留過時描述。
 - **不要 commit** `.env`、`.cache/`、`.venv/`（`.gitignore` 已排除）
 - **不要在 CI workflow 移除 `--dry-run`**（workflow 已設計成執行後自己 git push）
+- **不得用 `datetime.now()` 決定報告日期**：`main.py` 的 `stats["date"]` 必須來自 `market_date`（SPY 最後收盤日），而非執行時的系統時鐘。CI 在 UTC 時區，台灣本地在 UTC+8，兩者 `datetime.now()` 可能不同，唯有 `market_date` 才是數據的正確時間標籤。→ 詳見設計決策 12
 - **不要同時修改 `tracker.py` 和 `scorer.py`**（難以隔離問題，分次修改）
-- **不要繞過規格的 Design Decisions**（DD 是已解決的設計爭議，見上方十一大決策）
+- **不要繞過規格的 Design Decisions**（DD 是已解決的設計爭議，見上方十二大決策）
 
 ## 快取說明
 
@@ -133,6 +140,20 @@ S&P 500 (~503 支)
 - 排程：週一至五 UTC 21:30（台灣時間隔日 05:30）
 - Secrets：`DEEPSEEK_API_KEY` 設在 repo Settings → Secrets and variables → Actions
 - 手動觸發：Actions 頁 → Daily Stock Screener → Run workflow
+
+### 時區行為（重要）
+
+CI 執行環境為 **UTC 時區**。這決定了報告日期的一切：
+
+| 台灣時間（UTC+8）觸發 | 對應 UTC | yfinance 最後數據 | 報告日期 |
+|----------------------|---------|-----------------|---------|
+| 7/1 05:30（自動 CI）  | 6/30 21:30 | 6/30 | **6/30** ✓ |
+| 7/1 07:49（手動）     | 6/30 23:49 | 6/30 | **6/30** ✓ |
+| 7/2 05:30（自動 CI）  | 7/1 21:30  | 7/1  | **7/1** ✓ |
+
+**「在台灣 7/1 觸發，卻看到 6/30 報告」是正確行為。** 美股 7/1 數據要等美股收盤後（UTC 20:00+，台灣 7/2 04:00 後）才存在；7/1 報告會由 UTC 21:30 自動 CI 生成，在台灣 7/2 05:30 才出現。
+
+`.cache/` 的 GitHub Actions cache key 也以 `date -u`（UTC 日期）為鍵，與 Python 的 `market_date` 在正常情境下一致。
 
 ## CI 注意事項
 

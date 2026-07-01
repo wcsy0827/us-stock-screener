@@ -90,11 +90,12 @@ if __name__ == "__main__":
     market_context = summary.get("market_context", {})
     _, categories = run_tracker(ranked, market_context=market_context, market_date=summary.get("market_date"))
 
+    market_date_str = summary.get("market_date") or datetime.utcnow().date().isoformat()
     stats = {
         "total":    summary.get("total", 0),
         "l1_count": summary.get("l1_count", 0),
         "l2_count": summary.get("l2_count", 0),
         "ai_count": len(ranked),
-        "date":     datetime.now(),
+        "date":     datetime.strptime(market_date_str, "%Y-%m-%d"),
     }
     publish(categories, stats, dry_run=args.dry_run, market_context=market_context)

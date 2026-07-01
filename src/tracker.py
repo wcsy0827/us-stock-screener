@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import os
 import re
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 import pandas as pd
@@ -54,10 +54,11 @@ def save_watchlist(watchlist: list[dict]) -> None:
 
 
 def check_already_run_today() -> bool:
-    """檢查今日是否已執行過追蹤，回傳 True 表示已執行。"""
-    today = date.today().isoformat()
+    """檢查今日（UTC）是否已執行過追蹤，回傳 True 表示已執行。
+    使用 UTC 日期確保與 CI 環境行為一致（market_date 以 UTC 為基準）。"""
+    today_utc = datetime.utcnow().date().isoformat()
     watchlist = load_watchlist()
-    return any(today in e.get("tracked_dates", []) for e in watchlist)
+    return any(today_utc in e.get("tracked_dates", []) for e in watchlist)
 
 
 # ── 工具函式 ─────────────────────────────────────────────────────────
