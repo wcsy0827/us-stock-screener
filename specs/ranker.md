@@ -23,7 +23,7 @@
 </Output_Constraint>
 ```
 
-### Markdown 候選池表格欄位（15 欄）
+### Markdown 候選池表格欄位（19 欄）
 
 | 欄位 | 說明 |
 |------|------|
@@ -33,6 +33,10 @@
 | L2_Score | L2 總分 |
 | Strategy_Tag | 系統預判策略（僅供參考） |
 | MA_Trend | BULL_1/BULL_2/MIXED/BEAR |
+| EMA5 | 5 日指數移動均線價位（美元）；DD-12 |
+| EMA10 | 10 日指數移動均線價位（美元）；動能策略標準回檔買進區間上緣；DD-12 |
+| EMA20 | 20 日指數移動均線價位（美元）；動能策略標準回檔買進區間下緣；DD-12 |
+| Vol_vs_5DAvg | 當日成交量 ÷ 5 日均量；`.round(2)`；<0.7 代表回檔量縮確認；DD-12 |
 | RSI | RSI 數值 |
 | MACD_Hist | POS_INC/POS_DEC/NEG_INC/NEG_DEC |
 | VTF_Score | 量能推進因子：`max(-5.0, Vol_Ratio × (2×K_pos − 1))`，下限 -5.0、上限不設；`.round(2)`；分母為零時安全降級 `vol_ratio = 1.0`；正值=帶量推進（> 5.0 為史詩級機構建倉），負值=高檔派發；缺值填 `N/A` |
@@ -45,7 +49,7 @@
 
 ### 策略指引（System Prompt 約束）
 
-**動能策略（Momentum）**：優先挑選 `Momentum_ATR >= 2.0` 且 `VTF_Score > 1.0` 的標的，跨行業公平挑選，不以絕對漲幅百分比作為依據。
+**動能策略（Momentum）**：優先挑選 `Momentum_ATR >= 2.0` 且 `VTF_Score > 1.0` 的標的，跨行業公平挑選，不以絕對漲幅百分比作為依據。買入區間依 `EMA5`/`EMA10`/`EMA20`/`Vol_vs_5DAvg` 三段式判斷（DD-12）：標準回檔進場設在 `EMA20~EMA10` 且需 `Vol_vs_5DAvg < 0.7`；極端強勢例外可設在 `EMA5` 附近（5MA 探針帶）；股價距 `EMA5` 超過 +5% 視為過度延伸，禁止以收盤價設定買入區間上限。
 
 **突破策略（Breakout）**：強烈關注 `VTF_Score >= 1.5` 且股價在 20 日高點附近的標的。`VTF_Score < 0` 一律視為假突破派發陷阱，禁止入選。
 
@@ -131,6 +135,7 @@ def compute_indicators(
       price, ema5/10/20/50, rsi
       momentum_atr  (float | None)   ATR 標準化 20 日動能
       vtf_score     (float | None)   量能推進因子，下限 -5.0、上限不設
+      vol_vs_5d_avg (float)          當日量 ÷ 5日均量（動能策略回檔量縮確認，DD-12）；分母為零時降級為 1.0
       beta_60d      (float | None)   60 日 Beta；共同交易日不足 30 時 None
       earnings_days_left (int | None)
       change_1d_pct, change_5d_pct
@@ -234,6 +239,17 @@ vtf_score = round(max(-5.0, vol_ratio * (2 * k_pos - 1)), 2)           # 下限�
 - **限制**：若候選池總數 < 24（3 個產業 × 8），此函式無任何效果，正常通過
 - **捨棄**：每產業 5 支（過緊，少數超強板塊的機會被壓縮）；不做截斷（同一板塊霸榜，AI 輸出集中度高）
 
+### DD-12: 動能策略買進區間結構化（EMA10~EMA20 回檔帶）
+
+- **選擇**：候選池表格新增 `EMA5`、`EMA10`、`EMA20`（美元原始價位）與 `Vol_vs_5DAvg`（當日量 ÷ 5日均量）四欄；System Prompt 動能策略段落改為三段式規則：
+  1. 標準回檔進場：股價已回落至 `EMA20~EMA10` 之間，且 `Vol_vs_5DAvg < 0.7`（量縮無賣壓）→ `buy_zone` 設在該區間
+  2. 極端強勢例外：股價緊貼 `EMA5`（尚未明顯回檔）但 `VTF_Score` 仍強 → `buy_zone` 可設在 `EMA5` 附近（5MA 探針帶）
+  3. 股價距 `EMA5` 已超過 +5%（過度延伸、未回檔）→ 大幅降低信心分數，禁止以收盤價設為買入區間上限
+- **原因**：實測觀察到動能策略 `buy_zone` 上限幾乎恆等於 `Close_Price`（例：KLAC 收盤 $301.71，`buy_zone` `$295~$302`；AMAT 收盤 $723.00，`buy_zone` `$710~$723`），與 Prompt 文字宣稱的「小幅回調至 EMA10」不符。根因是候選池表格只提供 `MA_Trend` 文字標籤（如 `BULL_1`），沒有任何 EMA 的實際數值，AI 無數字依據可用，只能以收盤價為錨猜測。`ema5/ema10/ema20` 其實已在 `compute_indicators()` 算出，只是未曝露於表格；本次僅需新增曝露與一個新指標 `vol_vs_5d_avg`。規則來源：使用者提供的《股票操作高勝率買進區間策略指南》動能策略章節（10EMA~20EMA 回檔帶、量縮確認 <0.7 倍 5 日均量、5MA 探針帶、遠離 5MA 超過 5% 拒絕追價）。
+- **範圍**：本次僅處理動能策略；突破策略、反轉策略的買進區間同樣缺乏數字依據（如反轉策略引用 EMA50 附近支撐區，但表格未提供 EMA50 數值），列為後續獨立任務，不在本次變更範圍
+- **不變**：`buy_zone` 仍由 AI 自行輸出最終字串（格式 `$X~$Y`），不改為 Python 端確定性計算；`tracker.py` 的 `_parse_buy_zone()` 解析邏輯與格式需求不變
+- **捨棄**：Python 端直接算出確定性 buy_zone（偏離現有「AI 給出完整交易計畫」的架構精神，且需大改 tracker.py 假設）；只給 `Dist_EMA5_Pct` 衍生百分比而不給原始 EMA 價位（AI 無法據此寫出具體美元買進區間）
+
 ## Acceptance Criteria
 
 - [ ] Prompt 中 `<Market_Regime>` 區塊含有 `5日` 與 `20日` 漲跌的產業 ETF 資訊
@@ -248,3 +264,6 @@ vtf_score = round(max(-5.0, vol_ratio * (2 * k_pos - 1)), 2)           # 下限�
 - [ ] 爆量突破（VTF_raw = 10.0）→ 表格顯示 `10.00`（未被雙側裁切壓制）
 - [ ] 極端出貨（VTF_raw = -8.0）→ 表格顯示 `-5.00`（下限保護）
 - [ ] 浮點數欄位（Momentum_ATR、VTF_Score、Beta_60D）均保留 2 位小數
+- [ ] 表格 header 含 `EMA5`、`EMA10`、`EMA20`、`Vol_vs_5DAvg`
+- [ ] `compute_indicators()` 回傳 dict 含 `vol_vs_5d_avg` key
+- [ ] `avg_vol_5 = 0`（新股或數據不足）→ `vol_vs_5d_avg` 不崩潰，降級為 1.0

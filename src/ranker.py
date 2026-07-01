@@ -102,6 +102,10 @@ def compute_indicators(
     k_pos = 0.5 if h_last == l_last else (price_now - l_last) / (h_last - l_last)
     vtf_score: float | None = round(max(-5.0, vol_ratio * (2 * k_pos - 1)), 2)
 
+    # Vol_vs_5DAvg（動能策略回檔量縮確認，DD-12）
+    avg_vol_5 = float(volume.tail(5).mean()) if len(volume) >= 5 else avg_vol_30
+    vol_vs_5d_avg = float(volume.iloc[-1]) / avg_vol_5 if avg_vol_5 > 0 else 1.0
+
     # ATR14
     atr14: float | None = None
     if len(close) >= 15 and len(high) >= 15 and len(low) >= 15:
@@ -161,6 +165,7 @@ def compute_indicators(
         "momentum_atr": momentum_atr,
         "beta_60d": beta_60d,
         "earnings_days_left": earnings_days_left,
+        "vol_vs_5d_avg": round(vol_vs_5d_avg, 2),
         # 供 _strategy_tag 使用
         "volume_ratio": round(vol_ratio, 2),
         "high_20d": round(high_20d, 2),
@@ -304,11 +309,13 @@ def _generate_candidates_markdown_table(
 
     header = (
         "| Ticker | Close_Price | Sector | L2_Score | Strategy_Tag | MA_Trend"
+        " | EMA5 | EMA10 | EMA20 | Vol_vs_5DAvg"
         " | RSI | MACD_Hist | VTF_Score | Price_5D_Pct | Momentum_ATR"
         " | RS_vs_Sector | 52W_High_Dist | Beta_60D | Earnings_Days_Left |"
     )
     sep = (
         "|--------|-------------|--------|----------|--------------|----------"
+        "|------|-------|-------|--------------"
         "|-----|-----------|-----------|--------------|-------------|"
         "--------------|---------------|----------|-------------------|"
     )
@@ -330,6 +337,14 @@ def _generate_candidates_markdown_table(
         macd_tag  = _macd_hist_tag(close)
         strategy  = _strategy_tag(indic)
         price_str = f"${indic['price']:.2f}"
+
+        # EMA5/10/20 與 Vol_vs_5DAvg（動能策略回檔買進區間依據，DD-12）
+        ema5_v, ema10_v, ema20_v = indic.get("ema5"), indic.get("ema10"), indic.get("ema20")
+        ema5_str  = f"${ema5_v:.2f}"  if ema5_v  is not None else "N/A"
+        ema10_str = f"${ema10_v:.2f}" if ema10_v is not None else "N/A"
+        ema20_str = f"${ema20_v:.2f}" if ema20_v is not None else "N/A"
+        vol5_v = indic.get("vol_vs_5d_avg")
+        vol5_str = f"{vol5_v:.2f}" if vol5_v is not None else "N/A"
 
         rsi_val = indic.get("rsi")
         rsi_str = f"{rsi_val:.1f}" if rsi_val is not None else "N/A"
@@ -363,7 +378,8 @@ def _generate_candidates_markdown_table(
 
         rows.append(
             f"| {sym} | {price_str} | {sector_display} | {c['total_score']:.0f} | {strategy}"
-            f" | {ma_trend} | {rsi_str} | {macd_tag} | {vtf_str}"
+            f" | {ma_trend} | {ema5_str} | {ema10_str} | {ema20_str} | {vol5_str}"
+            f" | {rsi_str} | {macd_tag} | {vtf_str}"
             f" | {p5d_str} | {mom_str} | {rs_str} | {dist_str} | {beta_str} | {ed_str} |"
         )
 
@@ -454,6 +470,10 @@ def _build_prompt(
     field_defs = (
         "欄位定義：\n"
         "- MA_Trend: BULL_1=EMA5>EMA10>EMA20>EMA50完美多頭｜BULL_2=EMA5>EMA20>EMA50標準多頭｜MIXED=混合｜BEAR=空頭\n"
+        "- EMA5/EMA10/EMA20: 指數移動均線價位（美元）。動能策略買進區間應設在EMA20~EMA10之間的回檔帶；"
+        "股價距EMA5超過+5%視為過度延伸，不宜追價；EMA5附近可作為極端強勢股的探針帶進場價\n"
+        "- Vol_vs_5DAvg: 當日成交量÷5日均量；<0.7代表回檔量縮（拋壓衰竭，無恐慌賣壓），"
+        "為動能策略回檔進場的量能確認條件\n"
         "- MACD_Hist: POS_INC=正且遞增(最強)｜POS_DEC=正但遞減｜NEG_INC=負但回升｜NEG_DEC=負且下降(最弱)\n"
         "- VTF_Score: 量能推進因子=量比×(2×K線位置-1)，正值=帶量推進，負值=高檔出貨；>5.0=史詩級機構建倉\n"
         "- Price_5D_Pct: 近5日漲跌幅（短線爆發力）\n"
@@ -509,7 +529,11 @@ SYSTEM_PROMPT = """你是一位經驗豐富的美股量化分析師，擅長技�
 【動能策略（momentum）】：
 - 條件：均線多頭排列（EMA5>EMA10>EMA20>EMA50）、RSI 50~70、VTF_Score >= 1.0
 - 優先：Momentum_ATR >= 2.0 且 RS_vs_Sector > +1%（板塊內領頭羊動能延續）
-- 買入：當前股價或小幅回調至 EMA10；目標：+10%~20%；止損：跌破 EMA20
+- 買入區間（拒絕盲目追價，優先選有結構確認的回檔）：
+  1. 標準回檔進場：股價已回落至 EMA20~EMA10 之間，且 Vol_vs_5DAvg < 0.7（量縮無賣壓）→ buy_zone 設在該 EMA20~EMA10 區間
+  2. 極端強勢例外：股價緊貼 EMA5（尚未明顯回檔）但 VTF_Score 仍強 → buy_zone 可設在 EMA5 附近（5MA 探針帶）
+  3. 股價距 EMA5 已超過 +5%（過度延伸、未回檔）→ 大幅降低信心分數，禁止以當前收盤價設為買入區間上限
+- 目標：+10%~20%；止損：跌破 EMA20
 - 持有：1~4 週
 
 【突破策略（breakout）】：
