@@ -150,15 +150,15 @@
     "vix_value": 16.15,
     "l2_score": 91.38,
     "ai_confidence": 9,
-    "ai_strategy_reason": "均線多頭排列(EMA5>EMA10>EMA20>EMA50)，RSI=70.1在50~70健康區，VTF=1.03>1.0，Momentum_ATR=5.61>=2.0，RS_vs_Sector=+3.8%>+1%。"
+    "ai_strategy_reason": "均線多頭排列(EMA5>EMA10>EMA20>EMA50)，RSI=70.1在50~70健康區，VTF=1.03>=1.0，Momentum_ATR=5.61>=2.0，RS_vs_Sector=+3.8%>+1%。"
   },
   {
     "symbol": "V",
     "name": "Visa Inc.",
     "sector": "Financial Services",
-    "buy_zone": "$340～$345",
-    "buy_zone_lower": 340.0,
-    "buy_zone_upper": 345.0,
+    "buy_zone": "$335～$340",
+    "buy_zone_lower": 335.0,
+    "buy_zone_upper": 340.0,
     "target": "$385",
     "stop_loss": "$325",
     "hold_period": "15",
@@ -179,16 +179,16 @@
     "vix_value": 16.15,
     "l2_score": 91.38,
     "ai_confidence": 8,
-    "ai_strategy_reason": "均線多頭排列，RSI=71.6在50~70健康區，VTF=0.90接近1.0，Momentum_ATR=5.11>=2.0，RS_vs_Sector=+3.7%>+1%。"
+    "ai_strategy_reason": "均線多頭排列，RSI=71.6在50~70區間，VTF=0.90接近1.0，Momentum_ATR=5.11>=2.0，RS_vs_Sector=+3.7%>+1%。"
   },
   {
     "symbol": "AJG",
     "name": "Arthur J. Gallagher & Co.",
     "sector": "Financial Services",
-    "buy_zone": "$230～$235",
-    "buy_zone_lower": 230.0,
-    "buy_zone_upper": 235.0,
-    "target": "$265",
+    "buy_zone": "$225～$230",
+    "buy_zone_lower": 225.0,
+    "buy_zone_upper": 230.0,
+    "target": "$260",
     "stop_loss": "$215",
     "hold_period": "15",
     "strategy": "動能策略",
@@ -208,17 +208,17 @@
     "vix_value": 16.15,
     "l2_score": 91.38,
     "ai_confidence": 7,
-    "ai_strategy_reason": "均線多頭排列，RSI=72.8在50~70健康區，Momentum_ATR=5.49>=2.0，RS_vs_Sector=+7.5%>+1%。"
+    "ai_strategy_reason": "均線多頭排列，RSI=72.8在50~70區間，Momentum_ATR=5.49>=2.0，RS_vs_Sector=+7.5%>+1%。"
   },
   {
-    "symbol": "KHC",
-    "name": "The Kraft Heinz Company",
+    "symbol": "KMB",
+    "name": "Kimberly-Clark Corporation",
     "sector": "Consumer Defensive",
-    "buy_zone": "$24.0～$24.5",
-    "buy_zone_lower": 24.0,
-    "buy_zone_upper": 24.5,
-    "target": "$27.5",
-    "stop_loss": "$23.0",
+    "buy_zone": "$107～$109",
+    "buy_zone_lower": 107.0,
+    "buy_zone_upper": 109.0,
+    "target": "$120",
+    "stop_loss": "$102",
     "hold_period": "15",
     "strategy": "動能策略",
     "tracked_dates": [
@@ -235,19 +235,19 @@
     "entry_regime": "BULL_TREND",
     "market_breadth_pct": 64.0,
     "vix_value": 16.15,
-    "l2_score": 91.38,
-    "ai_confidence": 6,
-    "ai_strategy_reason": "均線多頭排列，RSI=63.3在50~70健康區，VTF=1.07>1.0，Momentum_ATR=3.88>=2.0，RS_vs_Sector=+7.3%>+1%。"
+    "l2_score": 85.0,
+    "ai_confidence": 7,
+    "ai_strategy_reason": "均線多頭排列，RSI=72.6在50~70區間，Momentum_ATR=7.30>=2.0，RS_vs_Sector=+3.9%>+1%。"
   },
   {
-    "symbol": "LIN",
-    "name": "Linde plc",
-    "sector": "Basic Materials",
-    "buy_zone": "$520～$525",
-    "buy_zone_lower": 520.0,
-    "buy_zone_upper": 525.0,
-    "target": "$575",
-    "stop_loss": "$505",
+    "symbol": "KVUE",
+    "name": "Kenvue Inc.",
+    "sector": "Consumer Defensive",
+    "buy_zone": "$18.80～$19.00",
+    "buy_zone_lower": 18.8,
+    "buy_zone_upper": 19.0,
+    "target": "$21.00",
+    "stop_loss": "$18.00",
     "hold_period": "15",
     "strategy": "動能策略",
     "tracked_dates": [
@@ -264,8 +264,8 @@
     "entry_regime": "BULL_TREND",
     "market_breadth_pct": 64.0,
     "vix_value": 16.15,
-    "l2_score": 91.38,
+    "l2_score": 85.0,
     "ai_confidence": 6,
-    "ai_strategy_reason": "均線多頭排列，RSI=63.2在50~70健康區，Momentum_ATR=2.40>=2.0，RS_vs_Sector=+3.7%>+1%。"
+    "ai_strategy_reason": "均線多頭排列，RSI=71.2在50~70區間，Momentum_ATR=6.94>=2.0，RS_vs_Sector=+2.7%>+1%。"
   }
 ]
