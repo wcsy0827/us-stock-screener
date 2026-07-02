@@ -138,6 +138,8 @@ S&P 500 (~503 支)
 
 20. **L2 候選池排名上限，穩定輸出數量至 50~60 支（scorer.py DD-10）**：原本固定分數門檻（`min_score`，Regime 感知調整）的通過數量完全跟著大盤強弱擺動（BULL_TREND 廣度 63.9% 時 119 支通過 70 分門檻，弱勢盤面可能剩不到 20 支，強勢盤面可能破 200 支），無法穩定收斂到期望區間。`score_all()` 篩選出品質門檻候選 `qualified` 後，若數量 `> L2_TARGET_COUNT`（55），取第 55 名分數為 `cutoff_score`，只保留 `total_score >= cutoff_score` 的股票（同分邊界一律保留，不引入 tie-breaker，允許小幅超出目標區間）；`force_pass`（PANIC_REVERSAL 強制放行股）不受排名上限排除；`qualified` 數量本來就 `<= 55` 時不觸發，不硬湊數量。既有 Regime 感知分數門檻與 DD-1/DD-2/DD-3 強制放行機制完全保留，排名上限是疊加在品質門檻之上的天花板，不是取代品質門檻。→ 詳見 `specs/scorer.md`
 
+21. **動能/反轉策略止損改為明確百分比緩衝（ranker.py DD-15）**：用 `data/watchlist.json` 實測數據發現動能策略止損常等於買入區間下緣（CB/KHC/V/AJG/LIN 五支候選股完全相等）——根因是買入區間下緣本身就是 EMA20，止損規則卻只寫「跌破 EMA20」這個方向詞、沒有明確百分比，AI 有時照字面解讀成止損=EMA20，等於一買進去就已觸發止損、沒有容錯空間。止損改為「EMA20 下方 2%（不得設為等於買入區間下緣，須低於 EMA20）」，比照突破策略既有的「跌回 High_20D 下方 2%」寫法。反轉策略「止損：Low_20D 下方」有同一類措辭缺陷（雖因買入區間錨點 EMA50 與止損錨點 Low_20D 不同、正常情況天生有緩衝而風險較低，但「`buy_zone` 下緣不得低於 `Low_20D`」地板條件被觸發時仍可能重演），一併改為「Low_20D 下方 2%」並加註不得等於買入區間下緣。純 Prompt 文字修正，`tracker.py` 的止損/買入區間解析邏輯零改動。→ 詳見 `specs/ranker.md`
+
 12. **報告日期與防重複執行皆錨定 UTC（main.py / tracker.py）**：CI 在 UTC 時區執行；台灣時間 7/1 08:00 = UTC 6/30 24:00，yfinance 此時拿到的最後數據仍是 6/30——報告正確標示 6/30 是預期行為，不是 bug。規則如下：
     - **`main.py`**：`stats["date"]` 必須用 `datetime.strptime(market_date_str, "%Y-%m-%d")`（`market_date_str` 來自 `summary["market_date"]` = `price_data["SPY"].index[-1].date()`），**不得用 `datetime.now()`**。`datetime.now()` 在非 UTC 時區執行時，與 market_date 不一致，會產生「報告標題 7/1、數據內容 6/30」的誤導標籤。
     - **`tracker.py`**：`check_already_run_today()` 使用 `datetime.utcnow().date()` 而非 `date.today()`，確保台灣本地執行時防重複邏輯與 CI 時區一致。`run_tracker()` 內的 `today` 繼續由 `market_date` 注入（DD-11 不變）。
