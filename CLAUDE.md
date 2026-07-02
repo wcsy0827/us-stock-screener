@@ -173,7 +173,7 @@ S&P 500 (~503 支)
 |----------|------|--------|----------|
 | 日 K 數據 | `.cache/price_YYYYMMDD.pkl` | 當日 | `--no-cache` |
 | 基本面資訊 | `.cache/info_YYYYMMDD.json` | 7 日（取最近一份） | `--no-cache` |
-| AI 精選結果 | `.cache/ranked_YYYYMMDD.json` | 當日 | `--no-ai-cache` 或 `--no-cache` |
+| AI 精選結果 | `.cache/ranked_YYYYMMDD.json` | 當日 | `--no-ai-cache` 或 `--no-cache`；CI 一律強制略過，只有本機手動執行才會複用 |
 | 財報日期 | `.cache/earnings_registry.json` | 30 日（per-symbol TTL，獨立管理） | — |
 | 追蹤清單 | `data/watchlist.json` | 永久（持久化） | 手動刪除 |
 | 歷史績效 | `data/performance_history.json` | 永久（只增不刪） | 手動刪除 |
@@ -201,5 +201,6 @@ CI 執行環境為 **UTC 時區**。這決定了報告日期的一切：
 
 ## CI 注意事項
 
+- **CI 一律加 `--no-ai-cache`**：`daily-screener.yml` 的 `Run screener` 步驟固定帶 `--no-ai-cache`（price/info 快取不受影響，只跳過 AI 精選結果快取）。原因：`.cache/` 的 GitHub Actions cache key 只用日期（`screener-data-YYYY-MM-DD`），沒有綁定程式碼版本。若同一天內「先跑一次 → 修改 `ranker.py` 的 Prompt → 合併 → 手動重跑」，第二次執行會直接撿到第一次用舊 Prompt 產生的 `ranked_YYYYMMDD.json`，導致 hotfix 合併後仍發布舊結果（實際發生過：PR #46 止損緩衝修正合併後，同日重跑仍輸出止損=買入區間下緣的舊資料）。一天正常只排程跑一次，AI 快取本來就是當日首次 miss，加這個旗標對正常排程執行零差異，只在同日重跑時強制拿到當前程式碼版本的最新判斷。→ 詳見 `plans/2026-07-02-ci-ai-cache-staleness.md`
 - **pandas-ta 已從專案移除**：pandas-ta 0.4.x 依賴 numba/llvmlite，numba 的 LLVM 初始化在 GitHub Actions Ubuntu 環境觸發 Segmentation Fault（exit 139）。`scorer.py` 已改用純 pandas 實作所有指標（EMA、RSI、MACD、ATR），**不得重新引入 pandas-ta**。
 - **`yfinance<1.0.0` + `curl_cffi<0.15.0`**：`curl_cffi 0.15.0` 在 GitHub Actions Ubuntu 環境中與 Python toolchain 的 `LD_LIBRARY_PATH` 衝突，導致 Segmentation Fault。`yfinance 1.x` 要求 `curl_cffi>=0.15`，故鎖定 `yfinance<1.0.0`（0.2.66）。yfinance 0.2.66 API 完全相容（`download(group_by="ticker")`、`ticker.info`、`ticker.calendar`）。**不得移除這兩個上限**。
