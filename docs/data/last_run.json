@@ -1,9 +1,9 @@
 {
-  "run_at_utc": "2026-07-01T23:53:53Z",
+  "run_at_utc": "2026-07-02T03:32:34Z",
   "market_date": "2026-07-01",
   "regime": "BULL_TREND",
   "total_scanned": 503,
-  "l1_count": 499,
-  "l2_count": 179,
+  "l1_count": 502,
+  "l2_count": 185,
   "ai_count": 5
 }
