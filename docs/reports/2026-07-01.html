@@ -241,7 +241,7 @@ function toggleRunInfo() {
         '<strong>資料來源核實</strong><br>' +
         '執行時間（UTC）：' + utc + '<br>' +
         '執行時間（台灣）：' + twStr + '<br>' +
-        '資料截止日：' + (d.market_date || '—') + '<br>' +
+        '資料截止日：' + (d.market_date || '—') + '（若於美股盤中執行，系統會自動捨棄當日未收盤數據，此欄可能為前一交易日）<br>' +
         '掃描：S&amp;P500 ' + (d.total_scanned || '—') + ' 支 → L1 ' +
         (d.l1_count || '—') + ' → L2 ' + (d.l2_count || '—') +
         ' → AI精選 ' + (d.ai_count || '—') + ' 支';
