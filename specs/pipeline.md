@@ -37,6 +37,15 @@
 - `--no-cache` 旗標：跳過所有快取，強制重下
 - `clear_old_cache()`：執行前清除超過 7 日的 `.cache/` 檔案
 
+### Step 2 收盤完整性防呆（DD-6）
+
+`fetcher.trim_incomplete_session(price_data, now=None)` 在 Step 2 快取/下載完成後、統計計數與 `market_date` 計算之前執行：
+
+- 以 `price_data["SPY"]` 最後一列日期為基準；若該日期等於美東當下日期（`America/New_York`）**且**美東現在時間早於當天 `16:15`（收盤 16:00 + 15 分鐘 settle buffer），判定該列為尚未收盤的殘缺 K 棒
+- 判定成立時，逐股比對日期並過濾掉那一列（非整批 `.iloc[:-1]` 盲刪），過濾後列數 `< 20` 的股票整支移除
+- 週末/假日、或已收盤後執行：no-op，不印訊息
+- `market_date`（`pipeline.py` 現行第 78 行左右）因此自然回退到前一個完整交易日，Step 2.5 的 `fetch_regime_quick()` 也會讀到同一份已修剪的 `price_data`，不需額外改動
+
 ### L1 硬篩條件（filter.py，兩段執行）
 
 **第一段（Step 4 — 流動性）**
@@ -105,6 +114,13 @@ def run(
 - **選擇**：`calculate_market_breadth()` 內部以 `_BREADTH_EXCLUDED` frozenset 過濾，跳過 11 支板塊 ETF 及 SPY
 - **原因**：DD-4 將 ETF 加入 `price_data` 後，若不過濾，ETF 會被計入廣度分母。板塊 ETF 是追蹤工具，不是 S&P 500 成分股，不應影響廣度百分比。
 - **捨棄**：在 `pipeline.py` 傳入篩選後的 `price_data`（增加額外資料結構，且 `fetch_market_context` 的廣度計算也需同步修改）
+
+### DD-6: 盤中執行自動捨棄殘缺當日 K 棒
+
+- **選擇**：Step 2 完成後統一呼叫 `trim_incomplete_session()`，比對 SPY 最後一列日期與美東當下時間，未收盤（美東 16:15 前）則逐股捨棄該列，讓 `market_date` 自動回退到前一個完整交易日
+- **原因**：`yf.download(interval="1d")` 在美股盤中會回傳「今天」的殘缺 OHLCV（非最終收盤值），而 `pipeline.py` 原本直接用 `spy_df.index[-1]` 當 `market_date`，沒有完整性檢查。這會讓報告標籤顯示完整日期，內容卻是盤中殘缺數據跑出來的評分與 AI 精選，與 `CLAUDE.md`「盤中觸發＝自動拿到前一日完整報告」的既有心智模型不符
+- **捨棄**：中斷執行並警告使用者重跑——會打斷 CI 自動化流程，且使用者原本就預期盤中觸發等於前一日報告，不需要額外中斷；僅印警告但仍用殘缺數據繼續跑——無法防止污染 `market_date` 與下游評分
+- → 詳見 `plans/2026-07-02-intraday-partial-bar-guard.md`
 
 ### DD-3: L3 失敗降級至 L2 前 top_n
 

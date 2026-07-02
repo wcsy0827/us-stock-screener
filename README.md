@@ -29,6 +29,7 @@ S&P 500（~503 支）
     ▼  Step 2  fetcher.py
     │  下載 90 日日 K 數據（.cache/price_YYYYMMDD.pkl 快取）
     │  同批次下載 11 支板塊 ETF（XLK/XLV/XLF 等）及 SPY，供 L2 RS 計算用
+    │  盤中執行時自動捨棄當日尚未收盤的殘缺K棒（美東 16:15 前判定未收盤，market_date 回退至前一完整交易日）
     │
     ▼  Step 2.5  market.py — 快速 Regime 判定
     │  計算市場廣度（近 3 日均值，% 股票 > 50 SMA）+ 下載 VIX

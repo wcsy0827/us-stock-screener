@@ -46,6 +46,7 @@ S&P 500 (~503 支)
   ↓ Step 1   universe.py     爬取成份股
   ↓ Step 2   fetcher.py      下載 90 日日 K（.cache/ 快取）
                               同批次下載 11 支板塊 ETF（XLK/XLV/XLF 等）及 SPY，供 scorer RS 計算用
+                              盤中執行時自動捨棄當日尚未收盤的殘缺K棒（trim_incomplete_session，美東 16:15 前判定未收盤）
   ↓ Step 2.5 market.py       快速 Regime 判定（近 3 日均廣度 + VIX）← 必須在 scorer 之前
                               五象限：BULL_TREND / CONSOLIDATION / CONSOLIDATION_VOLATILE / PANIC_REVERSAL / BEAR_DISTRIBUTION
                               回傳 (regime, breadth_pct, vix_value, vix_ok)，供 Step 5.5 複用
@@ -130,6 +131,8 @@ S&P 500 (~503 支)
 16. **動能策略買進區間結構化（ranker.py DD-12）**：候選池表格新增 `EMA5`/`EMA10`/`EMA20`（美元原始價位）與 `Vol_vs_5DAvg`（當日量 ÷ 5日均量）四欄，解決 AI 過去只有 `MA_Trend` 文字標籤、無實際 EMA 數值可用而把 `buy_zone` 上限退化成收盤價的問題。動能策略 Prompt 改為三段式規則：標準回檔進場設在 `EMA20~EMA10` 且 `Vol_vs_5DAvg < 0.7`（量縮確認）；極端強勢例外可用 `EMA5` 附近（5MA 探針帶）；股價距 `EMA5` 超過 +5% 視為過度延伸禁止追價。`buy_zone` 仍由 AI 自行輸出字串，不改為 Python 端確定性計算。→ 詳見 `specs/ranker.md`
 
 17. **突破/反轉策略買進區間結構化（ranker.py DD-13）**：候選池表格新增 `High_20D`/`Vol_vs_20DAvg`（突破策略）與 `EMA50`/`Low_20D`/`Stoch_K`/`RSI_5D_Ago`（反轉策略）共六欄。根因比 DD-12 更嚴重：Prompt 原本就直接引用 `stoch_k`、`rsi_5d_ago`、`ema50` 等指標名稱要求 AI 判斷，但這些值只用於 `_strategy_tag()` 內部計算，AI 在表格裡完全看不到。突破策略 Prompt 改為四段式規則（回測確認優先於當日追單、`Vol_vs_20DAvg >= 1.5` 攻擊量確認）；反轉策略改為三段式規則（`EMA50` 支撐 + `Stoch_K`/`RSI_5D_Ago` 底背離確認 + `Low_20D` 止損基準）。完整的 W 底/BOS/斐波那契回撤形態辨識超出「單筆技術指標快照」的資料設計範疇，本次不做。→ 詳見 `specs/ranker.md`
+
+18. **盤中執行自動捨棄殘缺當日 K 棒（fetcher.py，`specs/pipeline.md` DD-6）**：`yf.download(interval="1d")` 在美股盤中會回傳「今天」的殘缺 OHLCV（非最終收盤值），第 12 點原本假設「盤中觸發＝自動拿到前一日完整報告」只是文件描述，程式碼並未實際保證。`fetcher.trim_incomplete_session()` 在 Step 2 完成後執行：比對 `price_data["SPY"]` 最後一列日期是否等於美東（`America/New_York`）當下日期，且美東現在時間早於 `16:15`（收盤 16:00 + 15 分鐘 settle buffer），成立則逐股捨棄該殘缺列（過濾後 `< 20` 列的股票整支移除），讓 `market_date` 自動回退到前一個完整交易日，補上第 12 點文件假設與程式碼行為之間的落差。→ 詳見 `specs/pipeline.md`
 
 12. **報告日期與防重複執行皆錨定 UTC（main.py / tracker.py）**：CI 在 UTC 時區執行；台灣時間 7/1 08:00 = UTC 6/30 24:00，yfinance 此時拿到的最後數據仍是 6/30——報告正確標示 6/30 是預期行為，不是 bug。規則如下：
     - **`main.py`**：`stats["date"]` 必須用 `datetime.strptime(market_date_str, "%Y-%m-%d")`（`market_date_str` 來自 `summary["market_date"]` = `price_data["SPY"].index[-1].date()`），**不得用 `datetime.now()`**。`datetime.now()` 在非 UTC 時區執行時，與 market_date 不一致，會產生「報告標題 7/1、數據內容 6/30」的誤導標籤。

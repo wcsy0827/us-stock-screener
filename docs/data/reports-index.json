@@ -13,10 +13,10 @@
     "date": "2026-07-01",
     "weekday": "三",
     "active": 0,
-    "watch": 5,
-    "invalid": 4,
-    "new": 5,
-    "reset": 0,
+    "watch": 4,
+    "invalid": 3,
+    "new": 4,
+    "reset": 1,
     "removed": 0
   }
 ]
