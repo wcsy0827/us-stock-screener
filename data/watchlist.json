@@ -127,11 +127,11 @@
     "symbol": "CB",
     "name": "Chubb Limited",
     "sector": "Financial Services",
-    "buy_zone": "$332～$337",
-    "buy_zone_lower": 332.0,
-    "buy_zone_upper": 337.0,
+    "buy_zone": "$337～$342",
+    "buy_zone_lower": 337.0,
+    "buy_zone_upper": 342.0,
     "target": "$387",
-    "stop_loss": "$332",
+    "stop_loss": "$325",
     "hold_period": "15",
     "strategy": "動能策略",
     "tracked_dates": [
@@ -150,46 +150,17 @@
     "vix_value": 16.59,
     "l2_score": 91.38,
     "ai_confidence": 9,
-    "ai_strategy_reason": "均線多頭排列完整，RSI=70.1，VTF=1.03，Momentum_ATR=5.61，RS_vs_Sector=+3.8%，符合動能策略條件。"
-  },
-  {
-    "symbol": "KHC",
-    "name": "The Kraft Heinz Company",
-    "sector": "Consumer Defensive",
-    "buy_zone": "$23.49～$23.73",
-    "buy_zone_lower": 23.49,
-    "buy_zone_upper": 23.73,
-    "target": "$27.50",
-    "stop_loss": "$23.49",
-    "hold_period": "15",
-    "strategy": "動能策略",
-    "tracked_dates": [
-      "2026-07-01"
-    ],
-    "status": "watch",
-    "invalid_reason": null,
-    "watch_days": 0,
-    "active_days": 0,
-    "signal_date_close": null,
-    "active_entry_price": null,
-    "active_start_date": null,
-    "date_added": "2026-07-01",
-    "entry_regime": "BULL_TREND",
-    "market_breadth_pct": 64.0,
-    "vix_value": 16.59,
-    "l2_score": 91.38,
-    "ai_confidence": 7,
-    "ai_strategy_reason": "均線多頭排列，RSI=63.3，VTF=1.07，Momentum_ATR=3.88，RS_vs_Sector=+7.3%，符合動能策略。"
+    "ai_strategy_reason": "均線多頭排列(EMA5>EMA10>EMA20>EMA50)，RSI=70.1，VTF=1.03>1.0，Momentum_ATR=5.61>=2.0，RS_vs_Sector=+3.8%>+1%。"
   },
   {
     "symbol": "V",
     "name": "Visa Inc.",
     "sector": "Financial Services",
-    "buy_zone": "$331～$336",
-    "buy_zone_lower": 331.0,
-    "buy_zone_upper": 336.0,
+    "buy_zone": "$336～$342",
+    "buy_zone_lower": 336.0,
+    "buy_zone_upper": 342.0,
     "target": "$386",
-    "stop_loss": "$331",
+    "stop_loss": "$325",
     "hold_period": "15",
     "strategy": "動能策略",
     "tracked_dates": [
@@ -208,17 +179,17 @@
     "vix_value": 16.59,
     "l2_score": 91.38,
     "ai_confidence": 8,
-    "ai_strategy_reason": "均線多頭排列，RSI=71.6，VTF=0.9，Momentum_ATR=5.11，RS_vs_Sector=+3.7%，符合動能策略。"
+    "ai_strategy_reason": "均線多頭排列，RSI=71.6，VTF=0.90接近1.0，Momentum_ATR=5.11>=2.0，RS_vs_Sector=+3.7%>+1%。"
   },
   {
     "symbol": "AJG",
     "name": "Arthur J. Gallagher & Co.",
     "sector": "Financial Services",
-    "buy_zone": "$219～$224",
-    "buy_zone_lower": 219.0,
-    "buy_zone_upper": 224.0,
+    "buy_zone": "$229～$234",
+    "buy_zone_lower": 229.0,
+    "buy_zone_upper": 234.0,
     "target": "$263",
-    "stop_loss": "$219",
+    "stop_loss": "$215",
     "hold_period": "15",
     "strategy": "動能策略",
     "tracked_dates": [
@@ -237,17 +208,46 @@
     "vix_value": 16.59,
     "l2_score": 91.38,
     "ai_confidence": 7,
-    "ai_strategy_reason": "均線多頭排列，RSI=72.8，Momentum_ATR=5.49，RS_vs_Sector=+7.5%，符合動能策略。"
+    "ai_strategy_reason": "均線多頭排列，RSI=72.8，Momentum_ATR=5.49>=2.0，RS_vs_Sector=+7.5%>+1%。"
+  },
+  {
+    "symbol": "KMB",
+    "name": "Kimberly-Clark Corporation",
+    "sector": "Consumer Defensive",
+    "buy_zone": "$109～$111",
+    "buy_zone_lower": 109.0,
+    "buy_zone_upper": 111.0,
+    "target": "$122",
+    "stop_loss": "$102",
+    "hold_period": "15",
+    "strategy": "動能策略",
+    "tracked_dates": [
+      "2026-07-01"
+    ],
+    "status": "watch",
+    "invalid_reason": null,
+    "watch_days": 0,
+    "active_days": 0,
+    "signal_date_close": null,
+    "active_entry_price": null,
+    "active_start_date": null,
+    "date_added": "2026-07-01",
+    "entry_regime": "BULL_TREND",
+    "market_breadth_pct": 64.0,
+    "vix_value": 16.59,
+    "l2_score": 85.0,
+    "ai_confidence": 7,
+    "ai_strategy_reason": "均線多頭排列，RSI=72.6，Momentum_ATR=7.30>=2.0，RS_vs_Sector=+3.9%>+1%。"
   },
   {
     "symbol": "LIN",
     "name": "Linde plc",
     "sector": "Basic Materials",
-    "buy_zone": "$515～$519",
-    "buy_zone_lower": 515.0,
-    "buy_zone_upper": 519.0,
-    "target": "$586",
-    "stop_loss": "$515",
+    "buy_zone": "$519～$522",
+    "buy_zone_lower": 519.0,
+    "buy_zone_upper": 522.0,
+    "target": "$587",
+    "stop_loss": "$505",
     "hold_period": "15",
     "strategy": "動能策略",
     "tracked_dates": [
@@ -265,7 +265,7 @@
     "market_breadth_pct": 64.0,
     "vix_value": 16.59,
     "l2_score": 91.38,
-    "ai_confidence": 7,
-    "ai_strategy_reason": "均線多頭排列，RSI=63.2，Momentum_ATR=2.4，RS_vs_Sector=+3.7%，符合動能策略。"
+    "ai_confidence": 6,
+    "ai_strategy_reason": "均線多頭排列，RSI=63.2，Momentum_ATR=2.40>=2.0，RS_vs_Sector=+3.7%>+1%。"
   }
 ]
