@@ -6,8 +6,9 @@ import json
 import os
 import pickle
 import time
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import yfinance as yf
 import pandas as pd
@@ -18,6 +19,9 @@ PERIOD = "90d"
 INTERVAL = "1d"
 MAX_RETRIES = 3
 RETRY_DELAY = 5
+MARKET_CLOSE_HOUR = 16
+MARKET_CLOSE_MINUTE = 15  # 16:00 ET 收盤 + 15 分鐘 settle buffer（yfinance 有時延遲幾分鐘才定案當日收盤K棒）
+MIN_BARS = 20  # 與 fetch_batch 的最低列數門檻一致
 
 # 快取目錄（相對於專案根目錄）
 _CACHE_DIR = Path(__file__).parent.parent / ".cache"
@@ -176,6 +180,38 @@ def fetch_batch(symbols: list[str]) -> dict[str, pd.DataFrame]:
 
     print(f"[fetcher] 成功取得 {len(result)} 支股票數據")
     return result
+
+
+def trim_incomplete_session(price_data: dict[str, pd.DataFrame], now: datetime | None = None) -> dict[str, pd.DataFrame]:
+    """捨棄尚未收盤的殘缺當日 K 棒，避免 market_date 誤標為未完成的交易日。"""
+    spy_df = price_data.get("SPY")
+    if spy_df is None or spy_df.empty:
+        return price_data
+
+    et = ZoneInfo("America/New_York")
+    now_et = (now or datetime.now(et)).astimezone(et)
+    last_date = spy_df.index[-1].date()
+
+    close_cutoff = now_et.replace(hour=MARKET_CLOSE_HOUR, minute=MARKET_CLOSE_MINUTE, second=0, microsecond=0)
+    if last_date != now_et.date() or now_et >= close_cutoff:
+        return price_data
+
+    affected = 0
+    dropped = 0
+    trimmed: dict[str, pd.DataFrame] = {}
+    for sym, df in price_data.items():
+        if df.empty or df.index[-1].date() != last_date:
+            trimmed[sym] = df
+            continue
+        affected += 1
+        df = df[df.index.map(lambda ts: ts.date()) != last_date]
+        if len(df) >= MIN_BARS:
+            trimmed[sym] = df
+        else:
+            dropped += 1
+
+    print(f"[fetcher] 偵測到 {last_date} 尚未收盤，已捨棄殘缺K棒（{affected} 支股票受影響，{dropped} 支因列數不足被移除）")
+    return trimmed
 
 
 def fetch_info(symbols: list[str]) -> dict[str, dict]:

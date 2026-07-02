@@ -12,7 +12,7 @@ from fetcher import (
     fetch_batch, fetch_info,
     load_price_cache, save_price_cache,
     load_info_cache, save_info_cache,
-    clear_old_cache,
+    clear_old_cache, trim_incomplete_session,
 )
 from earnings import fetch_earnings_dates
 from filter import apply_filters, apply_earnings_filter
@@ -67,6 +67,7 @@ def run(
             price_data = fetch_batch(symbols_with_etf)
             if use_cache:
                 save_price_cache(price_data)
+        price_data = trim_incomplete_session(price_data)
         etf_set = set(_etf_tickers)
         sp500_count = sum(1 for k in price_data if k not in etf_set)
         summary["downloaded"] = sp500_count
