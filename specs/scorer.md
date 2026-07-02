@@ -27,6 +27,13 @@
 - `CONSOLIDATION_VOLATILE` 環境：門檻提高至 **max(min_score, 65) 分**（高 VIX 整理期至少 65 分，若 min_score 更高則以 min_score 為準）
 - `PANIC_REVERSAL` 環境額外：RSI < 35 **且** 20 日跌幅 > 15% 的股票**強制放行**（不受分數限制）
 
+### 排名上限（DD-10）
+
+- 品質門檻篩選後，若通過數量 `> L2_TARGET_COUNT`（55），依總分取第 55 名的分數為 `cutoff_score`，只保留 `total_score >= cutoff_score` 的股票
+- 同分邊界一律保留，不引入額外 tie-breaker 排序鍵，允許小幅超出 50~60 目標區間
+- `force_pass`（PANIC_REVERSAL 強制放行股）不受排名上限排除，無條件保留
+- 通過數量本來就 `<= L2_TARGET_COUNT` 時（弱勢盤面）不觸發排名上限，維持原樣，不硬湊數量
+
 ### 強制放行條件（`_is_oversold_reversal_candidate`）
 
 ```
@@ -52,6 +59,9 @@ def score_all(
     回傳依總分降序排列的候選股列表。
     每筆含 symbol, price, sector, total_score, ma_score, rsi_score,
            macd_score, volume_score, momentum_score, rs_score。
+
+    品質門檻篩選後，若通過數量 > L2_TARGET_COUNT（55），疊加排名上限只保留
+    Top N（同分邊界保留，不引入 tie-breaker），force_pass 股票不受排名上限排除（DD-10）。
     """
 
 def score_stock(
@@ -110,6 +120,14 @@ def _calc_rs_score(sym: str, df: pd.DataFrame, sector: str, price_data: dict) ->
 - **權重替換**：MA 25→20；RSI 20→18；MACD 20→17；Volume 20→15；Momentum 15→15；RS 0→15（合計維持 100 分）
 - **sector 欄位**：score_all() 回傳 dict 中必須包含 `sector`，供 ranker.py `_diversify_candidates()` 使用
 - **捨棄**：以個股對 SPY 計算 RS（忽略板塊輪動效果，無法區分「整個板塊都在漲」vs「板塊內個別強股」）
+
+### DD-10: L2 候選池排名上限，穩定輸出數量至 50~60 支
+
+- **選擇**：品質門檻篩選出 `qualified` 後，若數量 `> L2_TARGET_COUNT`（55），取第 55 名的分數為 `cutoff_score`，只保留 `total_score >= cutoff_score` 的股票（同分邊界一律保留，不引入 tie-breaker）；`force_pass`（PANIC_REVERSAL 強制放行股）不受此排名上限排除；`qualified` 數量本來就 `<= 55` 時不觸發，維持原樣
+- **原因**：原本的固定分數門檻（`min_score`，Regime 感知調整）通過數量完全跟著大盤強弱擺動——BULL_TREND 廣度 63.9% 時 119 支通過 70 分門檻，換成弱勢盤面可能剩不到 20 支，強勢盤面可能破 200 支，無法穩定收斂到使用者期望的 50~60 支範圍
+- **不變**：既有 Regime 感知的分數門檻（`effective_min`）與 DD-1/DD-2/DD-3 的強制放行機制完全保留，排名上限是疊加在品質門檻之上的「天花板」，不是取代品質門檻
+- **捨棄**：完全改用純排名制（直接取 Top 55，不管分數）——弱勢盤面會被迫湊出 55 支候選，可能硬拉進 30 幾分的低品質股充數，與使用者「數量太多」的訴求方向相反；用額外指標（如 RS_vs_Sector）當同分 tie-breaker——50~60 是彈性目標區間非精確值，不需要為了卡在單一數字引入額外排序鍵增加複雜度
+- → 詳見 `plans/2026-07-02-l2-rank-cap.md`
 
 ### DD-1: RSI > 80 改為軟過濾
 
