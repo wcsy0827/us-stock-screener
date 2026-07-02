@@ -53,7 +53,7 @@ S&P 500（~503 支）
     │
     ▼  Step 5  scorer.py — L2 技術評分（六維度 100 分制）
     │  門檻：60 分；CONSOLIDATION_VOLATILE→65 分；PANIC_REVERSAL→40 分 + 超賣股強制放行
-    │  → 通常剩 10~30 支
+    │  疊加排名上限 Top 55（同分邊界保留、強制放行股不受排除），穩定收斂至 50~60 支
     │
     ▼  Step 5.5  market.py — 完整大盤環境
     │  直接複用 Step 2.5 的廣度與 VIX，補抓 SPY + 相關產業 ETF 細節
@@ -177,7 +177,7 @@ copy .env.example .env
 DEEPSEEK_API_KEY=your_deepseek_api_key_here
 
 MAX_OUTPUT=5              # 最多輸出幾支（預設 5）
-MIN_SCORE=60              # L2 最低評分門檻（程式預設 60，可自行調高）
+MIN_SCORE=60              # L2 最低評分門檻（程式預設 60，可自行調高；上方另疊加 Top 55 排名上限）
 MIN_PRICE=5               # 最低股價
 MIN_DOLLAR_VOLUME=10000000  # 近 30 日均量美元成交額下限（$1,000 萬）
 MIN_MARKET_CAP=300000000  # 最低市值（3 億美元）

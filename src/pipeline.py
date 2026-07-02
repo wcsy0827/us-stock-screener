@@ -157,7 +157,7 @@ def run(
         sector_map = {sym: info_data.get(sym, {}).get("sector", "") for sym in l1_passed}
         candidates = score_all(l1_passed, price_data, min_score=min_score, regime=regime_quick, sector_map=sector_map)
         summary["l2_count"] = len(candidates)
-        print(f"[pipeline] 完成 ({_elapsed(t)})｜{len(candidates)} 支 >= {min_score:.0f} 分")
+        print(f"[pipeline] 完成 ({_elapsed(t)})｜{len(candidates)} 支通過 L2")
 
         if not candidates:
             print("[pipeline] 無候選股，流程結束")

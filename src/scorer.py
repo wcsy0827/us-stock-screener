@@ -16,6 +16,8 @@ WEIGHT_VOLUME = 15   # 量能放大（含趨勢係數）
 WEIGHT_MOMENTUM = 15 # 多週期動能（20 日 ATR + 5 日確認）
 WEIGHT_RS = 15       # 相對強度（個股 vs 板塊 ETF）
 
+L2_TARGET_COUNT = 55  # L2 候選池排名上限（目標區間 50~60 取中位數），DD-10
+
 
 # ── 純 pandas 指標計算（不依賴 pandas-ta / numba）──────────────
 
@@ -303,17 +305,25 @@ def score_all(
         if force_pass:
             print(f"[scorer] PANIC_REVERSAL 強制放行 {len(force_pass)} 支超賣反轉候選股")
 
-    candidates = sorted(
+    qualified = sorted(
         [r for r in results if r["total_score"] >= effective_min or r["symbol"] in force_pass],
         key=lambda x: x["total_score"],
         reverse=True,
     )
 
-    if regime == "PANIC_REVERSAL":
-        suffix = f"（PANIC_REVERSAL，門檻 {effective_min:.0f} 分 + 強制放行 {len(force_pass)} 支）"
-    elif regime == "CONSOLIDATION_VOLATILE":
-        suffix = f"（CONSOLIDATION_VOLATILE，門檻 {effective_min:.0f} 分）"
+    # 排名上限（DD-10）：品質門檻之上疊加 Top N 截斷，避免通過數量隨大盤強弱大幅波動
+    # 同分邊界一律保留（不引入 tie-breaker），force_pass 股票不受排名上限排除
+    if len(qualified) > L2_TARGET_COUNT:
+        cutoff_score = qualified[L2_TARGET_COUNT - 1]["total_score"]
+        candidates = [r for r in qualified if r["total_score"] >= cutoff_score or r["symbol"] in force_pass]
     else:
-        suffix = ""
+        candidates = qualified
+
+    if regime == "PANIC_REVERSAL":
+        suffix = f"（PANIC_REVERSAL，門檻 {effective_min:.0f} 分 + 強制放行 {len(force_pass)} 支 + Top {L2_TARGET_COUNT} 排名上限）"
+    elif regime == "CONSOLIDATION_VOLATILE":
+        suffix = f"（CONSOLIDATION_VOLATILE，門檻 {effective_min:.0f} 分 + Top {L2_TARGET_COUNT} 排名上限）"
+    else:
+        suffix = f"（門檻 {effective_min:.0f} 分 + Top {L2_TARGET_COUNT} 排名上限）"
     print(f"[scorer] L2 評分：{len(symbols)} 支 → {len(candidates)} 支進入 L3{suffix}")
     return candidates
