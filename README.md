@@ -60,6 +60,7 @@ S&P 500（~503 支）
     │
     ▼  Step 6  ranker.py — L3 DeepSeek AI 精選
        依 Regime 主推策略從候選池選出最多 5 支
+       候選表格同時附基本面欄位（估值 Fwd_PE、獲利品質 Profit_Margin、成長性 Rev_Growth_YoY）供 AI 交叉判斷
        每支附：買入區間、目標價、止損、持有天數（純整數）、策略理由
        BEAR_DISTRIBUTION 時直接回傳空列表，不建議任何買入
 ```

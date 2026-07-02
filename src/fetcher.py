@@ -230,6 +230,9 @@ def fetch_info(symbols: list[str]) -> dict[str, dict]:
                     "fifty_two_week_high": info.get("fiftyTwoWeekHigh"),
                     "fifty_two_week_low":  info.get("fiftyTwoWeekLow"),
                     "earnings_date": info.get("earningsDate"),
+                    "forward_pe": info.get("forwardPE") or info.get("trailingPE"),
+                    "profit_margin": info.get("profitMargins"),
+                    "revenue_growth": info.get("revenueGrowth"),
                 }
                 break
             except Exception as e:

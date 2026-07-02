@@ -59,7 +59,7 @@ S&P 500 (~503 支)
   ↓ Step 5   scorer.py       L2 技術評分（六維度 100 分；動態門檻依 Regime；相對強度 RS 維度）
                               CONSOLIDATION_VOLATILE 門檻 65 分，PANIC_REVERSAL 40 分
   ↓ Step 5.5 market.py       完整大盤 ETF 背景（直接複用 Step 2.5 的廣度與 VIX，不重算）
-  ↓ Step 6   ranker.py       L3 DeepSeek AI 精選（≤5 支；15 欄 Markdown 表含 RS_vs_Sector；每產業 ≤8 支）
+  ↓ Step 6   ranker.py       L3 DeepSeek AI 精選（≤5 支；28 欄 Markdown 表含 RS_vs_Sector 與基本面欄位；每產業 ≤8 支）
              tracker.py      訊號追蹤（watchlist.json）→ 結算歸檔（performance_history.json）
              publisher.py    HTML 報告 → GitHub Pages（個股浮損益、今日結算區段、策略 Tooltip、歷史績效儀表板）
 ```
@@ -133,6 +133,8 @@ S&P 500 (~503 支)
 17. **突破/反轉策略買進區間結構化（ranker.py DD-13）**：候選池表格新增 `High_20D`/`Vol_vs_20DAvg`（突破策略）與 `EMA50`/`Low_20D`/`Stoch_K`/`RSI_5D_Ago`（反轉策略）共六欄。根因比 DD-12 更嚴重：Prompt 原本就直接引用 `stoch_k`、`rsi_5d_ago`、`ema50` 等指標名稱要求 AI 判斷，但這些值只用於 `_strategy_tag()` 內部計算，AI 在表格裡完全看不到。突破策略 Prompt 改為四段式規則（回測確認優先於當日追單、`Vol_vs_20DAvg >= 1.5` 攻擊量確認）；反轉策略改為三段式規則（`EMA50` 支撐 + `Stoch_K`/`RSI_5D_Ago` 底背離確認 + `Low_20D` 止損基準）。完整的 W 底/BOS/斐波那契回撤形態辨識超出「單筆技術指標快照」的資料設計範疇，本次不做。→ 詳見 `specs/ranker.md`
 
 18. **盤中執行自動捨棄殘缺當日 K 棒（fetcher.py，`specs/pipeline.md` DD-6）**：`yf.download(interval="1d")` 在美股盤中會回傳「今天」的殘缺 OHLCV（非最終收盤值），第 12 點原本假設「盤中觸發＝自動拿到前一日完整報告」只是文件描述，程式碼並未實際保證。`fetcher.trim_incomplete_session()` 在 Step 2 完成後執行：比對 `price_data["SPY"]` 最後一列日期是否等於美東（`America/New_York`）當下日期，且美東現在時間早於 `16:15`（收盤 16:00 + 15 分鐘 settle buffer），成立則逐股捨棄該殘缺列（過濾後 `< 20` 列的股票整支移除），讓 `market_date` 自動回退到前一個完整交易日，補上第 12 點文件假設與程式碼行為之間的落差。→ 詳見 `specs/pipeline.md`
+
+19. **L3 候選池加入基本面維度（ranker.py DD-14）**：L1 硬篩流動性、L2 是純技術評分，AI 在 L3 拿到的候選股技術面已經高度同質化，若判斷依據仍 100% 是技術指標，等於在同一批技術達標股票裡比誰的指標更漂亮。候選池表格新增 `Fwd_PE`（估值）、`Profit_Margin`（獲利品質）、`Rev_Growth_YoY`（成長性）三欄，取自 `fetcher.fetch_info()` 已下載但未使用的 yfinance `info` 字典欄位（不需額外 API 呼叫）。三欄缺值比照既有 `Beta_60D` 先例不排除（僅標記 N/A、讓 AI 自行降權判斷），不比照 `Earnings_Days_Left` 直接排除。JSON 輸出 schema 不變，基本面判斷折疊進既有 `reason`/`risk`/`confidence` 三欄；`buy_zone` 相關的 DD-12/DD-13 策略型買進區間算法完全不受影響。分析師共識維度（目標價/評等）經與使用者討論後排除，不在本次範圍內。→ 詳見 `specs/ranker.md`
 
 12. **報告日期與防重複執行皆錨定 UTC（main.py / tracker.py）**：CI 在 UTC 時區執行；台灣時間 7/1 08:00 = UTC 6/30 24:00，yfinance 此時拿到的最後數據仍是 6/30——報告正確標示 6/30 是預期行為，不是 bug。規則如下：
     - **`main.py`**：`stats["date"]` 必須用 `datetime.strptime(market_date_str, "%Y-%m-%d")`（`market_date_str` 來自 `summary["market_date"]` = `price_data["SPY"].index[-1].date()`），**不得用 `datetime.now()`**。`datetime.now()` 在非 UTC 時區執行時，與 market_date 不一致，會產生「報告標題 7/1、數據內容 6/30」的誤導標籤。

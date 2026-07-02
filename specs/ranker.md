@@ -23,7 +23,7 @@
 </Output_Constraint>
 ```
 
-### Markdown 候選池表格欄位（25 欄）
+### Markdown 候選池表格欄位（28 欄）
 
 | 欄位 | 說明 |
 |------|------|
@@ -52,6 +52,9 @@
 | 52W_High_Dist | 距 52 週高點百分比 |
 | Beta_60D | 個股 60 日 Beta vs SPY；完整序列 inner join + NaN 清洗後取末 60 日計算；`.round(2)`；**缺值填 `N/A`，不觸發 AI 排除** |
 | Earnings_Days_Left | 距下次財報日曆天數（基準日 = SPY 最後交易日）；安全無近期財報填 `99`；數據斷裂（完全查不到財報歷史）填 `N/A` |
+| Fwd_PE | 預估本益比（`forwardPE`，缺值 fallback `trailingPE`）；`.round(1)`；缺值填 `N/A`，**不觸發 AI 排除**；DD-14 |
+| Profit_Margin | 淨利率（`profitMargins`）；`.round(1)%`；缺值填 `N/A`，**不觸發 AI 排除**；DD-14 |
+| Rev_Growth_YoY | 營收年增率（`revenueGrowth`）；`.round(1)%`；缺值填 `N/A`，**不觸發 AI 排除**；DD-14 |
 
 ### 策略指引（System Prompt 約束）
 
@@ -69,6 +72,11 @@
 - `Earnings_Days_Left = N/A` → **直接排除**（數據斷裂，財報時間未知，黑天鵝風險無法評估）
 - `Momentum_ATR = N/A` 或 `VTF_Score = N/A` → **直接排除**（技術數據不足）
 - `Beta_60D = N/A` → **不排除**，忽略 Beta 限制，以 Momentum_ATR 與 VTF_Score 作為核心多空判斷依據
+- `Fwd_PE`/`Profit_Margin`/`Rev_Growth_YoY` 任一為 `N/A` → **不排除**，僅代表該基本面維度無法評估，改倚重其餘維度判斷（DD-14）
+
+**基本面取捨規則（DD-14）**：技術面強度相近的候選股之間，優先選擇 `Profit_Margin` 為正、`Rev_Growth_YoY`
+為正、`Fwd_PE` 相對同批候選股不過度偏貴的個股；若技術面強但基本面明顯空心（虧損、營收衰退、估值過高），
+不直接排除，但應降低 `confidence` 分數並在 `risk` 中具體說明基本面疑慮。
 
 **財報極端風控（所有策略）**：禁止選擇 `Earnings_Days_Left <= 3` 的任何個股，防止系統涉入財報賭博風險（filter.py 財報防禦牆為第一道攔截，此為 AI 側雙重保護）。
 
@@ -173,7 +181,7 @@ def _generate_candidates_markdown_table(
     earnings_data: dict | None = None,
     current_date: date | None = None,
 ) -> str:
-    """生成 15 欄 Markdown 表格字串。浮點數一律 .round(2)；None → 'N/A'（earnings_days_left None → 'N/A'，99 → '99'）。"""
+    """生成 28 欄 Markdown 表格字串。浮點數一律 .round(2)；None → 'N/A'（earnings_days_left None → 'N/A'，99 → '99'）。"""
 ```
 
 ### price_data 傳入前置條件
@@ -271,6 +279,25 @@ vtf_score = round(max(-5.0, vol_ratio * (2 * k_pos - 1)), 2)           # 下限�
 - **不變**：`buy_zone` 仍由 AI 自行輸出最終字串（格式 `$X~$Y`），`tracker.py` 的 `_parse_buy_zone()` 解析邏輯與格式需求不變
 - **捨棄**：套牢量檢查（需額外歷史成交量峰值追蹤邏輯，改動範圍超出「曝露既有指標」的最小化原則）；反轉策略完整形態辨識（W 底第二腳、BOS、50%~61.8% 斐波那契回撤——需偵測「第一波反彈」的高低點，現有資料模型是單筆技術指標快照，無法表達多筆歷史事件的形態序列）；Python 端直接算出確定性 buy_zone（偏離現有「AI 給出完整交易計畫」的架構精神）
 - → 詳見 `plans/2026-07-01-breakout-reversal-buy-zone-anchor.md`
+
+### DD-14: L3 候選池加入基本面維度（估值/獲利品質/成長性）
+
+- **選擇**：候選池表格新增 `Fwd_PE`（估值）、`Profit_Margin`（獲利品質）、`Rev_Growth_YoY`（成長性）三欄，
+  取自 `fetcher.fetch_info()` 已下載但未使用的 yfinance `info` 字典欄位（不需額外 API 呼叫）；System Prompt
+  新增選股原則第 7 條，將基本面定位為「技術面強度相近時的取捨依據與風險旗標」；三欄缺值比照 `Beta_60D`
+  先例（不排除，改用其餘維度判斷），**不**比照 `Earnings_Days_Left`（直接排除）
+- **原因**：L1 已做流動性/市值硬篩、L2 是 100 分制純技術評分，L3 拿到的候選池技術面同質性已經很高，若 AI
+  的判斷依據仍然 100% 是技術指標，等於在同一批「技術達標」的股票裡比誰的指標數字更漂亮，缺乏「公司體質
+  好不好」的另一個維度。三個欄位覆蓋估值、獲利品質、成長性三個互補角度，且都能從既有 `fetch_info()` 呼叫
+  免費取得，不增加下載成本
+- **不變**：JSON 輸出 schema（`{"selections": [...]}`）不變，不新增欄位，基本面判斷折疊進既有的
+  `reason`/`risk`/`confidence` 三欄；DD-12/DD-13 的策略型買進區間算法完全不受影響，基本面不推翻技術面
+  結構確認邏輯
+- **捨棄**：在 L2 加基本面分數維度（會混淆 L2「純技術評分」的既有定位，且需要重新校準 100 分權重）；
+  新增獨立 JSON 欄位如 `fundamental_reason`（增加 `tracker.py`/`publisher.py` 需要適配的欄位，且與現有
+  `reason`/`risk` 語意重疊）；納入分析師共識維度（目標價隱含漲幅、評等）——與使用者討論後排除，不在本次
+  範圍內
+- → 詳見 `plans/2026-07-02-fundamental-dimension-l3-prompt.md`
 
 ## Acceptance Criteria
 
