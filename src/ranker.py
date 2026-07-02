@@ -298,7 +298,7 @@ def _generate_candidates_markdown_table(
     current_date: date | None = None,
 ) -> str:
     """
-    將 L2 候選股清單轉換為 15 欄 Markdown 表格（含 RS_vs_Sector，DD-10）。
+    將 L2 候選股清單轉換為 28 欄 Markdown 表格（含 RS_vs_Sector DD-10、基本面維度 DD-14）。
     """
     _SECTOR_ABBR = {
         " Services": "", " Cyclical": "", " Defensive": "",
@@ -317,14 +317,16 @@ def _generate_candidates_markdown_table(
         " | EMA5 | EMA10 | EMA20 | Vol_vs_5DAvg | High_20D | Vol_vs_20DAvg"
         " | RSI | MACD_Hist | VTF_Score | Price_5D_Pct | Momentum_ATR"
         " | EMA50 | Low_20D | Stoch_K | RSI_5D_Ago"
-        " | RS_vs_Sector | 52W_High_Dist | Beta_60D | Earnings_Days_Left |"
+        " | RS_vs_Sector | 52W_High_Dist | Beta_60D | Earnings_Days_Left"
+        " | Fwd_PE | Profit_Margin | Rev_Growth_YoY |"
     )
     sep = (
         "|--------|-------------|--------|----------|--------------|----------"
         "|------|-------|-------|--------------|----------|--------------"
         "|-----|-----------|-----------|--------------|-------------|"
         "-------|---------|---------|------------"
-        "|--------------|---------------|----------|-------------------|"
+        "|--------------|---------------|----------|-------------------"
+        "|--------|----------------|-----------------|"
     )
     rows = [header, sep]
 
@@ -395,6 +397,14 @@ def _generate_candidates_markdown_table(
         ed = indic.get("earnings_days_left")
         ed_str = "N/A" if ed is None else str(ed)
 
+        # 基本面維度：估值/獲利品質/成長性（DD-14），缺值不排除、印 N/A 讓 AI 自行降權
+        fwd_pe_v = info.get("forward_pe")
+        fwd_pe_str = f"{fwd_pe_v:.1f}" if fwd_pe_v is not None else "N/A"
+        margin_v = info.get("profit_margin")
+        margin_str = f"{margin_v * 100:+.1f}%" if margin_v is not None else "N/A"
+        rev_growth_v = info.get("revenue_growth")
+        rev_growth_str = f"{rev_growth_v * 100:+.1f}%" if rev_growth_v is not None else "N/A"
+
         sector_display = sector_raw or "Unknown"
         for k, v in _SECTOR_ABBR.items():
             sector_display = sector_display.replace(k, v)
@@ -404,7 +414,8 @@ def _generate_candidates_markdown_table(
             f" | {ma_trend} | {ema5_str} | {ema10_str} | {ema20_str} | {vol5_str} | {high20_str} | {vol20_str}"
             f" | {rsi_str} | {macd_tag} | {vtf_str}"
             f" | {p5d_str} | {mom_str} | {ema50_str} | {low20_str} | {stoch_str} | {rsi5ago_str}"
-            f" | {rs_str} | {dist_str} | {beta_str} | {ed_str} |"
+            f" | {rs_str} | {dist_str} | {beta_str} | {ed_str}"
+            f" | {fwd_pe_str} | {margin_str} | {rev_growth_str} |"
         )
 
     return "\n".join(rows)
@@ -512,7 +523,11 @@ def _build_prompt(
         "- 52W_High_Dist: 距52週高點（-2%=接近高點，-30%=遠離高點）\n"
         "- Beta_60D: 60日Beta vs SPY；N/A=數據不足，不排除，改用Momentum_ATR判斷\n"
         "- Earnings_Days_Left: 距下次財報曆天數；N/A=數據斷裂請排除；99=安全；<=5請排除\n"
-        "- Strategy_Tag: 系統預判策略（MOMENTUM/BREAKOUT/REVERSAL/NEUTRAL），僅供參考"
+        "- Strategy_Tag: 系統預判策略（MOMENTUM/BREAKOUT/REVERSAL/NEUTRAL），僅供參考\n"
+        "- Fwd_PE: 預估本益比（缺值時退化為trailing PE）；數值愈高代表市場對獲利的預期愈貴，"
+        "同一批候選股橫向比較即可判斷相對貴賤；N/A=數據缺失，不代表不能選\n"
+        "- Profit_Margin: 淨利率；正值愈高代表獲利體質愈紮實，負值代表虧損中；N/A=數據缺失，不代表不能選\n"
+        "- Rev_Growth_YoY: 營收年增率；正值代表營收成長，負值代表營收衰退；N/A=數據缺失，不代表不能選"
     )
     pool_block = f"{table}\n\n{field_defs}"
 
@@ -538,7 +553,8 @@ def _build_prompt(
 
 
 SYSTEM_PROMPT = """你是一位經驗豐富的美股量化分析師，擅長技術面與動能選股。
-你的任務是從 S&P 500 候選股中，根據技術指標、量價關係、趨勢動能，
+候選池（<Candidate_Pool>）已經過系統流動性與技術強度雙重篩選，技術面同質性偏高，
+你的任務是從中根據技術指標、量價關係、趨勢動能，並疊加基本面（估值、獲利品質、成長性）作最終取捨，
 挑選出你認為值得「買入」的標的（最多 5 支），並給出具體操作建議。
 若符合買入條件的標的不足 5 支，只輸出實際符合條件的數量，不要勉強湊數。
 
@@ -549,6 +565,9 @@ SYSTEM_PROMPT = """你是一位經驗豐富的美股量化分析師，擅長技�
 4. Momentum_ATR 為跨行業標準化動能（ATR 倍數），比絕對漲跌幅更公平；>=2.0 代表強勢動能
 5. 避免過度集中於同一產業（已由系統做初步分散，但 AI 可進一步考量）
 6. 若候選股 Earnings_Days_Left <= 5 或 = N/A（數據斷裂），一律排除
+7. 技術面強度相近的候選股之間，優先選擇 Profit_Margin 為正、Rev_Growth_YoY 為正、Fwd_PE 相對同批候選股
+   不過度偏貴的個股；若技術面強但基本面明顯空心（虧損、營收衰退、估值過高），不必直接排除，
+   但應在 confidence 給予較低分數，並在 risk 中具體說明基本面疑慮
 
 市場背景判斷原則：
 - 大盤（S&P 500）：若大盤 5 日跌幅 > 2% 或處於 EMA20 之下，整體提高警覺，傾向「觀望」
@@ -591,6 +610,7 @@ N/A 差異化處理：
 - Earnings_Days_Left = N/A → 直接排除（財報時間未知，黑天鵝風險無法評估）
 - Momentum_ATR = N/A 或 VTF_Score = N/A → 直接排除（技術數據不足）
 - Beta_60D = N/A → 不排除，以 Momentum_ATR 和 VTF_Score 作為核心多空判斷
+- Fwd_PE、Profit_Margin、Rev_Growth_YoY 任一為 N/A → 不排除，僅代表該基本面維度無法評估，改倚重其餘維度判斷
 
 請以如下 JSON 格式輸出（根節點為物件，陣列放在 "selections" key 中），不要其他說明文字：
 {"selections": [ {...}, {...}, ... ]}
@@ -598,7 +618,7 @@ N/A 差異化處理：
 每個元素包含：
 - rank: 排名（整數，從 1 開始）
 - ticker: 股票代號
-- reason: 繁體中文選股理由，聚焦技術面優勢與策略依據（50字以內）
+- reason: 繁體中文選股理由，綜合技術面與基本面（估值/獲利/成長）優勢，聚焦策略依據（50字以內）
 - risk: 繁體中文風險提示（50字以內）
 - confidence: 信心分數（整數 1~10）
 - buy_zone: 建議買入價格區間，格式如 "$185～$188"
