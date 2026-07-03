@@ -197,10 +197,10 @@ CI 執行環境為 **UTC 時區**。這決定了報告日期的一切：
 
 **「在台灣 7/1 觸發，卻看到 6/30 報告」是正確行為。** 美股 7/1 數據要等美股收盤後（UTC 20:00+，台灣 7/2 04:00 後）才存在；7/1 報告會由 UTC 21:30 自動 CI 生成，在台灣 7/2 05:30 才出現。
 
-`.cache/` 的 GitHub Actions cache key 也以 `date -u`（UTC 日期）為鍵，與 Python 的 `market_date` 在正常情境下一致。
+`.cache/` 的 GitHub Actions cache key 也以 `date -u`（UTC 日期）為鍵，**但因 price 快取可能被同日早跑汙染（見 CI 注意事項），CI 一律 `--no-cache`**。
 
 ## CI 注意事項
 
-- **CI 一律加 `--no-ai-cache`**：`daily-screener.yml` 的 `Run screener` 步驟固定帶 `--no-ai-cache`（price/info 快取不受影響，只跳過 AI 精選結果快取）。原因：`.cache/` 的 GitHub Actions cache key 只用日期（`screener-data-YYYY-MM-DD`），沒有綁定程式碼版本。若同一天內「先跑一次 → 修改 `ranker.py` 的 Prompt → 合併 → 手動重跑」，第二次執行會直接撿到第一次用舊 Prompt 產生的 `ranked_YYYYMMDD.json`，導致 hotfix 合併後仍發布舊結果（實際發生過：PR #46 止損緩衝修正合併後，同日重跑仍輸出止損=買入區間下緣的舊資料）。一天正常只排程跑一次，AI 快取本來就是當日首次 miss，加這個旗標對正常排程執行零差異，只在同日重跑時強制拿到當前程式碼版本的最新判斷。→ 詳見 `plans/2026-07-02-ci-ai-cache-staleness.md`
+- **CI 一律加 `--no-cache`**：`daily-screener.yml` 的 `Run screener` 步驟固定帶 `--no-cache`（price／info／AI 精選結果快取全部跳過）。原因有兩層：①`.cache/` 的 GitHub Actions cache key 只用日期（`screener-data-YYYY-MM-DD`），若同一天內先手動觸發一次（例如台灣下午 workflow_dispatch），此時 US 市場未開盤，price 快取只含前日收盤數據；晚間 21:30 排程再跑時 GitHub Actions 會 restore 同一 key 的舊快取，Python 複用後仍拿到前日數據，報告日期卡在前一交易日（實際發生：2026-07-02 早間手動跑建立含 7/1 數據的 `price_20260702.pkl`，21:30 排程跑仍輸出 7/1 報告，沒有產生 7/2 report commit）。②若同日修改 Prompt 合併後重跑，AI 快取也會汙染（同 PR #46 事件）。一天正常只排程跑一次，`--no-cache` 的額外下載成本只在同日重跑時才顯現，對正常排程執行實質差異僅是 info 快取需重取（約多數秒，可接受）。→ 詳見 `plans/2026-07-02-ci-ai-cache-staleness.md` 與 `plans/2026-07-03-ci-price-cache-staleness.md`
 - **pandas-ta 已從專案移除**：pandas-ta 0.4.x 依賴 numba/llvmlite，numba 的 LLVM 初始化在 GitHub Actions Ubuntu 環境觸發 Segmentation Fault（exit 139）。`scorer.py` 已改用純 pandas 實作所有指標（EMA、RSI、MACD、ATR），**不得重新引入 pandas-ta**。
 - **`yfinance<1.0.0` + `curl_cffi<0.15.0`**：`curl_cffi 0.15.0` 在 GitHub Actions Ubuntu 環境中與 Python toolchain 的 `LD_LIBRARY_PATH` 衝突，導致 Segmentation Fault。`yfinance 1.x` 要求 `curl_cffi>=0.15`，故鎖定 `yfinance<1.0.0`（0.2.66）。yfinance 0.2.66 API 完全相容（`download(group_by="ticker")`、`ticker.info`、`ticker.calendar`）。**不得移除這兩個上限**。
