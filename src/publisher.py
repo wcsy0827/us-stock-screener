@@ -923,6 +923,13 @@ def _build_index() -> str:
 </html>"""
 
 
+def sync_index() -> None:
+    """重新生成 docs/index.html。_build_index() 為無參數確定性函式（DD-6），
+    改動 _INFO_HTML/_CSS/模板後執行本函式即完成同步，不得手動編輯 docs/index.html。"""
+    _INDEX_HTML.write_text(_build_index(), encoding="utf-8", newline="\n")
+    print(f"[publisher] 首頁已同步：{_INDEX_HTML}")
+
+
 # ── 索引 JSON I/O ────────────────────────────────────────────────────
 
 def _load_report_index() -> list[dict]:
@@ -1031,9 +1038,7 @@ def publish(
     _save_report_index(index)
 
     # 生成首頁（報告列表由前端 fetch reports-index.json 動態渲染，DD-5）
-    index_html = _build_index()
-    _INDEX_HTML.write_text(index_html, encoding="utf-8")
-    print(f"[publisher] 首頁已更新：{_INDEX_HTML}")
+    sync_index()
 
     # 寫入執行記錄（供前端核實資料新鮮度）
     _write_last_run(stats, date_str, market_context=market_context)
@@ -1049,3 +1054,7 @@ def publish(
         return
 
     _git_push(date_str)
+
+
+if __name__ == "__main__":
+    sync_index()

@@ -1,8 +1,8 @@
-"""守門測試：publisher._INFO_HTML 與 docs/index.html 的系統說明卡片必須同步。
+"""守門測試：docs/index.html 必須與 publisher._build_index() 輸出整檔全等（DD-6）。
 
-CLAUDE.md 規定修改 _INFO_HTML 後必須同步手動更新 docs/index.html（或重跑
-pipeline 重新生成）。此測試把該手動規則變成機器檢查：_INFO_HTML 的每一行
-實質內容都必須原樣出現在 docs/index.html 中，漂移即紅燈。
+_build_index() 是無參數確定性函式，docs/index.html 是其純函數輸出。任何模板
+改動（_INFO_HTML、_CSS、script 邏輯）後，執行 python src/publisher.py 一鍵
+重新生成即完成同步；漂移即紅燈，不再依賴手動同步規則。
 """
 
 from pathlib import Path
@@ -12,14 +12,8 @@ import publisher
 _INDEX_HTML = Path(__file__).parents[1] / "docs" / "index.html"
 
 
-def test_info_html_lines_present_in_docs_index():
-    html = _INDEX_HTML.read_text(encoding="utf-8")
-    missing = [
-        line.strip()
-        for line in publisher._INFO_HTML.splitlines()
-        if len(line.strip()) > 20 and line.strip() not in html
-    ]
-    assert not missing, (
-        "publisher._INFO_HTML 已修改但 docs/index.html 未同步"
-        f"（重跑 python main.py --dry-run --yes 或手動同步）；漂移行：{missing}"
+def test_index_html_matches_build_index():
+    assert _INDEX_HTML.read_text(encoding="utf-8") == publisher._build_index(), (
+        "docs/index.html 與 publisher._build_index() 輸出不一致；"
+        "執行 python src/publisher.py 重新生成後一起 commit"
     )

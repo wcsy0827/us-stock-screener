@@ -10,7 +10,7 @@
 - **必須**：每日報告頁顯示資料截止日標籤（`美股資料截止日`），並透過前端 JavaScript 動態顯示資料新鮮度提示。
 - **必須**：每次 `publish()` 執行後寫入 `docs/data/last_run.json`，記錄實際執行時間（UTC）與掃描統計，供前端核實。
 - **不得**：在 `publish()` 或任何 `_build_*` 函數中以 `datetime.now()` 決定 `date_str`（但 `last_run.json` 的 `run_at_utc` 欄位例外，此欄位本就是執行時刻的事實記錄）。
-- **若 `_INFO_HTML` 或 `_build_index` 模板有變動**：必須同一 commit 內手動更新 `docs/index.html`；或執行 `python main.py --dry-run --yes` 後一起 commit。
+- **若 `_INFO_HTML`、`_CSS` 或 `_build_index` 模板有變動**：同一 commit 內執行 `python src/publisher.py` 重新生成 `docs/index.html` 並一起 commit（DD-6）；`tests/test_publisher_info_sync.py` 以全等比對守門，漂移即紅燈。
 - **不得直接修改 `docs/` 下的 HTML 檔案**（會被下次執行覆蓋），所有 UI 變更必須在 `publisher.py` 中進行。
 
 ## Interface
@@ -59,6 +59,13 @@ def publish(
 - **`index.html` 何時需要重新生成**：只有 `_build_index()` 模板本身（CSS、佈局、script 邏輯）改變時才需要重新執行 `publish()` 或手動同步；報告清單新增/刪除不再需要。
 - **捨棄**：靜態 HTML 生成（index.html 與 JSON 雙重維護，手動重置時容易不同步）。
 
+### DD-6: index.html 同步自動化——全等比對守門 + `sync_index()` 一鍵再生成
+
+- **選擇**：`_build_index()` 自 DD-5 起為無參數確定性函式（只嵌入靜態字串 `_CSS` 與 `_INFO_HTML`，無日期、無資料輸入），`docs/index.html` 是其純函數輸出。同步改由 `sync_index()`（CLI 入口 `python src/publisher.py`）程式化完成；`publish()` 內的 index.html 寫檔也統一走 `sync_index()`，單一出口。守門測試 `tests/test_publisher_info_sync.py` 由「`_INFO_HTML` 行子字串比對」升級為「整檔全等比對 `_build_index()` 輸出」。
+- **原因**：手動同步規則的根本前提（index.html 含動態內容、無法離線再生成）已被 DD-5 消除；純函數輸出的同步不該由人做。全等比對同時補上舊測試守不住 `_CSS`／JS 漂移的缺口，且失敗時修復動作是一條命令而非人工比對編輯。
+- **`sync_index()` 以 `newline="\n"` 固定 LF**：避免 Windows 本機執行產生 CRLF 造成整檔 whitespace diff（CI Linux 輸出即為 LF）；測試端 `read_text` 的 universal newlines 讀入一律為 `\n`，跨平台行為一致。
+- **捨棄**：pre-commit hook（引入額外基礎設施，且繞過 hook 即失守）；測試內自動改寫檔案（CI 綠燈但 repo 內已部署的 Pages 檔案仍是舊的，掩蓋漂移）；維持行子字串比對（守不住 `_CSS`/JS 漂移，修復仍靠人工）。→ 詳見 `plans/2026-07-03-index-html-auto-sync.md`
+
 ## Acceptance Criteria
 
 - [ ] 每日報告頁標題顯示「美股資料截止日：YYYY-MM-DD（週X）」
@@ -69,3 +76,4 @@ def publish(
 - [ ] 首頁 fetch `last_run.json` 後顯示實際上次執行時間（而非時鐘推算）
 - [ ] `docs/data/last_run.json` 在每次 `publish()` 呼叫後更新
 - [ ] `date_str` 始終等於 `market_date`（SPY 最後收盤日），與執行時區無關
+- [ ] `docs/index.html` 與 `_build_index()` 輸出整檔全等；`python src/publisher.py` 可離線一鍵再生成（DD-6）

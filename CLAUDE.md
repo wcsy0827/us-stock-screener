@@ -161,7 +161,7 @@ S&P 500 (~503 支)
 - 常數用全大寫，放在模組頂部
 - AI 輸出欄位的型態：`hold_period` 必須解析為整數（`_parse_hold_period` 已支援 int/float/str 輸入），Prompt 應要求 AI 直接輸出整數天數
 - `tests/test_tracker.py` 覆蓋 `tracker.py` 純函式（解析、狀態機、結算、風控、watch 天數上限、B/C 新訊號處理），全數不連網、不觸碰 `data/watchlist.json`（透過 `isolate_data_dir` fixture 隔離至 `tmp_path`）。修改 `tracker.py` 的判斷邏輯或新增 DD 後，須同步補上對應測試案例並確保 `pytest` 全數通過
-- `tests/test_publisher_info_sync.py` 守門 `publisher._INFO_HTML` 與 `docs/index.html` 的同步：`_INFO_HTML` 每一行實質內容都必須原樣出現在 `docs/index.html` 中，漂移即測試失敗（「改 `_INFO_HTML` 必須同步 docs」的規則由此測試機器化把關）
+- `tests/test_publisher_info_sync.py` 守門 `docs/index.html` 與 `publisher._build_index()` 輸出的整檔全等（publisher.py DD-6）：任何模板改動（`_INFO_HTML`、`_CSS`、script 邏輯）漂移即測試失敗，修復方式是執行 `python src/publisher.py` 一鍵重新生成後一起 commit
 - 需求不明確或有多種合理解讀時，先向用戶提問，不得臆測意圖自行擴充範圍
 - 驗證程式改動用 `pytest` 或 `python main.py --dry-run --yes` 實跑，不要跑 `ast.parse` 之類的純語法檢查迴圈
 - 回報 PR / issue 編號前必須先 `gh pr list` 確認實際存在，不得憑記憶引用
@@ -169,8 +169,8 @@ S&P 500 (~503 支)
 ## 禁止事項
 
 - **不要直接修改 `docs/` 下的 HTML**（由 `publisher.py` 生成，手動改會被下次執行覆蓋）
-- **修改篩選流程、評分邏輯或策略定義後，必須判斷是否需要更新 `publisher.py` 的 `_INFO_HTML`**：前端系統說明卡片（篩選流程、L2 評分表、Regime 表、訊號追蹤狀態）是靜態字串，不會自動反映程式碼改動。凡是影響「L1/L2/L3 定義、評分條件、Regime 邊界、狀態機轉換規則」的修改，都須同步更新 `_INFO_HTML`，並手動同步 `docs/index.html`（同一 commit）。
-- **修改 `publisher.py` 的靜態文字（如 `_INFO_HTML`）後，必須同步手動更新 `docs/index.html`**：pipeline 只在執行時才重新生成 HTML，修改 `publisher.py` 不會自動更新已存在的 `docs/` 檔案，GitHub Pages 畫面不會立即反映。例外：若能馬上執行 `python main.py --dry-run --yes` 並將產出的 `docs/` 一起 commit，則不需要手動改。
+- **修改篩選流程、評分邏輯或策略定義後，必須判斷是否需要更新 `publisher.py` 的 `_INFO_HTML`**：前端系統說明卡片（篩選流程、L2 評分表、Regime 表、訊號追蹤狀態）是靜態字串，不會自動反映程式碼改動。凡是影響「L1/L2/L3 定義、評分條件、Regime 邊界、狀態機轉換規則」的修改，都須同步更新 `_INFO_HTML`，並執行 `python src/publisher.py` 重新生成 `docs/index.html`（同一 commit）。
+- **修改 `publisher.py` 的靜態文字（如 `_INFO_HTML`、`_CSS`）後，必須執行 `python src/publisher.py` 重新生成 `docs/index.html` 並一起 commit**：pipeline 只在執行時才重新生成 HTML，修改 `publisher.py` 不會自動更新已存在的 `docs/` 檔案。`sync_index()` 是離線確定性再生成（publisher.py DD-6），不觸發任何下載或 API；`pytest` 的全等比對守門測試會攔下漏做的同步。
 - **每次修改程式碼或規格後，必須同步更新 `CLAUDE.md` 與 `README.md`**：架構速覽、模組對照表、快取說明、L2 評分表、專案結構等章節若有變動，須在同一個 commit 內一併更新，不得遺留過時描述。
 - **不要 commit** `.env`、`.cache/`、`.venv/`（`.gitignore` 已排除）
 - **不要在 CI workflow 移除 `--dry-run`**（workflow 已設計成執行後自己 git push）
