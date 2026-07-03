@@ -32,11 +32,22 @@ _REGIME_EXTRA_HINT: dict[str, str] = {
 }
 
 _CACHE_DIR = Path(__file__).parent.parent / ".cache"
+_AI_HINTS_PATH = Path(__file__).parent.parent / "data" / "ai_hints.json"
 
 
 def _ranked_cache_path(market_date: str) -> Path:
     date_str = market_date.replace("-", "")
     return _CACHE_DIR / f"ranked_{date_str}.json"
+
+
+def _load_ai_hints() -> list[str]:
+    """讀取 analyzer 產出的歷史績效回饋行（DD-16）。任何失敗靜默回傳空清單。"""
+    try:
+        with open(_AI_HINTS_PATH, encoding="utf-8") as f:
+            lines = json.load(f).get("prompt_lines", [])
+        return [str(x) for x in lines] if isinstance(lines, list) else []
+    except Exception:
+        return []
 
 
 # ── 指標計算（純 pandas / numpy）────────────────────────────────
@@ -453,8 +464,10 @@ def _build_prompt(
     market_context: dict | None = None,
     earnings_data: dict | None = None,
     current_date: date | None = None,
+    ai_hints: list[str] | None = None,
 ) -> str:
-    """以 XML 標籤包裹三大區塊，組裝結構化 Prompt 送給 DeepSeek。"""
+    """以 XML 標籤包裹三大區塊組裝結構化 Prompt；ai_hints 非空時在末尾附加
+    <Historical_Performance_Review> 第四區塊（DD-16）。"""
     mc = market_context or {}
     regime_code = mc.get("regime", "")
 
@@ -545,11 +558,24 @@ def _build_prompt(
         f'以 JSON 格式輸出，不附加任何說明文字：{{"selections": [{{...}}, ...]}}'
     )
 
-    return (
+    prompt = (
         f"<Market_Regime>\n{regime_block}\n</Market_Regime>\n\n"
         f"<Candidate_Pool>\n{pool_block}\n</Candidate_Pool>\n\n"
         f"<Output_Constraint>\n{constraint_block}\n</Output_Constraint>"
     )
+
+    # ── <Historical_Performance_Review>（DD-16，空清單時 Prompt 與舊版逐字元相同）──
+    if ai_hints:
+        review_block = (
+            "以下為本系統過往已結算訊號的實戰統計回饋：\n"
+            + "\n".join(ai_hints)
+            + "\n樣本數有限，僅供權衡參考，不得覆蓋 Market_Regime 的策略方向。"
+        )
+        prompt += (
+            f"\n\n<Historical_Performance_Review>\n{review_block}\n</Historical_Performance_Review>"
+        )
+
+    return prompt
 
 
 SYSTEM_PROMPT = """你是一位經驗豐富的美股量化分析師，擅長技術面與動能選股。
@@ -770,10 +796,15 @@ def rank_candidates(
         except Exception:
             pass
 
+    ai_hints = _load_ai_hints()
+    if ai_hints:
+        print(f"[ranker] 附加 {len(ai_hints)} 條歷史績效回饋至 Prompt（ai_hints.json）")
+
     print(f"[ranker] 送出 {min(len(diversified), MAX_CANDIDATES_TO_AI)} 支候選股給 DeepSeek AI...")
     prompt_content = _build_prompt(
         diversified, price_data, info_data, market_context,
         earnings_data=earnings_data, current_date=current_date,
+        ai_hints=ai_hints,
     )
 
     ranked_raw = _call_deepseek(prompt_content)

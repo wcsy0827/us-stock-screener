@@ -58,8 +58,13 @@ S&P 500（~503 支）
     ▼  Step 5.5  market.py — 完整大盤環境
     │  直接複用 Step 2.5 的廣度與 VIX，補抓 SPY + 相關產業 ETF 細節
     │
+    ▼  Step 5.7  analyzer.py — 本地績效診斷
+    │  讀 performance_history.json 歸納 Regime×策略×產業賺賠關聯 → data/ai_hints.json
+    │  分組 <3 筆或總樣本 <5 筆不生成回饋；失敗不中斷流程
+    │
     ▼  Step 6  ranker.py — L3 DeepSeek AI 精選
        依 Regime 主推策略從候選池選出最多 5 支
+       發送前自動讀取 ai_hints.json，非空時在 Prompt 末尾附加歷史績效回饋區塊
        候選表格同時附基本面欄位（估值 Fwd_PE、獲利品質 Profit_Margin、成長性 Rev_Growth_YoY）供 AI 交叉判斷
        每支附：買入區間、目標價、止損、持有天數（純整數）、策略理由
        BEAR_DISTRIBUTION 時直接回傳空列表，不建議任何買入
@@ -145,6 +150,7 @@ S&P 500（~503 支）
 | `src/ranker.py` | [`specs/ranker.md`](specs/ranker.md) |
 | `src/market.py` | [`specs/market.md`](specs/market.md) |
 | `src/pipeline.py` | [`specs/pipeline.md`](specs/pipeline.md) |
+| `src/analyzer.py` | [`specs/analyzer.md`](specs/analyzer.md) |
 
 新功能請複製 [`specs/_template.md`](specs/_template.md) 建立規格文件，並在實作前完成 Behavior 與 Design Decisions 節。
 
@@ -227,7 +233,7 @@ python -m http.server 8080
 
 ### 單元測試
 
-`tracker.py` 的純函式（解析、狀態機、結算、風控、watch 天數上限）有 `tests/test_tracker.py` 覆蓋，不需連網、不會觸碰 `data/watchlist.json`；`tests/test_publisher_info_sync.py` 則守門 `docs/index.html` 與 `publisher._build_index()` 輸出的整檔全等，漂移即失敗（修復：執行 `python src/publisher.py` 一鍵重新生成）：
+`tracker.py` 的純函式（解析、狀態機、結算、風控、watch 天數上限）有 `tests/test_tracker.py` 覆蓋，`analyzer.py` 的純函式（冷啟動、聚合統計、樣本門檻）有 `tests/test_analyzer.py` 覆蓋，均不需連網、不會觸碰 `data/`；`tests/test_publisher_info_sync.py` 則守門 `docs/index.html` 與 `publisher._build_index()` 輸出的整檔全等，漂移即失敗（修復：執行 `python src/publisher.py` 一鍵重新生成）：
 
 ```powershell
 pip install -r requirements-dev.txt
@@ -318,9 +324,10 @@ us-stock-screener/
 │   ├── filter.py           # L1 流動性篩選 + 財報防禦牆
 │   ├── scorer.py           # L2 技術評分（K_pos 量能綁定、ATR 動能、PANIC_REVERSAL 強制放行）
 │   ├── market.py           # 大盤廣度、VIX、Regime 判定、產業 ETF
-│   ├── ranker.py           # L3 DeepSeek AI 精選（XML Prompt）
+│   ├── analyzer.py         # 本地績效診斷（賺賠關聯 → ai_hints.json）
+│   ├── ranker.py           # L3 DeepSeek AI 精選（XML Prompt + 歷史回饋注入）
 │   ├── tracker.py          # 訊號追蹤（狀態機、績效結算、歸檔）
-│   ├── pipeline.py         # 流程編排（Steps 1–6，含 3.5 / 4.5）
+│   ├── pipeline.py         # 流程編排（Steps 1–6，含 3.5 / 4.5 / 5.7）
 │   └── publisher.py        # HTML 生成 & GitHub Pages 發布（含績效儀表板）
 ├── specs/                  # 規格文件（Spec-First 開發）
 │   ├── _template.md
@@ -329,16 +336,19 @@ us-stock-screener/
 │   ├── tracker.md
 │   ├── ranker.md
 │   ├── market.md
-│   └── pipeline.md
+│   ├── pipeline.md
+│   └── analyzer.md
 ├── data/
 │   ├── watchlist.json      # 追蹤清單（持久化）
-│   └── performance_history.json  # 歷史績效資料庫（結算後自動建立）
+│   ├── performance_history.json  # 歷史績效資料庫（結算後自動建立）
+│   └── ai_hints.json       # AI 歷史回饋（每輪 Step 5.7 重寫，可再生）
 ├── docs/                   # GitHub Pages 靜態檔案
 │   ├── index.html
 │   └── reports/
 ├── tests/
 │   ├── conftest.py         # 將 src/ 加入 sys.path
 │   ├── test_tracker.py     # tracker.py 純函式單元測試
+│   ├── test_analyzer.py    # analyzer.py 純函式單元測試
 │   └── test_publisher_info_sync.py  # docs/index.html ↔ _build_index() 全等守門
 ├── .github/workflows/
 │   └── daily-screener.yml  # GitHub Actions workflow

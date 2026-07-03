@@ -319,6 +319,13 @@ vtf_score = round(max(-5.0, vol_ratio * (2 * k_pos - 1)), 2)           # 下限�
   且會讓 AI 給出的止損理由與實際存入的止損價不一致，治標不治本
 - → 詳見 `plans/2026-07-02-stop-loss-buffer-fix.md`
 
+### DD-16: Historical_Performance_Review 第四區塊——注入本地績效回饋
+
+- **選擇**：`rank_candidates()` 在 `_build_prompt()` 前呼叫新函式 `_load_ai_hints()`（讀 `data/ai_hints.json` 的 `prompt_lines`，檔案不存在、損壞或欄位缺失時靜默回傳 `[]`），將行清單以新參數 `ai_hints: list[str] | None` 傳入 `_build_prompt()`。非空時在 Prompt 末尾（`</Output_Constraint>` 之後）附加第四區塊 `<Historical_Performance_Review>`：首行說明「以下為本系統過往已結算訊號的實戰統計回饋」，尾行固定加「樣本數有限，僅供權衡參考，不得覆蓋 Market_Regime 的策略方向」警語（analyzer DD-3）。空清單時 Prompt 與現狀逐字元相同（零回歸）。
+- **原因**：L3 過去沒有從歷史績效學習的回饋迴路；hints 由 `analyzer.py` 統計並渲染（analyzer DD-4），ranker 只盲讀附加，統計邏輯不外溢。放在 Prompt 末尾而非 `<Output_Constraint>` 之前，維持既有三區塊順序完全不動、輸出約束的解析位置不變。
+- **不變**：`SYSTEM_PROMPT` 不改動；JSON 輸出 schema 不變；DD-12/DD-13/DD-15 的策略買進區間與止損規則完全不受影響。
+- **捨棄**：ranker 端讀 `dimensions` 自行渲染（統計與呈現分散兩模組）；改寫 `SYSTEM_PROMPT`（靜態字串放動態統計，語意錯位）；hints 放進 `<Market_Regime>`（該區塊語意是「當日大盤環境」，混入歷史統計會稀釋 Regime 服從性指令的權威）。→ 詳見 `plans/2026-07-03-analyzer-ai-hints.md`
+
 ## Acceptance Criteria
 
 - [ ] Prompt 中 `<Market_Regime>` 區塊含有 `5日` 與 `20日` 漲跌的產業 ETF 資訊
@@ -329,6 +336,8 @@ vtf_score = round(max(-5.0, vol_ratio * (2 * k_pos - 1)), 2)           # 下限�
 - [ ] `avg_vol_30d = 0` → `vtf_score` 不崩潰（vol_ratio 降級為 1.0）
 - [ ] 停牌個股與 SPY 共同交易日不足 30 → `beta_60d = None`，表格顯示 `N/A`，AI 不排除
 - [ ] 數據斷裂無財報歷史 → `earnings_days_left = None`，表格 `N/A`，AI 排除
+- [ ] `data/ai_hints.json` 缺失/損壞/`prompt_lines` 為空 → Prompt 無第四區塊，與現狀逐字元相同
+- [ ] `prompt_lines` 非空 → Prompt 末尾出現 `<Historical_Performance_Review>` 區塊，含樣本數警語
 - [ ] 無近期財報但查到遠期日期 → `earnings_days_left = 99`，表格顯示 `99`，AI 不排除
 - [ ] 爆量突破（VTF_raw = 10.0）→ 表格顯示 `10.00`（未被雙側裁切壓制）
 - [ ] 極端出貨（VTF_raw = -8.0）→ 表格顯示 `-5.00`（下限保護）
