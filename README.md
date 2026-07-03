@@ -227,7 +227,7 @@ python -m http.server 8080
 
 ### 單元測試
 
-`tracker.py` 的純函式（解析、狀態機、結算、風控、watch 天數上限）有 `tests/test_tracker.py` 覆蓋，不需連網、不會觸碰 `data/watchlist.json`：
+`tracker.py` 的純函式（解析、狀態機、結算、風控、watch 天數上限）有 `tests/test_tracker.py` 覆蓋，不需連網、不會觸碰 `data/watchlist.json`；`tests/test_publisher_info_sync.py` 則守門 `publisher._INFO_HTML` 與 `docs/index.html` 的系統說明卡片同步，漂移即失敗：
 
 ```powershell
 pip install -r requirements-dev.txt
@@ -288,7 +288,7 @@ python main.py --dry-run --yes
 
 ### 單元測試 CI
 
-`.github/workflows/tests.yml`：`src/**` 或 `tests/**` 有變動的 push/PR 會自動跑 `pytest`（目前涵蓋 `tracker.py` 純函式），與每日排程的 `daily-screener.yml` 分開、互不影響。
+`.github/workflows/tests.yml`：`src/**`、`tests/**` 或 `docs/index.html` 有變動的 push/PR 會自動跑 `pytest`（涵蓋 `tracker.py` 純函式與 `_INFO_HTML` ↔ `docs/index.html` 同步守門），與每日排程的 `daily-screener.yml` 分開、互不影響。
 
 ### 手動觸發
 
@@ -338,7 +338,8 @@ us-stock-screener/
 │   └── reports/
 ├── tests/
 │   ├── conftest.py         # 將 src/ 加入 sys.path
-│   └── test_tracker.py     # tracker.py 純函式單元測試
+│   ├── test_tracker.py     # tracker.py 純函式單元測試
+│   └── test_publisher_info_sync.py  # _INFO_HTML ↔ docs/index.html 同步守門
 ├── .github/workflows/
 │   └── daily-screener.yml  # GitHub Actions workflow
 ├── requirements.txt

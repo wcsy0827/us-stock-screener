@@ -161,6 +161,10 @@ S&P 500 (~503 支)
 - 常數用全大寫，放在模組頂部
 - AI 輸出欄位的型態：`hold_period` 必須解析為整數（`_parse_hold_period` 已支援 int/float/str 輸入），Prompt 應要求 AI 直接輸出整數天數
 - `tests/test_tracker.py` 覆蓋 `tracker.py` 純函式（解析、狀態機、結算、風控、watch 天數上限、B/C 新訊號處理），全數不連網、不觸碰 `data/watchlist.json`（透過 `isolate_data_dir` fixture 隔離至 `tmp_path`）。修改 `tracker.py` 的判斷邏輯或新增 DD 後，須同步補上對應測試案例並確保 `pytest` 全數通過
+- `tests/test_publisher_info_sync.py` 守門 `publisher._INFO_HTML` 與 `docs/index.html` 的同步：`_INFO_HTML` 每一行實質內容都必須原樣出現在 `docs/index.html` 中，漂移即測試失敗（「改 `_INFO_HTML` 必須同步 docs」的規則由此測試機器化把關）
+- 需求不明確或有多種合理解讀時，先向用戶提問，不得臆測意圖自行擴充範圍
+- 驗證程式改動用 `pytest` 或 `python main.py --dry-run --yes` 實跑，不要跑 `ast.parse` 之類的純語法檢查迴圈
+- 回報 PR / issue 編號前必須先 `gh pr list` 確認實際存在，不得憑記憶引用
 
 ## 禁止事項
 
