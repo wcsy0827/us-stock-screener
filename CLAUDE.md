@@ -28,6 +28,10 @@ python main.py --dry-run --yes --no-ai-cache
 # 正式執行（生成並 push 至 GitHub Pages）
 $env:PYTHONUTF8=1; python main.py
 
+# 單元測試（tracker.py 純函式；不需連網、不觸碰 data/watchlist.json）
+pip install -r requirements-dev.txt
+pytest
+
 # Windows 包裝腳本
 .\run.ps1 --dry-run
 .\run.ps1 --top 10
@@ -156,6 +160,7 @@ S&P 500 (~503 支)
 - 錯誤處理只在系統邊界（外部 API / 使用者輸入）加；內部函式信任呼叫端
 - 常數用全大寫，放在模組頂部
 - AI 輸出欄位的型態：`hold_period` 必須解析為整數（`_parse_hold_period` 已支援 int/float/str 輸入），Prompt 應要求 AI 直接輸出整數天數
+- `tests/test_tracker.py` 覆蓋 `tracker.py` 純函式（解析、狀態機、結算、風控、watch 天數上限、B/C 新訊號處理），全數不連網、不觸碰 `data/watchlist.json`（透過 `isolate_data_dir` fixture 隔離至 `tmp_path`）。修改 `tracker.py` 的判斷邏輯或新增 DD 後，須同步補上對應測試案例並確保 `pytest` 全數通過
 
 ## 禁止事項
 
