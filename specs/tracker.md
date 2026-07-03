@@ -269,6 +269,15 @@ def _is_expired(entry: dict) -> bool:
 - **`_max_watch_days(entry)` 函式**：讀取 `entry["strategy"]`，查表回傳對應上限，查無則回傳 `_DEFAULT_WATCH_DAYS`
 - **捨棄**：統一 5 日（對反轉策略過短）；統一 10 日（突破/動能 setup 過期後 5 天仍佔用 watchlist）
 
+### DD-16: watch 天數上限疊加訊號當下 regime/VIX 條件
+
+- **選擇**：`_max_watch_days()` 在 DD-15 策略查表之上疊加兩條 regime/VIX 條件分支：`突破策略` 且訊號當下 `entry_regime == "CONSOLIDATION_VOLATILE"` → 3 日；`反轉策略` 且訊號當下 `entry_regime == "PANIC_REVERSAL"` 且 `vix_value > 35` → 5 日；其餘沿用 DD-15 既有查表結果（含反轉策略 VIX 25~30 或未落入以上分支的所有情況，維持 10 日）
+- **原因**：高波動整理市（CONSOLIDATION_VOLATILE）中帶量突破前高的假突破機率明顯升高，3 天內無法穩住價格即高機率退化為高位套牢，縮短觀察期讓風控更敏銳；VIX > 35 對應流動性擠壓式尖底，優質股錯殺後的 V 型反彈通常數日內兌現，5 天仍未進場，代表個股可能有未引爆的基本面問題（非單純大盤恐慌錯殺），10 天的等待期在此情境下反而暴露於接刀風險
+- **判斷基準用訊號當下鎖定值**：兩條件均讀取 `entry["entry_regime"]`／`entry["vix_value"]`（於 B/C 步驟建立條目時寫入，見上方 `base` dict），不用每日重新查詢的當下 regime，與 `buy_zone`/`stop_loss`/`target` 等訊號特徵鎖定的既有慣例一致，避免同一檔股票的 watch 上限在追蹤期間內隨當下 regime 波動
+- **既有條目相容性**：不做版本判斷或遷移，`data/watchlist.json` 中所有現存 `watch` 狀態條目立即套用新規則——`entry_regime`／`vix_value` 早於本次改動就已寫入既有條目，新規則生效當下即可直接讀取
+- **捨棄**：改用每日重新評估的當下 regime（會讓 watch 上限在追蹤期間內波動）；以 `date_added` 判斷新舊條目、僅對部署後新訊號生效（既有欄位已支援新規則，無需遷移邏輯）
+- → 詳見 `plans/2026-07-03-watch-days-regime-vix.md`
+
 ---
 
 ## performance_history.json Schema
@@ -337,3 +346,6 @@ def _is_expired(entry: dict) -> bool:
 - [ ] **DD-15 反轉策略 watch**：strategy="反轉策略" 的 watch 股票追蹤 5 日 → 仍在 watchlist（未 expired）
 - [ ] **DD-15 反轉策略 expired**：strategy="反轉策略" 的 watch 股票追蹤 10 日 → 進入 expired
 - [ ] **DD-15 突破策略 expired**：strategy="突破策略" 的 watch 股票追蹤 5 日 → 進入 expired（行為不變）
+- [ ] **DD-16 高波動突破縮短**：strategy="突破策略"、entry_regime="CONSOLIDATION_VOLATILE" 的 watch 股票追蹤 3 日 → 進入 expired
+- [ ] **DD-16 VIX 暴噴反轉縮短**：strategy="反轉策略"、entry_regime="PANIC_REVERSAL"、vix_value=36 的 watch 股票追蹤 5 日 → 進入 expired
+- [ ] **DD-16 邊界不變**：strategy="反轉策略"、entry_regime="PANIC_REVERSAL"、vix_value=28 的 watch 股票追蹤 9 日 → 仍在 watchlist；追蹤 10 日 → 進入 expired（維持 DD-15 行為）

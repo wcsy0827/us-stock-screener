@@ -140,6 +140,8 @@ S&P 500 (~503 支)
 
 21. **動能/反轉策略止損改為明確百分比緩衝（ranker.py DD-15）**：用 `data/watchlist.json` 實測數據發現動能策略止損常等於買入區間下緣（CB/KHC/V/AJG/LIN 五支候選股完全相等）——根因是買入區間下緣本身就是 EMA20，止損規則卻只寫「跌破 EMA20」這個方向詞、沒有明確百分比，AI 有時照字面解讀成止損=EMA20，等於一買進去就已觸發止損、沒有容錯空間。止損改為「EMA20 下方 2%（不得設為等於買入區間下緣，須低於 EMA20）」，比照突破策略既有的「跌回 High_20D 下方 2%」寫法。反轉策略「止損：Low_20D 下方」有同一類措辭缺陷（雖因買入區間錨點 EMA50 與止損錨點 Low_20D 不同、正常情況天生有緩衝而風險較低，但「`buy_zone` 下緣不得低於 `Low_20D`」地板條件被觸發時仍可能重演），一併改為「Low_20D 下方 2%」並加註不得等於買入區間下緣。純 Prompt 文字修正，`tracker.py` 的止損/買入區間解析邏輯零改動。→ 詳見 `specs/ranker.md`
 
+22. **watch 天數上限疊加訊號當下 regime/VIX 條件（tracker.py DD-16）**：`_max_watch_days()` 在 DD-15 策略查表之上疊加：`突破策略` 且訊號當下 `entry_regime == "CONSOLIDATION_VOLATILE"` → 3 日（高波動整理市假突破機率高，縮短觀察期）；`反轉策略` 且訊號當下 `entry_regime == "PANIC_REVERSAL"` 且 `vix_value > 35` → 5 日（VIX 暴噴級尖底，V 型反彈應快速兌現，遲遲不進場視為真黑天鵝而非錯殺）；其餘沿用 DD-15 查表結果（反轉策略 VIX 25~30 維持 10 日）。判斷用訊號建立當下鎖定的 `entry_regime`/`vix_value`（早於本次改動即已寫入 watchlist 條目），不用每日重新查詢的當下 regime，與 `buy_zone`/`stop_loss` 訊號鎖定慣例一致。既有 watchlist 條目立即套用新規則，不做版本判斷或遷移。→ 詳見 `specs/tracker.md`、`plans/2026-07-03-watch-days-regime-vix.md`
+
 12. **報告日期與防重複執行皆錨定 UTC（main.py / tracker.py）**：CI 在 UTC 時區執行；台灣時間 7/1 08:00 = UTC 6/30 24:00，yfinance 此時拿到的最後數據仍是 6/30——報告正確標示 6/30 是預期行為，不是 bug。規則如下：
     - **`main.py`**：`stats["date"]` 必須用 `datetime.strptime(market_date_str, "%Y-%m-%d")`（`market_date_str` 來自 `summary["market_date"]` = `price_data["SPY"].index[-1].date()`），**不得用 `datetime.now()`**。`datetime.now()` 在非 UTC 時區執行時，與 market_date 不一致，會產生「報告標題 7/1、數據內容 6/30」的誤導標籤。
     - **`tracker.py`**：`check_already_run_today()` 使用 `datetime.utcnow().date()` 而非 `date.today()`，確保台灣本地執行時防重複邏輯與 CI 時區一致。`run_tracker()` 內的 `today` 繼續由 `market_date` 注入（DD-11 不變）。
