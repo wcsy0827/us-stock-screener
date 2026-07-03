@@ -32,21 +32,10 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Get current date
-        id: date
-        run: echo "date=$(date -u +%Y-%m-%d)" >> $GITHUB_OUTPUT
-
-      - name: Cache screener price/info data
-        uses: actions/cache@v4
-        with:
-          path: .cache/
-          key: screener-data-${{ steps.date.outputs.date }}
-
       - name: Run screener
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           PYTHONUTF8: '1'
-          PANDAS_TA_JIT: '0'
         # --dry-run: 只生成 HTML，不在 Python 內做 git push
         # --yes: 跳過重複執行確認（CI 環境無法互動）
         # --no-cache: 強制重下 price/info，避免同日早跑建立的舊 price 快取被晚間排程撿到
