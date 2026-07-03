@@ -2,7 +2,7 @@
 
 ## Purpose
 
-將 universe → fetcher → filter → scorer → market → ranker 六個步驟串接成完整的選股流程，管理快取、錯誤降級，並回傳供 main.py / publisher.py 使用的彙總結果。
+將 universe → fetcher → filter → scorer → market → analyzer → ranker 各步驟串接成完整的選股流程，管理快取、錯誤降級，並回傳供 main.py / publisher.py 使用的彙總結果。
 
 ## Behavior
 
@@ -19,10 +19,12 @@
 | 4.5 | earnings.py + filter.py | liq_filtered, info_data | l1_passed: list[str] | `.cache/earnings_registry.json` 更新 |
 | 5 | scorer.py | l1_passed, price_data, regime_quick | candidates: list[dict] | 無 |
 | 5.5 | market.py | candidate_sectors | market_context: dict | 無 |
+| 5.7 | analyzer.py | `data/performance_history.json` | `data/ai_hints.json` | 無（每輪全量重寫） |
 | 6 | ranker.py | candidates, price_data, info_data, market_context | ranked: list[dict] | 無 |
 
 - **必須**：Step 2.5 在 Step 5 之前執行，regime_quick 必須傳入 `score_all()`
 - **必須**：Step 5.5 在 Step 6 之前執行，只下載候選股所在的產業 ETF
+- **必須**：Step 5.7 在 VIX Gate 之後、Step 6 之前執行；analyzer 失敗印警告後繼續，不中斷流程（DD-7）
 - **若** Step 6 失敗：降級使用 L2 分數前 top_n 名（`_enrich_fallback()`），不讓整個流程中斷
 
 ### 快取策略
@@ -121,6 +123,12 @@ def run(
 - **原因**：`yf.download(interval="1d")` 在美股盤中會回傳「今天」的殘缺 OHLCV（非最終收盤值），而 `pipeline.py` 原本直接用 `spy_df.index[-1]` 當 `market_date`，沒有完整性檢查。這會讓報告標籤顯示完整日期，內容卻是盤中殘缺數據跑出來的評分與 AI 精選，與 `CLAUDE.md`「盤中觸發＝自動拿到前一日完整報告」的既有心智模型不符
 - **捨棄**：中斷執行並警告使用者重跑——會打斷 CI 自動化流程，且使用者原本就預期盤中觸發等於前一日報告，不需要額外中斷；僅印警告但仍用殘缺數據繼續跑——無法防止污染 `market_date` 與下游評分
 - → 詳見 `plans/2026-07-02-intraday-partial-bar-guard.md`
+
+### DD-7: Step 5.7 本地績效診斷插在 VIX Gate 之後、Step 6 之前
+
+- **選擇**：`analyzer.generate_hints(market_date=...)` 在 VIX Gate 通過後、Step 6 ranker 之前執行，以 try/except 攔截，失敗印 `[pipeline] 警告` 後繼續（與 Step 2.5/3/5.5 同慣例，enhancement 非關鍵路徑）。
+- **原因**：hints 的唯一消費者是 Step 6 的 L3 Prompt（ranker DD-16），必須在 ranker 之前生成；VIX Gate 中斷時 L3 不執行，hints 無消費者，放在 Gate 之後可免做白工。tracker 結算在 main.py 的 ranker 之後，analyzer 讀到的是截至前一輪執行的結算資料（1-cycle lag，與 tracker DD-11 一致，見 `specs/analyzer.md` DD-1）。
+- **捨棄**：放在 main.py 的 run_tracker 之後（hints 要等下一輪才被消費，寫入時機與消費時機分離、更難推理）；analyzer 失敗中斷流程（歷史回饋是加分項，不該阻斷選股主流程）。→ 詳見 `plans/2026-07-03-analyzer-ai-hints.md`
 
 ### DD-3: L3 失敗降級至 L2 前 top_n
 

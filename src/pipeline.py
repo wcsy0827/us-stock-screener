@@ -17,6 +17,7 @@ from fetcher import (
 from earnings import fetch_earnings_dates
 from filter import apply_filters, apply_earnings_filter
 from scorer import score_all
+from analyzer import generate_hints
 from ranker import rank_candidates
 
 
@@ -197,6 +198,15 @@ def run(
         summary["ranked"] = []
         summary["success"] = True
         return summary
+
+    # ── Step 5.7: 本地績效診斷（生成 ai_hints.json 供 L3 參考，DD-7）──
+    print("\n[pipeline] ── Step 5.7：本地績效診斷 ──")
+    t = time.time()
+    try:
+        generate_hints(market_date=summary.get("market_date"))
+        print(f"[pipeline] 完成 ({_elapsed(t)})")
+    except Exception as e:
+        print(f"[pipeline] 警告：績效診斷失敗，L3 將不附加歷史回饋：{e}")
 
     # ── Step 6: L3 AI 排序 ──────────────────────────────────────
     print("\n[pipeline] ── Step 6/6：L3 AI 排序 ──")

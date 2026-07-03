@@ -63,7 +63,10 @@ S&P 500 (~503 支)
   ↓ Step 5   scorer.py       L2 技術評分（六維度 100 分；動態門檻依 Regime；相對強度 RS 維度）
                               CONSOLIDATION_VOLATILE 門檻 65 分，PANIC_REVERSAL 40 分
   ↓ Step 5.5 market.py       完整大盤 ETF 背景（直接複用 Step 2.5 的廣度與 VIX，不重算）
+  ↓ Step 5.7 analyzer.py     本地績效診斷（讀 performance_history.json，歸納 Regime×策略×產業賺賠關聯
+                              → data/ai_hints.json；分組 <3 筆或總樣本 <5 筆不生成回饋；失敗不中斷流程）
   ↓ Step 6   ranker.py       L3 DeepSeek AI 精選（≤5 支；28 欄 Markdown 表含 RS_vs_Sector 與基本面欄位；每產業 ≤8 支）
+                              發送前自動讀取 ai_hints.json，非空時在 Prompt 末尾附加 Historical_Performance_Review 區塊
              tracker.py      訊號追蹤（watchlist.json）→ 結算歸檔（performance_history.json）
              publisher.py    HTML 報告 → GitHub Pages（個股浮損益、今日結算區段、策略 Tooltip、歷史績效儀表板）
 ```
@@ -82,6 +85,7 @@ S&P 500 (~503 支)
 | `src/fetcher.py` | `specs/pipeline.md`（快取節） |
 | `src/filter.py` | `specs/pipeline.md`（L1 節）、`specs/earnings.md`（財報防禦牆） |
 | `src/earnings.py` | `specs/earnings.md` |
+| `src/analyzer.py` | `specs/analyzer.md` |
 | `src/publisher.py` | `specs/publisher.md` |
 
 ## Spec-First 工作流
@@ -161,6 +165,7 @@ S&P 500 (~503 支)
 - 常數用全大寫，放在模組頂部
 - AI 輸出欄位的型態：`hold_period` 必須解析為整數（`_parse_hold_period` 已支援 int/float/str 輸入），Prompt 應要求 AI 直接輸出整數天數
 - `tests/test_tracker.py` 覆蓋 `tracker.py` 純函式（解析、狀態機、結算、風控、watch 天數上限、B/C 新訊號處理），全數不連網、不觸碰 `data/watchlist.json`（透過 `isolate_data_dir` fixture 隔離至 `tmp_path`）。修改 `tracker.py` 的判斷邏輯或新增 DD 後，須同步補上對應測試案例並確保 `pytest` 全數通過
+- `tests/test_analyzer.py` 覆蓋 `analyzer.py` 純函式（冷啟動、聚合統計、樣本門檻抑制、損壞 JSON 容錯），全數不連網、不觸碰 `data/`（透過 `isolate_data_dir` fixture 隔離至 `tmp_path`）
 - `tests/test_publisher_info_sync.py` 守門 `docs/index.html` 與 `publisher._build_index()` 輸出的整檔全等（publisher.py DD-6）：任何模板改動（`_INFO_HTML`、`_CSS`、script 邏輯）漂移即測試失敗，修復方式是執行 `python src/publisher.py` 一鍵重新生成後一起 commit
 - 需求不明確或有多種合理解讀時，先向用戶提問，不得臆測意圖自行擴充範圍
 - 驗證程式改動用 `pytest` 或 `python main.py --dry-run --yes` 實跑，不要跑 `ast.parse` 之類的純語法檢查迴圈
@@ -188,6 +193,7 @@ S&P 500 (~503 支)
 | 財報日期 | `.cache/earnings_registry.json` | 30 日（per-symbol TTL，獨立管理） | — |
 | 追蹤清單 | `data/watchlist.json` | 永久（持久化） | 手動刪除 |
 | 歷史績效 | `data/performance_history.json` | 永久（只增不刪） | 手動刪除 |
+| AI 歷史回饋 | `data/ai_hints.json` | 每輪 Step 5.7 全量重寫（可再生衍生檔，刪除後自動重建；CI 的 `git add data/` 自動 commit） | — |
 | 執行記錄 | `docs/data/last_run.json` | 每次 publish() 覆寫；含 `regime`、`market_date` 欄位供 market.py 遲滯帶讀取；前端 fetch 用於顯示「上次執行時間」與資料核實 | — |
 
 ## GitHub Actions
