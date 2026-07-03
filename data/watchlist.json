@@ -12,7 +12,8 @@
     "strategy": "動能策略",
     "tracked_dates": [
       "2026-06-30",
-      "2026-07-01"
+      "2026-07-01",
+      "2026-07-02"
     ],
     "status": "invalid",
     "invalid_reason": "跌破止損價 $285.00，錯過買點",
@@ -43,7 +44,8 @@
     "strategy": "動能策略",
     "tracked_dates": [
       "2026-06-30",
-      "2026-07-01"
+      "2026-07-01",
+      "2026-07-02"
     ],
     "status": "invalid",
     "invalid_reason": "跌破止損價 $690.00，錯過買點",
@@ -74,7 +76,8 @@
     "strategy": "動能策略",
     "tracked_dates": [
       "2026-06-30",
-      "2026-07-01"
+      "2026-07-01",
+      "2026-07-02"
     ],
     "status": "invalid",
     "invalid_reason": "已追高，錯過買點",
@@ -105,7 +108,8 @@
     "strategy": "動能策略",
     "tracked_dates": [
       "2026-06-30",
-      "2026-07-01"
+      "2026-07-01",
+      "2026-07-02"
     ],
     "status": "invalid",
     "invalid_reason": "跌破止損價 $415.00，錯過買點",
@@ -135,13 +139,14 @@
     "hold_period": "15",
     "strategy": "動能策略",
     "tracked_dates": [
-      "2026-07-01"
+      "2026-07-01",
+      "2026-07-02"
     ],
     "status": "watch",
     "invalid_reason": null,
-    "watch_days": 0,
+    "watch_days": 1,
     "active_days": 0,
-    "signal_date_close": null,
+    "signal_date_close": 361.17,
     "active_entry_price": null,
     "active_start_date": null,
     "date_added": "2026-07-01",
@@ -150,7 +155,8 @@
     "vix_value": 16.15,
     "l2_score": 91.38,
     "ai_confidence": 9,
-    "ai_strategy_reason": "均線多頭排列(EMA5>EMA10>EMA20>EMA50)，RSI=70.1在50~70健康區，VTF=1.03>=1.0，Momentum_ATR=5.61>=2.0，RS_vs_Sector=+3.8%>+1%。"
+    "ai_strategy_reason": "均線多頭排列(EMA5>EMA10>EMA20>EMA50)，RSI=70.1在50~70健康區，VTF=1.03>=1.0，Momentum_ATR=5.61>=2.0，RS_vs_Sector=+3.8%>+1%。",
+    "current_price": 361.17
   },
   {
     "symbol": "V",
@@ -164,13 +170,14 @@
     "hold_period": "15",
     "strategy": "動能策略",
     "tracked_dates": [
-      "2026-07-01"
+      "2026-07-01",
+      "2026-07-02"
     ],
     "status": "watch",
     "invalid_reason": null,
-    "watch_days": 0,
+    "watch_days": 1,
     "active_days": 0,
-    "signal_date_close": null,
+    "signal_date_close": 362.13,
     "active_entry_price": null,
     "active_start_date": null,
     "date_added": "2026-07-01",
@@ -179,21 +186,22 @@
     "vix_value": 16.15,
     "l2_score": 91.38,
     "ai_confidence": 8,
-    "ai_strategy_reason": "均線多頭排列，RSI=71.6在50~70區間，VTF=0.90接近1.0，Momentum_ATR=5.11>=2.0，RS_vs_Sector=+3.7%>+1%。"
+    "ai_strategy_reason": "均線多頭排列，RSI=71.6在50~70區間，VTF=0.90接近1.0，Momentum_ATR=5.11>=2.0，RS_vs_Sector=+3.7%>+1%。",
+    "current_price": 362.13
   },
   {
     "symbol": "AJG",
     "name": "Arthur J. Gallagher & Co.",
     "sector": "Financial Services",
-    "buy_zone": "$225～$230",
-    "buy_zone_lower": 225.0,
-    "buy_zone_upper": 230.0,
-    "target": "$260",
-    "stop_loss": "$215",
-    "hold_period": "15",
+    "buy_zone": "$237～$240",
+    "buy_zone_lower": 237.0,
+    "buy_zone_upper": 240.0,
+    "target": "$275",
+    "stop_loss": "$218",
+    "hold_period": "20",
     "strategy": "動能策略",
     "tracked_dates": [
-      "2026-07-01"
+      "2026-07-02"
     ],
     "status": "watch",
     "invalid_reason": null,
@@ -202,13 +210,14 @@
     "signal_date_close": null,
     "active_entry_price": null,
     "active_start_date": null,
-    "date_added": "2026-07-01",
+    "date_added": "2026-07-02",
     "entry_regime": "BULL_TREND",
-    "market_breadth_pct": 64.0,
+    "market_breadth_pct": 64.8,
     "vix_value": 16.15,
     "l2_score": 91.38,
-    "ai_confidence": 7,
-    "ai_strategy_reason": "均線多頭排列，RSI=72.8在50~70區間，Momentum_ATR=5.49>=2.0，RS_vs_Sector=+7.5%>+1%。"
+    "ai_confidence": 8,
+    "ai_strategy_reason": "均線多頭排列，RSI=78.4，VTF=1.33，Momentum_ATR=5.73，符合動能策略。",
+    "current_price": 252.44
   },
   {
     "symbol": "KMB",
@@ -222,13 +231,14 @@
     "hold_period": "15",
     "strategy": "動能策略",
     "tracked_dates": [
-      "2026-07-01"
+      "2026-07-01",
+      "2026-07-02"
     ],
     "status": "watch",
     "invalid_reason": null,
-    "watch_days": 0,
+    "watch_days": 1,
     "active_days": 0,
-    "signal_date_close": null,
+    "signal_date_close": 114.72,
     "active_entry_price": null,
     "active_start_date": null,
     "date_added": "2026-07-01",
@@ -237,7 +247,8 @@
     "vix_value": 16.15,
     "l2_score": 85.0,
     "ai_confidence": 7,
-    "ai_strategy_reason": "均線多頭排列，RSI=72.6在50~70區間，Momentum_ATR=7.30>=2.0，RS_vs_Sector=+3.9%>+1%。"
+    "ai_strategy_reason": "均線多頭排列，RSI=72.6在50~70區間，Momentum_ATR=7.30>=2.0，RS_vs_Sector=+3.9%>+1%。",
+    "current_price": 114.72
   },
   {
     "symbol": "KVUE",
@@ -251,13 +262,14 @@
     "hold_period": "15",
     "strategy": "動能策略",
     "tracked_dates": [
-      "2026-07-01"
+      "2026-07-01",
+      "2026-07-02"
     ],
     "status": "watch",
     "invalid_reason": null,
-    "watch_days": 0,
+    "watch_days": 1,
     "active_days": 0,
-    "signal_date_close": null,
+    "signal_date_close": 19.83,
     "active_entry_price": null,
     "active_start_date": null,
     "date_added": "2026-07-01",
@@ -266,6 +278,123 @@
     "vix_value": 16.15,
     "l2_score": 85.0,
     "ai_confidence": 6,
-    "ai_strategy_reason": "均線多頭排列，RSI=71.2在50~70區間，Momentum_ATR=6.94>=2.0，RS_vs_Sector=+2.7%>+1%。"
+    "ai_strategy_reason": "均線多頭排列，RSI=71.2在50~70區間，Momentum_ATR=6.94>=2.0，RS_vs_Sector=+2.7%>+1%。",
+    "current_price": 19.83
+  },
+  {
+    "symbol": "GPC",
+    "name": "Genuine Parts Company",
+    "sector": "Consumer Cyclical",
+    "buy_zone": "$121～$124",
+    "buy_zone_lower": 121.0,
+    "buy_zone_upper": 124.0,
+    "target": "$145",
+    "stop_loss": "$108",
+    "hold_period": "15",
+    "strategy": "動能策略",
+    "tracked_dates": [
+      "2026-07-02"
+    ],
+    "status": "watch",
+    "invalid_reason": null,
+    "watch_days": 0,
+    "active_days": 0,
+    "signal_date_close": null,
+    "active_entry_price": null,
+    "active_start_date": null,
+    "date_added": "2026-07-02",
+    "entry_regime": "BULL_TREND",
+    "market_breadth_pct": 64.8,
+    "vix_value": 16.15,
+    "l2_score": 88.75,
+    "ai_confidence": 8,
+    "ai_strategy_reason": "均線多頭排列完整，RSI=83.6偏高但VTF=1.70強，Momentum_ATR=8.23極強，符合動能策略。"
+  },
+  {
+    "symbol": "SNA",
+    "name": "Snap-On Incorporated",
+    "sector": "Industrials",
+    "buy_zone": "$398～$403",
+    "buy_zone_lower": 398.0,
+    "buy_zone_upper": 403.0,
+    "target": "$450",
+    "stop_loss": "$384",
+    "hold_period": "20",
+    "strategy": "動能策略",
+    "tracked_dates": [
+      "2026-07-02"
+    ],
+    "status": "watch",
+    "invalid_reason": null,
+    "watch_days": 0,
+    "active_days": 0,
+    "signal_date_close": null,
+    "active_entry_price": null,
+    "active_start_date": null,
+    "date_added": "2026-07-02",
+    "entry_regime": "BULL_TREND",
+    "market_breadth_pct": 64.8,
+    "vix_value": 16.15,
+    "l2_score": 91.38,
+    "ai_confidence": 7,
+    "ai_strategy_reason": "均線多頭排列，RSI=70.2健康，VTF=1.12，Momentum_ATR=4.03，符合動能策略。"
+  },
+  {
+    "symbol": "AWK",
+    "name": "American Water Works Company, I",
+    "sector": "Utilities",
+    "buy_zone": "$131～$133",
+    "buy_zone_lower": 131.0,
+    "buy_zone_upper": 133.0,
+    "target": "$150",
+    "stop_loss": "$126",
+    "hold_period": "20",
+    "strategy": "動能策略",
+    "tracked_dates": [
+      "2026-07-02"
+    ],
+    "status": "watch",
+    "invalid_reason": null,
+    "watch_days": 0,
+    "active_days": 0,
+    "signal_date_close": null,
+    "active_entry_price": null,
+    "active_start_date": null,
+    "date_added": "2026-07-02",
+    "entry_regime": "BULL_TREND",
+    "market_breadth_pct": 64.8,
+    "vix_value": 16.15,
+    "l2_score": 91.38,
+    "ai_confidence": 7,
+    "ai_strategy_reason": "均線多頭排列，RSI=70.6，VTF=1.11，Momentum_ATR=4.79，符合動能策略。"
+  },
+  {
+    "symbol": "WELL",
+    "name": "Welltower Inc.",
+    "sector": "Real Estate",
+    "buy_zone": "$229～$232",
+    "buy_zone_lower": 229.0,
+    "buy_zone_upper": 232.0,
+    "target": "$255",
+    "stop_loss": "$215",
+    "hold_period": "20",
+    "strategy": "動能策略",
+    "tracked_dates": [
+      "2026-07-02"
+    ],
+    "status": "watch",
+    "invalid_reason": null,
+    "watch_days": 0,
+    "active_days": 0,
+    "signal_date_close": null,
+    "active_entry_price": null,
+    "active_start_date": null,
+    "date_added": "2026-07-02",
+    "entry_regime": "BULL_TREND",
+    "market_breadth_pct": 64.8,
+    "vix_value": 16.15,
+    "l2_score": 91.38,
+    "ai_confidence": 6,
+    "ai_strategy_reason": "均線多頭排列，RSI=71.9，VTF=1.04，Momentum_ATR=6.17，符合動能策略。"
   }
 ]
