@@ -454,8 +454,18 @@ def _days(entry: dict) -> int:
 
 
 def _max_watch_days(entry: dict) -> int:
-    """依策略回傳 watch/invalid 天數上限（DD-15）。"""
-    return _WATCH_DAYS_BY_STRATEGY.get(entry.get("strategy", ""), _DEFAULT_WATCH_DAYS)
+    """依策略與訊號當下大盤環境回傳 watch/invalid 天數上限（DD-15、DD-16）。"""
+    strategy = entry.get("strategy", "")
+    regime   = entry.get("entry_regime", "")
+    vix      = entry.get("vix_value")
+
+    if strategy == "突破策略" and regime == "CONSOLIDATION_VOLATILE":
+        return 3  # 高波動整理市假突破風險升高，縮短觀察期（DD-16）
+
+    if strategy == "反轉策略" and regime == "PANIC_REVERSAL" and vix is not None and vix > 35:
+        return 5  # VIX 暴噴級尖底，V 型反彈應快速兌現，遲遲不進場視為真黑天鵝（DD-16）
+
+    return _WATCH_DAYS_BY_STRATEGY.get(strategy, _DEFAULT_WATCH_DAYS)
 
 
 def _is_expired(entry: dict) -> bool:
