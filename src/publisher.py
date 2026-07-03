@@ -998,7 +998,7 @@ def publish(
     """
     生成每日 HTML 報告 + 更新首頁索引，並 git push（dry_run 時略過 push）。
     """
-    dt: datetime = stats.get("date", datetime.now())
+    dt: datetime = stats["date"]
     weekday = WEEKDAY_ZH[dt.weekday()]
     date_str = dt.strftime("%Y-%m-%d")
 
