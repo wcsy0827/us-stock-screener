@@ -13,12 +13,11 @@
   watch  → active   （次日 price 落入 buy_zone，1-day lag）
   watch  → invalid  （失效條件觸發）
   watch  → expired  （watch_days >= 策略對應 watch 上限：突破/動能=5日，反轉=10日）
-  active → settled  （CLOSED_PROFIT / CLOSED_LOSS / FORCE_EXPIRED，歸檔至 performance_history.json）
-  active → invalid  （失效條件觸發，e.g. 跌破止損但尚未達結算門檻）
+  active → settled  （CLOSED_PROFIT / CLOSED_LOSS / CLOSED_TRAILING_STOP / FORCE_EXPIRED，歸檔至 performance_history.json）
   invalid → expired （_days() >= 策略對應 watch 上限）
 ```
 
-**active 部位不再由 `_is_expired()` 到期**，改由 `_check_settlement()` 控制完整生命週期。
+**active 部位不再由 `_is_expired()` 到期，也不再由 `_eval_status()` 判定失效**，完整生命週期只交給 `_check_settlement()`（DD-17）。
 
 - **必須**：watch 和 active 使用**分開的計數器**（`watch_days` / `active_days`），不能共用總追蹤天數
 - **不得**：active 持倉到期上限使用固定的 5 日；必須讀取 AI 指定的 `hold_period` 字串並解析
@@ -33,15 +32,16 @@
 | `"反轉策略"` | `price < stop_loss 絕對價` |
 | 其他（動能/突破）| `price < EMA20` |
 
-- **必須**：追高失效（`price > upper * 1.08`）只適用於**非 active** 狀態，active 持倉大漲屬正常獲利，不觸發追高失效
+- **必須**：`_eval_status()` 對 `status == "active"` 的條目一律直接短路回傳 `("active", None)`，不執行下方任何失效判定（見 DD-17）。追高失效、反轉止損、EMA20 判定等條件僅適用 watch 狀態
 - **不得**：對反轉策略使用 EMA50 作為失效門檻（見 DD-1）
 
-### 狀態機下限判定順序
+### 狀態機下限判定順序（僅適用 watch 狀態；active 已於函式頂部短路）
 
 ```
+status == "active"?                          → active（不判定，交給 _check_settlement）
 price < stop_loss?                           → invalid（反轉策略）
 price < ema20?                               → invalid（動能/突破策略）
-price > upper * 1.08 且非 active?            → invalid（追高）
+price > upper * 1.08?                        → invalid（追高）
 price > upper * 1.01?                        → watch（等回落）
 price >= lower 且 price <= stop_loss?        → invalid（開盤跳空安全攔截）
 price >= lower 且 price > stop_loss?         → active（進場）
@@ -98,7 +98,7 @@ High/Low NaN 防禦：若 today_high 或 today_low 為 NaN（停牌/數據缺失
 
 ### 拆股免疫
 
-- **必須**：首次加入 watchlist 時記錄 `signal_date_close`（當日 auto_adjust 收盤價）
+- **必須**：首次加入 watchlist（B/C 步驟建立條目當下）就直接寫入 `signal_date_close = stock["price"]`（L3/L2 訊號日收盤價），**不得**延遲到下一輪評估時才用「當時的收盤價」回填（見 DD-17）
 - **必須**：每次評估前計算 `split_factor = 當前調整後歷史收盤 / signal_date_close`
 - **若** `abs(split_factor - 1.0) > 0.01`：在記憶體中臨時縮放 `buy_zone_lower`、`buy_zone_upper`、`stop_loss`、`target`、`planned_stop_loss`、`effective_stop_loss`、`active_entry_price`、`highest_close_since_active`，**不寫回 watchlist**
 - `highest_close_since_active` 在 watchlist 中以**原生未拆股標尺**存儲；比對前先乘以 `split_factor` 轉換至調整後標尺
@@ -278,6 +278,16 @@ def _is_expired(entry: dict) -> bool:
 - **捨棄**：改用每日重新評估的當下 regime（會讓 watch 上限在追蹤期間內波動）；以 `date_added` 判斷新舊條目、僅對部署後新訊號生效（既有欄位已支援新規則，無需遷移邏輯）
 - → 詳見 `plans/2026-07-03-watch-days-regime-vix.md`
 
+### DD-17: active 部位失效判定移除 + signal_date_close 訊號日即時寫入
+
+- **選擇（缺陷 1）**：`_eval_status()` 在 `status == "invalid"` 短路之後，新增 `status == "active"` 短路，直接回傳 `("active", None)`，不再對 active 部位執行策略失效判定（反轉 `price < stop_loss`、動能/突破 `price < ema20`）與追高失效。active 部位的生命週期完全交給 `_check_settlement()` 的四態結算。
+- **原因**：`run_tracker()` 的 E 步驟在同一輪迭代中先呼叫 `_eval_status()` 並立即寫回 `entry["status"]`，再呼叫 `_check_settlement()`；後者開頭即檢查 `status != "active"` 直接跳過。結果是 active 部位一旦被 `_eval_status()` 判定失效，狀態被翻成 `invalid`，`_check_settlement()` 永遠跳過該筆，虧損不會被歸檔至 `performance_history.json`，之後經 `_is_expired()` 無聲移除。以反轉策略為例：`price < stop_loss` 必然隱含 `today_low ≤ price < stop_loss`，即 DD-10 的盤中止損（`today_low ≤ effective_stop_loss`）必定同時成立，代表 `_check_settlement()` 本可正確結算為 `CLOSED_LOSS`，卻被 `_eval_status()` 搶先攔截。這也是 spec 舊版狀態機圖 `active → invalid（跌破止損但尚未達結算門檻）` 條目在 DD-10 之下自相矛盾、不可達的根因：只要收盤已跌破止損，盤中最低點必然也已跌破，DD-10 的止損判定必先觸發。後果是 `performance_history.json` 系統性漏記虧損交易，`analyzer.py` 的勝率統計向上偏差，回饋進 L3 Prompt 的歷史績效回顧因而失真樂觀。
+- **動能股殘留風險與取捨**：移除失效判定後，動能/突破策略持倉「收盤跌破 EMA20 但盤中止損未觸」時不再提前標記失效，而是持續 active 直到止損、停利、移動停利或 `hold_period` 到期四者之一觸發，屬有界（受 `hold_period` 限制，非無限期滯留）。此行為與使用者「僅依止損/停利區間出場、不依當下均線位置」的實際操作方式一致，故不額外補上「趨勢轉弱提前出場」機制。
+- **選擇（缺陷 2）**：`run_tracker()` B/C 步驟建立 `base` 字典時，`signal_date_close` 直接寫入 `stock.get("price")`（L2/L3 訊號日收盤價），不再留空由下一輪評估時回填。原本 E 步驟的回填邏輯（`if entry.get("signal_date_close") is None`）保留作為存量條目的 fallback。
+- **原因**：`_calc_split_factor()` 用 `entry["tracked_dates"][0]`（訊號日）作為比對錨定日，但 `signal_date_close` 舊實作是在**次一輪評估**（訊號日的次一交易日）才寫入當日收盤價，兩者錯開一個交易日。只要訊號日到次日的正常漲跌幅超過 ±1%（`abs(split_factor - 1.0) > 0.01` 的門檻），就會被誤判為拆股，`buy_zone`/`stop_loss`/`target`/`effective_stop_loss` 全數被錯誤縮放，可能讓已進場（active）部位被翻回 `watch`，或讓 `effective_stop_loss` 被誤縮小而使真實止損事件在 DD-10 的比對中漏判（與缺陷 1 的漏記虧損風險疊加）。`ranker.py` 回傳的候選股 dict 本就含訊號日 `price` 欄位（L2 `score_stock()` 產出），無需額外下載即可在建立條目當下寫入正確值。此欄位透過 B/C 共用的 `base` 字典寫入，同時涵蓋全新個股與 watch/invalid 重置覆寫兩條路徑（`existing[sym].update(base)`），修復 reset 路徑會把 `signal_date_close` 覆寫回 `None`（因而延續次日回填錯位）的問題。
+- **不修復存量資料**：既有 `data/watchlist.json` 條目的 `signal_date_close` 若為舊邏輯寫入的錯位值，不做一次性 migration；此系統目前處於冷啟動期（尚無 active 部位、`performance_history.json` 尚未產生），存量 `watch`/`invalid` 條目會在數個交易日內依既有 watch 上限自然到期，無需回溯修正。
+- **捨棄**：讓 active 部位觸發失效時改以收盤價強制結算歸檔（等同新增第二套結算路徑，與 `_check_settlement()` 職責重疊，複雜化生命週期管理）；把 `_calc_split_factor` 的錨定日從 `tracked_dates[0]` 改為 `tracked_dates[1]`（治標且該索引在條目第一輪評估時尚不存在，需額外邊界處理，比直接修正寫入時機更脆弱）。
+
 ---
 
 ## performance_history.json Schema
@@ -349,3 +359,8 @@ def _is_expired(entry: dict) -> bool:
 - [ ] **DD-16 高波動突破縮短**：strategy="突破策略"、entry_regime="CONSOLIDATION_VOLATILE" 的 watch 股票追蹤 3 日 → 進入 expired
 - [ ] **DD-16 VIX 暴噴反轉縮短**：strategy="反轉策略"、entry_regime="PANIC_REVERSAL"、vix_value=36 的 watch 股票追蹤 5 日 → 進入 expired
 - [ ] **DD-16 邊界不變**：strategy="反轉策略"、entry_regime="PANIC_REVERSAL"、vix_value=28 的 watch 股票追蹤 9 日 → 仍在 watchlist；追蹤 10 日 → 進入 expired（維持 DD-15 行為）
+- [ ] **DD-17 active 不再被 _eval_status 判定失效**：`_eval_status()` 傳入 `status="active"` 的條目，無論 price/ema20/ema50 為何值，一律回傳 `("active", None)`
+- [ ] **DD-17 反轉股虧損不再漏記**：active 反轉策略部位 `price < stop_loss` 且 `today_low ≤ effective_stop_loss` → `run_tracker()` 應產生 `CLOSED_LOSS` 結算並寫入 `performance_history.json`，不應只落入 `invalid` 分類
+- [ ] **DD-17 動能股止損未觸時維持 active**：動能策略 active 部位 `close < ema20` 但 `today_low > effective_stop_loss` → 維持 `active`，不進入 `invalid`/`expired`
+- [ ] **DD-17 signal_date_close 訊號日即時寫入**：`run_tracker()` 處理新訊號（B/C 步驟）當輪，新條目的 `signal_date_close` 應等於該股 L2 訊號日 `price`，不為 `None`
+- [ ] **DD-17 訊號日正常漲跌不誤判拆股**：訊號日與次一評估日之間股價正常波動（漲跌 ≤ 若干 %，未實際拆股），`split_factor` 應 ≈ 1.0，不觸發拆股平移、不影響 active 判定

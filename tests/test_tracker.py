@@ -166,6 +166,19 @@ class TestEvalStatus:
         status, _ = tracker._eval_status(entry, price=105 * 1.09, ema20=50)
         assert status != "invalid"
 
+    def test_active_short_circuits_regardless_of_price_or_ema_dd17(self):
+        """DD-17：active 部位不再被 _eval_status 判定失效，一律回傳 active，
+        生命週期完全交給 _check_settlement。"""
+        entry = _watch_entry(status="active", strategy="反轉策略", stop_loss="$90.00")
+        # 收盤已跌破止損（若照舊邏輯會被判 invalid），active 短路後仍回傳 active
+        status, reason = tracker._eval_status(entry, price=85, ema20=None, ema50=None)
+        assert (status, reason) == ("active", None)
+
+    def test_active_momentum_below_ema20_still_short_circuits_dd17(self):
+        entry = _watch_entry(status="active", strategy="動能策略")
+        status, reason = tracker._eval_status(entry, price=90, ema20=200)
+        assert (status, reason) == ("active", None)
+
     def test_price_above_upper_band_returns_watch(self):
         entry = _watch_entry()
         status, reason = tracker._eval_status(entry, price=105 * 1.02, ema20=50)
@@ -486,3 +499,98 @@ class TestRunTrackerNewSignals:
         assert watchlist[0]["status"] == "watch"
         assert watchlist[0]["active_entry_price"] is None
         assert categories["active"] == []
+
+    def test_signal_date_close_written_immediately_on_creation_dd17(self):
+        """DD-17：新條目建立當下就寫入訊號日收盤價，不留 None 等下一輪回填。"""
+        stock = self._stock(price=102.5)
+        watchlist, _ = tracker.run_tracker([stock], market_date="2024-01-01")
+        assert watchlist[0]["signal_date_close"] == 102.5
+
+    def test_signal_date_close_refreshed_on_reset_path_dd17(self, monkeypatch):
+        """DD-17：watch 個股被新訊號覆寫展期（reset）時，signal_date_close
+        必須跟著更新為本輪訊號價，不能被清成 None（否則延續舊 bug 的次日回填錯位）。"""
+        existing = _watch_entry(
+            status="watch", symbol="NEW1", buy_zone_lower=100.0, buy_zone_upper=105.0,
+        )
+        existing.update({
+            "tracked_dates": ["2023-12-20"], "watch_days": 3, "date_added": "2023-12-20",
+            "signal_date_close": 88.0, "active_entry_price": None,
+        })
+        tracker.save_watchlist([existing])
+        monkeypatch.setattr(tracker, "_fetch_latest", lambda syms: {})
+
+        stock = self._stock(price=95.0)
+        watchlist, categories = tracker.run_tracker([stock], market_date="2024-01-01")
+        assert len(categories["reset"]) == 1
+        assert watchlist[0]["signal_date_close"] == 95.0
+        assert watchlist[0]["tracked_dates"] == ["2024-01-01"]
+
+
+# ── run_tracker：DD-17 active 部位結算/失效修復 ─────────────────────
+
+class TestRunTrackerActiveSettlementDD17:
+    def _active_watchlist_entry(self, **overrides) -> dict:
+        entry = {
+            "symbol": "TEST", "name": "Test Corp", "sector": "Technology",
+            "buy_zone": "$100.00～$105.00", "buy_zone_lower": 100.0, "buy_zone_upper": 105.0,
+            "target": "$130.00", "stop_loss": "$90.00", "hold_period": "10",
+            "strategy": "動能策略",
+            "tracked_dates": ["2026-06-25", "2026-06-26", "2026-06-29"],
+            "status": "active", "invalid_reason": None,
+            "watch_days": 1, "active_days": 3,
+            "signal_date_close": 100.0,
+            "active_entry_price": 100.0, "active_start_date": "2026-06-26",
+            "date_added": "2026-06-25",
+            "entry_regime": "BULL_TREND", "market_breadth_pct": 65.0, "vix_value": 15.0,
+            "l2_score": 80, "ai_confidence": 8, "ai_strategy_reason": "",
+            "planned_stop_loss": 90.0, "effective_stop_loss": 90.0,
+            "is_breakeven_locked": False, "highest_close_since_active": 100.0,
+        }
+        entry.update(overrides)
+        return entry
+
+    def _flat_series(self, value=100.0, end="2026-06-30", n=60):
+        idx = pd.bdate_range(end=end, periods=n)
+        return pd.Series([value] * n, index=idx)
+
+    def test_reversal_active_real_stop_breach_settles_as_closed_loss(self, monkeypatch):
+        """DD-17：反轉策略 active 部位實質跌破止損（today_low<=effective_stop_loss）
+        必須經 _check_settlement 結算為 CLOSED_LOSS 並歸檔，不能只落 invalid 就消失。"""
+        entry = self._active_watchlist_entry(strategy="反轉策略", stop_loss="$98.00",
+                                              planned_stop_loss=98.0, effective_stop_loss=98.0)
+        tracker.save_watchlist([entry])
+
+        monkeypatch.setattr(tracker, "_fetch_latest", lambda syms: {
+            "TEST": {"price": 97.0, "today_high": 99.0, "today_low": 96.5,
+                     "ema20": 100.0, "ema50": 100.0, "close_series": self._flat_series()},
+        })
+        watchlist, categories = tracker.run_tracker([], market_date="2026-06-30")
+
+        assert [e["symbol"] for e in categories["settled"]] == ["TEST"]
+        assert categories["settled"][0]["_exit_reason"] == tracker.EXIT_LOSS
+        assert categories["invalid"] == []
+        assert watchlist == []
+        assert tracker._PERF_PATH.exists()
+        with open(tracker._PERF_PATH, encoding="utf-8") as f:
+            records = json.load(f)["history_records"]
+        assert len(records) == 1
+        assert records[0]["actual_outcome"]["exit_reason"] == tracker.EXIT_LOSS
+        assert records[0]["performance_metrics"]["is_win"] is False
+
+    def test_momentum_active_below_ema20_without_stop_breach_stays_active(self, monkeypatch):
+        """DD-17：動能策略 active 部位收盤跌破 EMA20 但盤中止損未觸，維持 active，
+        不再被 _eval_status 判定失效而無聲移除。"""
+        entry = self._active_watchlist_entry()
+        tracker.save_watchlist([entry])
+
+        monkeypatch.setattr(tracker, "_fetch_latest", lambda syms: {
+            "TEST": {"price": 99.0, "today_high": 100.5, "today_low": 91.0,
+                     "ema20": 100.0, "ema50": 95.0, "close_series": self._flat_series()},
+        })
+        watchlist, categories = tracker.run_tracker([], market_date="2026-06-30")
+
+        assert [e["symbol"] for e in categories["active"]] == ["TEST"]
+        assert categories["invalid"] == []
+        assert categories["expired"] == []
+        assert categories["settled"] == []
+        assert watchlist[0]["status"] == "active"
