@@ -102,6 +102,12 @@ def fetch_earnings_dates(
 - **原因**：財報日期每季公布一次，7 天後仍有效。頻繁重新查詢 = 浪費 Tier 3 請求配額
 - **捨棄**：7 天 TTL（與 info cache 對齊，但過短，每週觸發 Tier 3）
 
+### DD-E5: apply_earnings_filter 的判斷基準日錨定 market_date
+
+- **選擇**：`filter.apply_earnings_filter()` 新增 `today: date | None = None` 參數，由 `pipeline.py` 傳入 `market_date`（`price_data["SPY"].index[-1].date()`）；未提供時 fallback 為 `date.today()`。
+- **原因**：財報防禦窗口原本用 `date.today()` 判斷「未來 N 天內」，與專案其餘模組（`main.py` 的 `stats["date"]`、`tracker.py` 的 `today`）一律錨定 `market_date` 的原則不一致。台灣本地執行時系統時鐘與 `market_date` 可能相差一天，讓財報黑名單窗口的起訖日偏移一天——方向偏保守（頂多多排除一天，不會漏放有財報風險的個股），影響範圍小，但破壞了「一切以 market_date 為準」的一致性慣例，且與 CLAUDE.md 既有的 DD-12（main.py 報告日期）精神相同。
+- **捨棄**：不修正（保留現狀，接受這處例外）——CLAUDE.md 已明文禁止用 `datetime.now()` 決定與資料日期相關的判斷，此處雖非報告日期而是篩選窗口，但同屬「資料時間標籤」性質，應一併對齊。
+
 ## Acceptance Criteria
 
 - [ ] 第一次執行：registry 不存在 → Tier 2+3 填充 → 寫入 `.cache/earnings_registry.json`
@@ -110,3 +116,5 @@ def fetch_earnings_dates(
 - [ ] registry 某股 tier=3 且 next_earnings=null → 第二次執行 → Tier 1 命中，Tier 3 不觸發
 - [ ] next_earnings 距今 <= 5 天 → `apply_earnings_filter()` 排除該股
 - [ ] next_earnings 為 None → 視為「無已知財報」，通過防禦牆
+- [ ] **DD-E5**：傳入 `today` 參數時，排除窗口以該值為準，不受系統時鐘影響
+- [ ] **DD-E5 向下相容**：未傳入 `today` 時，fallback 為 `date.today()`
