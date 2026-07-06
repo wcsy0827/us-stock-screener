@@ -64,18 +64,20 @@ def check_already_run_today() -> bool:
 # ── 工具函式 ─────────────────────────────────────────────────────────
 
 def _parse_hold_period(hold_period_str, default: int = _DEFAULT_HOLD_DAYS) -> int:
-    """解析 hold_period 為整數天數。接受 int/float 直接回傳，或從字串萃取最大數值。"""
+    """解析 hold_period 為整數天數。接受 int/float 直接回傳，或從字串萃取最大數值。
+    下界固定為 1（DD-19）：AI 若給出 <=0 的異常值，同日觸價成交（active_days
+    首輪即為 1）會被誤判為 FORCE_EXPIRED，故無條件夾在最小值 1。"""
     if isinstance(hold_period_str, int):
-        return hold_period_str
+        return max(1, hold_period_str)
     if isinstance(hold_period_str, float):
-        return int(hold_period_str)
+        return max(1, int(hold_period_str))
     s = str(hold_period_str) if hold_period_str is not None else ""
     if not s or s.strip() in ("-", ""):
         return default
     nums = re.findall(r"\d+", s)
     if not nums:
         return default
-    return max(int(n) for n in nums)
+    return max(1, max(int(n) for n in nums))
 
 
 def _count_trading_days(start: str, end: str) -> int:
@@ -118,7 +120,8 @@ def _parse_buy_zone(buy_zone_str: str) -> tuple[float, float] | None:
 
 
 def _fetch_latest(symbols: list[str]) -> dict[str, dict]:
-    """批次下載最新收盤價、盤中高低點與 EMA。High/Low NaN 時 fallback 為 close（DD-10）。"""
+    """批次下載最新收盤價、盤中高低點與 EMA。High/Low 與 Close 同列對齊，
+    NaN 時 fallback 為 close（DD-10、DD-19）。"""
     if not symbols:
         return {}
     try:
@@ -150,13 +153,17 @@ def _fetch_latest(symbols: list[str]) -> dict[str, dict]:
         close = df["Close"].dropna()
         if close.empty:
             continue
+        price_date = close.index[-1]
         price = float(close.iloc[-1])
         ema20 = float(close.ewm(span=20, adjust=False).mean().iloc[-1]) if len(close) >= 20 else None
         ema50 = float(close.ewm(span=50, adjust=False).mean().iloc[-1]) if len(close) >= 50 else None
 
-        # 日內高低點：NaN fallback → close，避免停損免疫 Bug（DD-10）
-        high_raw = df["High"].iloc[-1] if "High" in df.columns else float("nan")
-        low_raw  = df["Low"].iloc[-1]  if "Low"  in df.columns else float("nan")
+        # 日內高低點：必須與 price 同一列（price_date）讀取，避免 Close 缺值時
+        # dropna() 讓 price 落在前一列、但 High/Low 卻取自最新殘缺列而日期錯位
+        # （破壞 today_low <= price <= today_high 恆等式，DD-19 依賴此恆等式）；
+        # NaN fallback → close，避免停損免疫 Bug（DD-10）
+        high_raw = df["High"].loc[price_date] if "High" in df.columns else float("nan")
+        low_raw  = df["Low"].loc[price_date]  if "Low"  in df.columns else float("nan")
         today_high = float(high_raw) if pd.notna(high_raw) else price
         today_low  = float(low_raw)  if pd.notna(low_raw)  else price
 
@@ -201,17 +208,29 @@ def _eval_status(
     price: float,
     ema20: float | None,
     ema50: float | None = None,
+    today_low: float | None = None,
 ) -> tuple[str, str | None]:
     """
     評估訊號狀態：股價是否已落入買入區間，或訊號是否失效。
     回傳 (new_status, invalid_reason)。
     已失效者直接回傳原因，不再重新判斷。
 
-    失效條件依策略類型差異化（僅適用 watch 狀態）：
+    盤中限價單模擬進場（DD-19）：使用者實際下單方式是在買入區間上緣
+    （buy_zone_upper）掛限價單，只要 today_low <= buy_zone_upper 即視為
+    當日觸價成交，優先於下方所有以收盤價 price 為準的判定（含追高失效）。
+    此檢查嚴格位於 invalid/active 短路之後、其餘判定之前，確保既有 invalid
+    條目不會被追溯復活。today_low 為 None（呼叫端未提供）或今日未觸價
+    （today_low > buy_zone_upper）時，完全退化為下方原本以收盤價為準的
+    判定，行為與 DD-19 之前逐字元相同。
+
+    失效條件依策略類型差異化（僅適用 watch 狀態，且僅在今日未觸價成交時
+    才有意義：正常 AI 參數配置下 stop_loss 恆低於 buy_zone_lower、EMA20
+    恆低於 buy_zone_upper，觸價檢查必然先行成立；以下分支實務上僅作為
+    未提供 today_low 時的退化路徑，以及 AI 給出異常參數的防禦網）：
     - 反轉策略：進場點本就在 EMA50 下方，以跌破 AI 止損價為失效門檻
     - 動能/突破策略：跌破 EMA20 即失效
 
-    狀態機下限：
+    狀態機下限（今日未觸價成交時，以收盤價 price 為準）：
     - price >= lower → active（進場）
     - price < lower 但 >= stop_loss → watch（繼續觀察，未觸及止損）
     - price < lower 且 < stop_loss → invalid（跌穿止損）
@@ -224,6 +243,10 @@ def _eval_status(
     if entry.get("status") == "invalid":
         return "invalid", entry.get("invalid_reason")
     if entry.get("status") == "active":
+        return "active", None
+
+    # ── 盤中限價單模擬進場（DD-19）：today_low <= upper 即視為觸價成交 ──
+    if today_low is not None and today_low <= entry["buy_zone_upper"]:
         return "active", None
 
     lower = entry.get("buy_zone_lower", 0.0)
@@ -248,7 +271,11 @@ def _eval_status(
     if price > upper * 1.01:
         return "watch", None       # 高於買入區間，等回落
     if price >= lower:
-        # 開盤跳空安全攔截：進場前確認未跌破止損（防止 AI 止損設在買入區間內的邊界案例）
+        # 開盤跳空安全攔截（DD-7，實務上已被 DD-19 的觸價檢查取代並列為
+        # dormant：只要有提供 today_low，此分支便不可達，因為 price>=lower
+        # 蘊含 today_low<=price<=upper，DD-19 檢查必然已先行成立並提早
+        # return。保留作為未提供 today_low 時的向下相容路徑）：
+        # 進場前確認未跌破止損（防止 AI 止損設在買入區間內的邊界案例）
         if stop_loss_price is not None and price <= stop_loss_price:
             return "invalid", f"開盤跳空跌破止損價 ${stop_loss_price:.2f}，拒絕進場"
         return "active", None      # 在買入區間內且高於止損，視為進場
@@ -583,10 +610,10 @@ def run_tracker(
             adj["active_entry_price"]          = (entry.get("active_entry_price") or 0) * split_factor
             highest = entry.get("highest_close_since_active") or entry.get("active_entry_price") or 0
             adj["highest_close_since_active"]  = highest * split_factor
-            new_status, reason = _eval_status(adj, price, ema20, ema50)
+            new_status, reason = _eval_status(adj, price, ema20, ema50, today_low=today_low)
             settlement_entry = adj   # 結算也使用縮放後的 adj（DD-10）
         else:
-            new_status, reason = _eval_status(entry, price, ema20, ema50)
+            new_status, reason = _eval_status(entry, price, ema20, ema50, today_low=today_low)
             settlement_entry = entry
 
         prev_status = entry.get("status", "watch")
@@ -600,10 +627,15 @@ def run_tracker(
         if entry.get("signal_date_close") is None:
             entry["signal_date_close"] = price
 
-        # 首次進入 active：記錄代理進場價、日期，並初始化風控欄位（DD-12、DD-13）
+        # 首次進入 active：記錄代理進場價、日期，並初始化風控欄位（DD-12、DD-13、DD-19）
         if new_status == "active" and prev_status == "watch":
+            # 盤中限價單模擬進場（DD-19）：以買入區間上緣（使用者實際掛單價位）
+            # 作為進場代理價，取代原本的收盤價。settlement_entry 的 buy_zone_upper
+            # 拆股情境下已正確縮放（DD-3），與 active_entry_price 既有慣例
+            # （皆以「當下現值標尺」存儲，非原始拆股前標尺）一致。
+            entry_fill_price = settlement_entry["buy_zone_upper"]
             if entry.get("active_entry_price") is None:
-                entry["active_entry_price"] = price
+                entry["active_entry_price"] = entry_fill_price
                 entry["active_start_date"]  = today
             if entry.get("planned_stop_loss") is None:
                 planned_val = _parse_stop_loss(entry.get("stop_loss", "-"))
@@ -616,13 +648,13 @@ def run_tracker(
 
             # Fix #1：同步寫入 settlement_entry（adj），防止開倉當日停損時 entry_price=0 除零
             if settlement_entry is not entry:
-                settlement_entry["active_entry_price"]         = price
+                settlement_entry["active_entry_price"]         = entry_fill_price
                 settlement_entry["planned_stop_loss"]          = (entry["planned_stop_loss"] or 0) * split_factor
                 settlement_entry["effective_stop_loss"]        = settlement_entry["planned_stop_loss"]
                 settlement_entry["is_breakeven_locked"]        = False
                 settlement_entry["highest_close_since_active"] = price
             else:
-                settlement_entry["active_entry_price"]         = price
+                settlement_entry["active_entry_price"]         = entry_fill_price
                 settlement_entry["planned_stop_loss"]          = entry["planned_stop_loss"]
                 settlement_entry["effective_stop_loss"]        = entry["effective_stop_loss"]
                 settlement_entry["is_breakeven_locked"]        = False

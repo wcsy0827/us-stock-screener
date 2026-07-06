@@ -10,8 +10,8 @@
 
 ```
 [新加入] → watch
-  watch  → active   （次日 price 落入 buy_zone，1-day lag）
-  watch  → invalid  （失效條件觸發）
+  watch  → active   （次日 today_low <= buy_zone_upper 即視為觸價成交，1-day lag，DD-19）
+  watch  → invalid  （失效條件觸發，僅當今日未觸價成交時才可能發生）
   watch  → expired  （watch_days >= 策略對應 watch 上限：突破/動能=5日，反轉=10日）
   active → settled  （CLOSED_PROFIT / CLOSED_LOSS / CLOSED_TRAILING_STOP / FORCE_EXPIRED，歸檔至 performance_history.json）
   invalid → expired （_days() >= 策略對應 watch 上限）
@@ -34,22 +34,26 @@
 
 - **必須**：`_eval_status()` 對 `status == "active"` 的條目一律直接短路回傳 `("active", None)`，不執行下方任何失效判定（見 DD-17）。追高失效、反轉止損、EMA20 判定等條件僅適用 watch 狀態
 - **不得**：對反轉策略使用 EMA50 作為失效門檻（見 DD-1）
+- **必須**：`today_low <= buy_zone_upper` 的觸價成交判定（DD-19）嚴格位於 invalid/active 短路之後、其餘所有收盤價判定之前
 
-### 狀態機下限判定順序（僅適用 watch 狀態；active 已於函式頂部短路）
+### 狀態機下限判定順序（僅適用 watch 狀態；active/invalid 已於函式頂部短路）
 
 ```
+status == "invalid"?                         → invalid（不重新判定）
 status == "active"?                          → active（不判定，交給 _check_settlement）
-price < stop_loss?                           → invalid（反轉策略）
-price < ema20?                               → invalid（動能/突破策略）
+today_low <= buy_zone_upper?                 → active（DD-19：盤中觸價成交，優先於下方一切收盤價判定）
+─── 以下僅在今日未觸價成交（today_low > upper，或未提供 today_low）時才會執行 ───
+price < stop_loss?                           → invalid（反轉策略；正常參數配置下此分支實務不可達，見 DD-19）
+price < ema20?                               → invalid（動能/突破策略；同上，實務不可達）
 price > upper * 1.08?                        → invalid（追高）
 price > upper * 1.01?                        → watch（等回落）
-price >= lower 且 price <= stop_loss?        → invalid（開盤跳空安全攔截）
-price >= lower 且 price > stop_loss?         → active（進場）
+price >= lower 且 price <= stop_loss?        → invalid（開盤跳空安全攔截，DD-7，已被 DD-19 取代並列為 dormant）
+price >= lower 且 price > stop_loss?         → active（進場；正常參數配置下實務不可達，僅作未提供 today_low 時的向下相容路徑）
 price < lower 且 price >= stop_loss?         → watch（繼續觀察）
 price < lower 且 price < stop_loss?          → invalid
 ```
 
-- **必須**：`watch → active` 轉換前，需額外確認 `price > stop_loss`，防止 AI 誤設止損在買入區間內時造成績效污染（DD-7）
+- **必須**：`watch → active` 轉換前，需額外確認 `price > stop_loss`，防止 AI 誤設止損在買入區間內時造成績效污染（DD-7，已被 DD-19 取代，見下方 DD-19 說明）
 
 ### 重複訊號雙軌分流（DD-9）
 
@@ -128,7 +132,21 @@ def run_tracker(
 def _fetch_latest(symbols: list[str]) -> dict[str, dict]:
     """
     批次下載最新 Close/High/Low/EMA。
-    High/Low NaN 時 fallback 為 close，確保結算邏輯不受停牌股影響。
+    High/Low 與 price 取自同一列（price_date），避免 Close 缺值時 dropna
+    導致日期錯位；NaN 時 fallback 為 close，確保結算邏輯不受停牌股影響（DD-19）。
+    """
+
+def _eval_status(
+    entry: dict,
+    price: float,
+    ema20: float | None,
+    ema50: float | None = None,
+    today_low: float | None = None,
+) -> tuple[str, str | None]:
+    """
+    評估訊號狀態。today_low 提供且 <= buy_zone_upper 時，優先視為當日觸價
+    成交（DD-19，盤中限價單模擬），優先於下方一切收盤價判定；為 None 或
+    未觸價時完全退化為 DD-19 之前的收盤價判定邏輯。
     """
 
 def _check_settlement(
@@ -143,7 +161,8 @@ def _check_settlement(
     """
 
 def _parse_hold_period(hold_period_str: str, default: int = 10) -> int:
-    """解析 "5-10 個交易日" → 取最大值（10）；無法解析回傳 default。"""
+    """解析 "5-10 個交易日" → 取最大值（10）；無法解析回傳 default。
+    下界固定為 1，AI 給出 <=0 的異常值時夾在 1（DD-19）。"""
 
 def _calc_split_factor(signal_date: str, signal_date_close: float,
                        close_series: pd.Series) -> float:
@@ -206,12 +225,14 @@ def _is_expired(entry: dict) -> bool:
 - **選擇**：以股票第一次 `status` 從 `watch` 轉為 `active` 當日的收盤價作為報酬率計算基準
 - **原因**：系統只知道 AI 給的買入區間（`$185~$188`），不知道用戶的實際成交價。使用「首次落入買入區間當日收盤」作為代理，比 `buy_zone_lower`（AI 下限，過於樂觀）更接近真實進場成本。
 - **捨棄**：`buy_zone_lower` 作為進場價（永遠在區間下限，系統性高估報酬）；`buy_zone_midpoint`（區間中點，仍是估算）
+- **DD-19 更新**：進場代理價已改為 `buy_zone_upper`（使用者實際掛限價單的價位），不再是收盤價，見 DD-19。
 
 ### DD-7: watch → active 加入 stop_loss 進場前安全攔截
 
 - **選擇**：`price >= lower` 後額外確認 `price > stop_loss_price` 才標 active
 - **原因**：AI 偶爾誤將 stop_loss 設在買入區間下限以上（如 buy_zone $45-$50，stop_loss $47），若不攔截，股價落在 $46 時會被標為 active 但實際已在止損下方，後續結算為立即停損，污染績效資料庫。此攔截對反轉策略是雙重保護（頂部已有 `price < stop_loss → invalid`），對動能/突破策略則補上了缺失的進場前核查。
 - **捨棄**：只靠頂部失效條件攔截（動能/突破策略頂部只有 ema20 檢查，不覆蓋 stop_loss）
+- **DD-19 取代**：此機制在 DD-19 之後已列為 dormant——盤中觸價成交判定優先於此分支，若同日觸價又跌破止損，直接視為當日進場並交由 `_check_settlement()` 立即結算 CLOSED_LOSS，而非拒絕進場、不留紀錄。程式碼保留此區塊作為未提供 `today_low` 時的向下相容路徑，見 DD-19。
 
 ### DD-8: holding_days 使用交易日計算（active_days 計數器優先）
 
@@ -295,6 +316,20 @@ def _is_expired(entry: dict) -> bool:
 - **不影響的相鄰邏輯**：`_apply_risk_controls()`（保本鎖定、`highest_close_since_active` 更新）與 `_check_settlement()` 本身即為冪等或以「是否創新高」/「是否已鎖定」判斷，同日重跑重複呼叫不會累積誤差，故不需要疊加 `already_tracked_today` 守衛；新加入的 watch 個股（`base` 字典建立時 `watch_days=0`）不受影響，因為新條目在 B/C 步驟建立、不進入本輪 E 步驟迴圈。
 - **捨棄**：另外新增一個 `_last_counted_date` 欄位或旗標（重複 `tracked_dates` 已有的資訊，違反單一事實來源）；在 `run_tracker()` 開頭偵測 `is_rerun` 後直接整批跳過 E 步驟（會連帶跳過本應執行的 `_check_settlement()`，同日內若股價已觸發止損/停利也無法即時反映）。
 
+### DD-19: 盤中限價單模擬進場（觸價優先於收盤價判定）
+
+- **背景**：使用者的實際操作方式是收盤後跑選股，次一交易日盤中依 AI 給的買入區間掛限價單，價位設在區間**上緣**（`buy_zone_upper`）。原本 `_eval_status()` 只認收盤價：股價盤中回落到區間、使用者的限價單已經成交，但收盤又彈出區間上緣以上時，系統仍判 `watch`（等回落）；若隔日續漲超過 8%，系統甚至會判「已追高，錯過買點」而移除，使用者手上的真實部位從此不被追蹤，`performance_history.json` 記錄的也不是使用者的真實交易。
+- **選擇**：`_eval_status()` 新增 `today_low: float | None = None` 參數，在 `status=="invalid"`/`"active"` 短路之後、其餘所有判定之前，插入一行檢查：`if today_low is not None and today_low <= entry["buy_zone_upper"]: return "active", None`。此檢查優先於下方所有以收盤價為準的判定（反轉止損失效、動能 EMA20 失效、追高失效）。今日未觸價（`today_low > upper`）或呼叫端未提供 `today_low`（`None`）時，完全退化為插入前的原始邏輯，逐行為不變——**下方所有原本分支（含 DD-7 的開盤跳空攔截、`lower` 相關判斷）全部保留，不刪除**，僅在正常情境下變成實務不可達的 dormant 程式碼，作為 AI 給出異常參數或呼叫端未升級時的防禦網。
+- **同日跳空穿越止損的處理**：若同日觸價成交、`today_low` 也同時跌破止損（例如跳空急殺直接開盤在止損之下），`_eval_status()` 仍直接回傳 `active`；`_check_settlement()`（無需任何修改）會在同一輪迭代內立即以 `today_low <= effective_stop_loss` 判定 `CLOSED_LOSS`，比照既有 DD-10 黑天鵝保守原則同日結算歸檔。此為使用者明確選擇的處理方式（保守記為真實交易），取代 DD-7 原本「拒絕進場、完全不留紀錄」的做法——後者與 DD-17 已修復的「虧損繞過結算」屬同一類缺陷（真實經濟事件未被記錄）。
+- **進場代理價改為 `buy_zone_upper`**：不再是收盤價（DD-5 原始選擇），而是使用者實際掛單的價位，拆股情境下讀取已由 `split_factor` 縮放的 `settlement_entry["buy_zone_upper"]`，與 `active_entry_price` 既有「以當下現值標尺存儲」的慣例一致。**不使用 `min(今日開盤, buy_zone_upper)`**：抗辯審查中發現此方案需額外抓取 `today_open` 欄位，換來的精確度僅在「開盤即跳空至限價之下」的罕見情境才有意義，卻引入開盤價異常值（熔斷/停牌）污染 `return_pct` 的風險；`buy_zone_upper` 是 AI 輸出、已由 `_parse_buy_zone()` 驗證過的乾淨數值，無此風險。
+- **前置修正：`_fetch_latest()` 的 High/Low 讀取列對齊**：原本 `price` 取自 `df["Close"].dropna().iloc[-1]`（若最後一列 Close 為 NaN 會回退至前一列），但 `today_high`/`today_low` 卻不論 Close 是否為 NaN，一律取 `df["High"/"Low"].iloc[-1]`（literal 最後一列）。當最後一列 Close 缺值時，`price` 與 `today_high`/`today_low` 會來自不同日期，破壞 DD-19 的觸價判定所依賴的 `today_low <= price <= today_high` 恆等式。修正為 `high_raw = df["High"].loc[price_date]`（`price_date = close.index[-1]`），確保三者一律取自同一列。
+- **`_parse_hold_period()` 加下界 1**：DD-19 讓「當日觸價即成交」變常態（`active_days` 首輪即為 1），若 AI 給出 `hold_period<=0` 的異常值，`_check_settlement()` 的 `active_days >= hold_limit` 會讓剛成交當天就被誤判 `FORCE_EXPIRED`。修正為所有解析路徑（int/float/字串正規表達式）皆套用 `max(1, ...)`，單點根治所有呼叫端。
+- **與 DD-4（追高保護）的交互（記錄，非缺陷）**：若股票跳空暴漲穿越整個買入區間，但當日最低價（開盤前）仍曾 `<= upper`，DD-19 判定為已成交（真實限價單確實會在該價位成交），優先於 DD-4 的「已追高，錯過買點」分類。這是 DD-19 相對 DD-4 的刻意行為變更，非誤判——真實限價單不在乎後續股價暴漲，成交當下即已成交。
+- **與 DD-15/16（watch 到期上限）的交互（記錄，非缺陷）**：一支收盤已跌破 EMA20（趨勢崩壞）但盤中最低價從未觸及買入區間上緣的動能股，在 DD-19 之後不會提前被 `_eval_status()` 判 `invalid`，而是持續 `watch` 直到 `_max_watch_days()` 到期。此為有界行為（受 watch 上限約束），且與使用者「僅依止損/停利區間出場、不依當下均線位置提前反應」的實際操作方式一致，故不額外補上「趨勢轉弱提前出場」機制（與 DD-17 對 active 部位的既有取捨呼應）。
+- **既有 `data/watchlist.json` 存量條目立即套用新規則，不做 migration**：`status=="invalid"` 的短路嚴格位於觸價檢查之前，既有 invalid 條目（例如買入區間已遠低於現價的個股）不會被追溯認定「今日觸價成交」，不受影響（抗辯審查曾提出此疑慮，經確認為虛驚一場，但仍將順序要求明文寫入本規格與 `_eval_status()` 函式頂部註解，避免未來實作變更時因記憶而非約束而出錯）。
+- **捨棄**：`min(today_open, buy_zone_upper)` 進場代理價（見上，換取的精確度不敵新增的異常值風險與額外欄位）；把觸價檢查改寫進 `_eval_status()` 既有分支結構內部（改為插入獨立前置檢查，改動面最小、既有 8 個回歸測試與規格全數不受影響）；刪除因觸價檢查而變成事實不可達的舊分支（保留作防禦網成本趨近於零，刪除需同步改規格與重寫測試，且失去異常參數防禦）。
+- → 本設計經 skeptic/red-team/simplifier 三方抗辯審查（含 OHLC 恆等式前提驗證、`_fetch_latest` 列對齊缺陷、存量資料相容性、`hold_period` 邊界），最終方案為三方收斂後的最小化版本。
+
 ---
 
 ## performance_history.json Schema
@@ -374,3 +409,10 @@ def _is_expired(entry: dict) -> bool:
 - [ ] **DD-18 同日重跑不重複遞增 watch_days**：同一 `market_date` 對同一 watch 條目連續呼叫兩次 `run_tracker()`，`watch_days` 只增加 1，不是 2
 - [ ] **DD-18 同日重跑不重複遞增 active_days**：同一 `market_date` 對同一 active 條目連續呼叫兩次 `run_tracker()`，`active_days` 只增加 1，不是 2
 - [ ] **DD-18 跨日仍正常遞增**：不同 `market_date` 呼叫 `run_tracker()`，`watch_days`/`active_days` 各自正常遞增 1（確認守衛只擋同日重跑，不影響跨日累積）
+- [ ] **DD-19 觸價優先於收盤失效判定**：`today_low <= buy_zone_upper` 時，無論收盤價是否已跌破反轉止損、動能 EMA20，或高於追高門檻，`_eval_status()` 皆回傳 `("active", None)`
+- [ ] **DD-19 invalid 條目免疫**：`status=="invalid"` 的條目傳入任意 `today_low`，皆回傳原有 invalid 原因，不被觸價檢查追溯復活
+- [ ] **DD-19 未提供 today_low 向下相容**：呼叫 `_eval_status()` 不傳 `today_low`（預設 `None`），行為與 DD-19 之前逐字元相同
+- [ ] **DD-19 進場代理價為 buy_zone_upper**：`run_tracker()` 首次轉 active 時，`active_entry_price` 應等於 `buy_zone_upper`，不等於當日收盤價
+- [ ] **DD-19 同日跳空穿越止損結算為 CLOSED_LOSS**：watch 條目當日 `today_low` 同時 `<= buy_zone_upper` 與 `<= stop_loss`，`run_tracker()` 應產生 `CLOSED_LOSS` 結算並寫入 `performance_history.json`，不應落入 `invalid` 分類
+- [ ] **DD-19 前置修正：High/Low 與 Close 同列對齊**：`_fetch_latest()` 遇最後一列 Close 為 NaN 的殘缺列時，`today_high`/`today_low` 應取自 `price` 所屬的同一列，不得誤用殘缺列的異常值
+- [ ] **DD-19 hold_period 下界**：`_parse_hold_period(0)` 與 `_parse_hold_period(-5)` 皆回傳 `1`，不回傳 `0` 或負數

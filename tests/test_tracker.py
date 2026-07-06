@@ -38,6 +38,17 @@ class TestParseHoldPeriod:
     def test_custom_default(self):
         assert tracker._parse_hold_period("-", default=3) == 3
 
+    def test_zero_clamped_to_minimum_one_dd19(self):
+        """DD-19：hold_period<=0 的異常值必須夾在最小值 1，避免同日觸價成交
+        （active_days 首輪即為 1）被誤判為 FORCE_EXPIRED。"""
+        assert tracker._parse_hold_period(0) == 1
+
+    def test_negative_int_clamped_to_minimum_one_dd19(self):
+        assert tracker._parse_hold_period(-5) == 1
+
+    def test_zero_string_clamped_to_minimum_one_dd19(self):
+        assert tracker._parse_hold_period("0") == 1
+
 
 # ── _count_trading_days ─────────────────────────────────────────────
 
@@ -113,6 +124,47 @@ class TestCalcSplitFactor:
         series = self._series(["2024-02-01"], [100.0])
         factor = tracker._calc_split_factor("2024-01-01", 100.0, series)
         assert factor == 1.0
+
+
+# ── _fetch_latest：High/Low 與 Close 同列對齊（DD-19 前置修正）───────
+
+class TestFetchLatestRowAlignment:
+    def test_high_low_aligned_with_valid_close_row_not_incomplete_last_row(self, monkeypatch):
+        """當最後一列 Close 為 NaN（殘缺列）時，High/Low 必須與 dropna 後的
+        有效 Close 取自同一列，不得誤用殘缺列的 High/Low（會破壞
+        today_low <= price <= today_high 恆等式，DD-19 的觸價判定依賴此式）。"""
+        idx = pd.to_datetime(["2026-06-29", "2026-06-30"])
+        df = pd.DataFrame({
+            "Open":   [100.0, 105.0],
+            "High":   [102.0, 999.0],   # 殘缺列的異常值，不應被誤用
+            "Low":    [98.0,  0.1],     # 殘缺列的異常值，不應被誤用
+            "Close":  [100.0, float("nan")],
+            "Volume": [1000, 500],
+        }, index=idx)
+
+        monkeypatch.setattr(tracker.yf, "download", lambda **kwargs: df)
+        result = tracker._fetch_latest(["TEST"])
+
+        assert result["TEST"]["price"] == 100.0
+        assert result["TEST"]["today_high"] == 102.0
+        assert result["TEST"]["today_low"] == 98.0
+
+    def test_high_low_match_close_row_when_no_missing_data(self, monkeypatch):
+        idx = pd.to_datetime(["2026-06-29", "2026-06-30"])
+        df = pd.DataFrame({
+            "Open":   [100.0, 103.0],
+            "High":   [102.0, 106.0],
+            "Low":    [98.0,  101.0],
+            "Close":  [100.0, 105.0],
+            "Volume": [1000, 1200],
+        }, index=idx)
+
+        monkeypatch.setattr(tracker.yf, "download", lambda **kwargs: df)
+        result = tracker._fetch_latest(["TEST"])
+
+        assert result["TEST"]["price"] == 105.0
+        assert result["TEST"]["today_high"] == 106.0
+        assert result["TEST"]["today_low"] == 101.0
 
 
 # ── _eval_status ─────────────────────────────────────────────────────
@@ -206,6 +258,59 @@ class TestEvalStatus:
         status, reason = tracker._eval_status(entry, price=85, ema20=50)
         assert status == "invalid"
         assert "錯過買點" in reason
+
+
+# ── _eval_status：DD-19 盤中限價單模擬進場（today_low 觸價優先） ──────
+
+class TestEvalStatusIntradayTouchDD19:
+    def test_touch_triggers_active_regardless_of_close_price(self):
+        """today_low <= buy_zone_upper 即視為觸價成交，不論收盤價落在何處。"""
+        entry = _watch_entry(buy_zone_upper=105.0)
+        status, reason = tracker._eval_status(entry, price=130, ema20=50, today_low=104.0)
+        assert (status, reason) == ("active", None)
+
+    def test_touch_takes_priority_over_reversal_stop_invalidation(self):
+        entry = _watch_entry(strategy="反轉策略", stop_loss="$90.00", buy_zone_upper=105.0)
+        # 收盤已跌破止損（若照舊邏輯會被判 invalid），但今日曾觸及區間上緣 → 仍視為成交
+        status, reason = tracker._eval_status(entry, price=88, ema20=None, ema50=None, today_low=85.0)
+        assert (status, reason) == ("active", None)
+
+    def test_touch_takes_priority_over_momentum_ema20_invalidation(self):
+        entry = _watch_entry(strategy="動能策略", buy_zone_upper=105.0)
+        status, reason = tracker._eval_status(entry, price=97, ema20=99, today_low=95.0)
+        assert (status, reason) == ("active", None)
+
+    def test_touch_takes_priority_over_chase_high(self):
+        """跳空暴漲穿越整個買入區間：今日曾觸及上緣（限價單真實成交），
+        即使收盤遠高於追高門檻，仍視為已成交，而非「已追高，錯過買點」。"""
+        entry = _watch_entry(buy_zone_upper=100.0)
+        status, reason = tracker._eval_status(entry, price=150, ema20=50, today_low=99.0)
+        assert (status, reason) == ("active", None)
+
+    def test_invalid_status_immune_to_intraday_touch(self):
+        """鎖定順序：觸價檢查嚴格位於 invalid 短路之後，不得追溯復活既有 invalid 條目。"""
+        entry = _watch_entry(status="invalid", invalid_reason="舊原因", buy_zone_upper=105.0)
+        status, reason = tracker._eval_status(entry, price=50, ema20=None, today_low=50.0)
+        assert (status, reason) == ("invalid", "舊原因")
+
+    def test_active_status_short_circuits_before_touch_check(self):
+        entry = _watch_entry(status="active", buy_zone_upper=105.0)
+        status, reason = tracker._eval_status(entry, price=200, ema20=None, today_low=500.0)
+        assert (status, reason) == ("active", None)
+
+    def test_no_touch_falls_back_to_original_close_based_logic(self):
+        """今日未觸價（today_low > upper）時，完全退化為原本收盤價判定，行為不變。"""
+        entry = _watch_entry(buy_zone_upper=100.0)
+        status, reason = tracker._eval_status(entry, price=100 * 1.09, ema20=50, today_low=100 * 1.05)
+        assert status == "invalid"
+        assert "已追高" in reason
+
+    def test_today_low_none_falls_back_to_original_close_based_logic(self):
+        """未提供 today_low（如既有呼叫端未升級）時，完全不影響既有行為，
+        向下相容舊版逐字元一致。"""
+        entry = _watch_entry()
+        status, reason = tracker._eval_status(entry, price=102, ema20=50)
+        assert (status, reason) == ("active", None)
 
 
 # ── _check_settlement ────────────────────────────────────────────────
@@ -676,3 +781,59 @@ class TestRunTrackerSameDayRerunCountersDD18:
 
         watchlist, _ = tracker.run_tracker([], market_date="2026-07-01")
         assert watchlist[0]["watch_days"] == 3, "跨日應正常遞增，守衛不應誤擋非重跑情境"
+
+
+# ── run_tracker：DD-19 盤中限價單模擬進場 ────────────────────────────
+
+class TestRunTrackerIntradayTouchEntryDD19:
+    def _watch_entry(self, **overrides) -> dict:
+        base = {
+            "symbol": "TEST", "name": "Test Corp", "sector": "Technology",
+            "buy_zone": "$100.00～$105.00", "buy_zone_lower": 100.0, "buy_zone_upper": 105.0,
+            "target": "$130.00", "stop_loss": "$95.00", "hold_period": "10",
+            "strategy": "動能策略",
+            "tracked_dates": ["2026-06-29"],
+            "status": "watch", "invalid_reason": None,
+            "watch_days": 1, "active_days": 0,
+            "signal_date_close": 100.0, "date_added": "2026-06-29",
+        }
+        base.update(overrides)
+        return base
+
+    def _flat_series(self, value=100.0, end="2026-06-30", n=60):
+        idx = pd.bdate_range(end=end, periods=n)
+        return pd.Series([value] * n, index=idx)
+
+    def test_entry_price_uses_buy_zone_upper_not_close(self, monkeypatch):
+        """收盤價大幅高於買入區間（盤中回落又反彈），進場代理價仍應為
+        使用者實際掛單的 buy_zone_upper，而非收盤價。"""
+        tracker.save_watchlist([self._watch_entry()])
+        monkeypatch.setattr(tracker, "_fetch_latest", lambda syms: {
+            "TEST": {"price": 118.0, "today_high": 119.0, "today_low": 103.0,
+                     "ema20": 95.0, "ema50": 90.0, "close_series": self._flat_series()},
+        })
+        watchlist, categories = tracker.run_tracker([], market_date="2026-06-30")
+
+        assert [e["symbol"] for e in categories["active"]] == ["TEST"]
+        assert watchlist[0]["active_entry_price"] == 105.0
+
+    def test_gap_through_zone_and_stop_settles_same_day_as_closed_loss(self, monkeypatch):
+        """DD-19 取代 DD-7：同日觸價成交又跌破止損（跳空急殺），保守判定為
+        當日進場即停損，結算歸檔 CLOSED_LOSS，而非舊版直接標記 invalid
+        拒絕進場、完全不留紀錄。"""
+        tracker.save_watchlist([self._watch_entry(stop_loss="$95.00")])
+        monkeypatch.setattr(tracker, "_fetch_latest", lambda syms: {
+            "TEST": {"price": 92.0, "today_high": 104.0, "today_low": 90.0,
+                     "ema20": 100.0, "ema50": 98.0, "close_series": self._flat_series()},
+        })
+        watchlist, categories = tracker.run_tracker([], market_date="2026-06-30")
+
+        assert categories["invalid"] == []
+        assert [e["symbol"] for e in categories["settled"]] == ["TEST"]
+        assert categories["settled"][0]["_exit_reason"] == tracker.EXIT_LOSS
+        assert watchlist == []
+        with open(tracker._PERF_PATH, encoding="utf-8") as f:
+            records = json.load(f)["history_records"]
+        assert len(records) == 1
+        assert records[0]["actual_outcome"]["exit_reason"] == tracker.EXIT_LOSS
+        assert records[0]["performance_metrics"]["return_pct"] < 0

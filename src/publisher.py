@@ -833,9 +833,9 @@ _INFO_HTML = """
   <div class="info-card">
     <h3>🚦 訊號追蹤狀態</h3>
     <table class="info-table">
-      <tr><td>✅ active</td><td>已落入買入區間，顯示持倉天數與彩色浮損益</td></tr>
-      <tr><td>🟡 watch</td><td>略高於買入區間等待回落，或低於下限但尚未跌破止損（繼續觀察）</td></tr>
-      <tr><td>❌ invalid</td><td>趨勢轉弱、跌破止損或開盤跳空攔截，訊號失效（僅發生在 watch 階段；已進場的 active 部位出場只由 settled 控制）</td></tr>
+      <tr><td>✅ active</td><td>當日最低價已觸及買入區間上緣（模擬限價單成交），顯示持倉天數與彩色浮損益</td></tr>
+      <tr><td>🟡 watch</td><td>今日未觸及買入區間，等待回落</td></tr>
+      <tr><td>❌ invalid</td><td>趨勢轉弱或跌破止損，訊號失效（僅發生在今日未觸價成交的 watch 階段；已進場的 active 部位出場只由 settled 控制）</td></tr>
       <tr><td>🗑 expired</td><td>觀察達策略對應上限自動移除（突破/動能 5 日、反轉 10 日；高波動整理市的突破 3 日、VIX&gt;35 尖底的反轉 5 日）</td></tr>
       <tr><td>📦 settled</td><td>停利／停損／移動停利／到期結算，歸檔績效資料庫</td></tr>
     </table>
