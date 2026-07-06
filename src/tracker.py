@@ -207,7 +207,7 @@ def _eval_status(
     回傳 (new_status, invalid_reason)。
     已失效者直接回傳原因，不再重新判斷。
 
-    失效條件依策略類型差異化：
+    失效條件依策略類型差異化（僅適用 watch 狀態）：
     - 反轉策略：進場點本就在 EMA50 下方，以跌破 AI 止損價為失效門檻
     - 動能/突破策略：跌破 EMA20 即失效
 
@@ -215,15 +215,21 @@ def _eval_status(
     - price >= lower → active（進場）
     - price < lower 但 >= stop_loss → watch（繼續觀察，未觸及止損）
     - price < lower 且 < stop_loss → invalid（跌穿止損）
+
+    active 部位不在此函式判定失效或到期：生命週期完全交給
+    _check_settlement() 的四態結算（止損/停利/移動停利/到期）。
+    此函式若對 active 部位另外翻 invalid，會使該部位繞過結算、
+    不寫入 performance_history.json 便被 _is_expired() 無聲移除（DD-17）。
     """
     if entry.get("status") == "invalid":
         return "invalid", entry.get("invalid_reason")
+    if entry.get("status") == "active":
+        return "active", None
 
     lower = entry.get("buy_zone_lower", 0.0)
     upper = entry["buy_zone_upper"]
     strategy = entry.get("strategy", "")
     stop_loss_price = _parse_stop_loss(entry.get("stop_loss", "-"))
-    current_status = entry.get("status", "watch")
 
     # ── 失效條件：依策略差異化 ──
     if strategy == "反轉策略":
@@ -234,9 +240,8 @@ def _eval_status(
         if ema20 is not None and price < ema20:
             return "invalid", "趨勢轉弱，訊號失效"
 
-    # ── 追高失效：僅適用非 active 狀態 ──
-    # active 持倉大漲屬正常獲利波段，由 _check_settlement 接管
-    if current_status != "active" and price > upper * 1.08:
+    # ── 追高失效（僅 watch 階段可達，active 已於上方短路）──
+    if price > upper * 1.08:
         return "invalid", "已追高，錯過買點"
 
     # ── 狀態機判定 ──
@@ -584,7 +589,9 @@ def run_tracker(
         entry["invalid_reason"] = reason
         entry["current_price"]  = price
 
-        # 記錄信號日收盤價（首次追蹤時設定，供後續拆股校正使用）
+        # 存量條目 fallback：正常路徑已在建立條目時直接寫入訊號日收盤（DD-17），
+        # 此處僅補救舊資料或 stock["price"] 缺失的極端情況，補寫值仍為次日收盤
+        # （非精確訊號日價），僅供拆股平移退化使用，不影響新條目。
         if entry.get("signal_date_close") is None:
             entry["signal_date_close"] = price
 
@@ -668,7 +675,10 @@ def run_tracker(
             # ── 計時器（持久化至 JSON）──
             "watch_days":         0,
             "active_days":        0,
-            "signal_date_close":  None,
+            # 訊號日收盤價（DD-17）：直接取自 L2 訊號日資料（stock["price"]），
+            # 不得延遲到首個評估日才寫入，否則與 _calc_split_factor 的
+            # tracked_dates[0] 錨定日錯位，日漲跌超過 ±1% 即誤判拆股。
+            "signal_date_close":  stock.get("price"),
             # ── 進場追蹤 ──
             "active_entry_price": None,
             "active_start_date":  None,
