@@ -23,7 +23,7 @@
 </Output_Constraint>
 ```
 
-### Markdown 候選池表格欄位（28 欄）
+### Markdown 候選池表格欄位（29 欄）
 
 | 欄位 | 說明 |
 |------|------|
@@ -55,6 +55,7 @@
 | Fwd_PE | 預估本益比（`forwardPE`，缺值 fallback `trailingPE`）；`.round(1)`；缺值填 `N/A`，**不觸發 AI 排除**；DD-14 |
 | Profit_Margin | 淨利率（`profitMargins`）；`.round(1)%`；缺值填 `N/A`，**不觸發 AI 排除**；DD-14 |
 | Rev_Growth_YoY | 營收年增率（`revenueGrowth`）；`.round(1)%`；缺值填 `N/A`，**不觸發 AI 排除**；DD-14 |
+| Short_Float_Pct | 空頭持股佔流通股比例（`shortPercentOfFloat`）；`.round(1)%`；缺值填 `N/A`，**不觸發 AI 排除**，僅作軋空風險旗標；DD-17 |
 
 ### 策略指引（System Prompt 約束）
 
@@ -73,6 +74,7 @@
 - `Momentum_ATR = N/A` 或 `VTF_Score = N/A` → **直接排除**（技術數據不足）
 - `Beta_60D = N/A` → **不排除**，忽略 Beta 限制，以 Momentum_ATR 與 VTF_Score 作為核心多空判斷依據
 - `Fwd_PE`/`Profit_Margin`/`Rev_Growth_YoY` 任一為 `N/A` → **不排除**，僅代表該基本面維度無法評估，改倚重其餘維度判斷（DD-14）
+- `Short_Float_Pct = N/A` → **不排除**，僅代表放空數據缺失，不影響其餘判斷（DD-17）
 
 **基本面取捨規則（DD-14）**：技術面強度相近的候選股之間，優先選擇 `Profit_Margin` 為正、`Rev_Growth_YoY`
 為正、`Fwd_PE` 相對同批候選股不過度偏貴的個股；若技術面強但基本面明顯空心（虧損、營收衰退、估值過高），
@@ -326,10 +328,25 @@ vtf_score = round(max(-5.0, vol_ratio * (2 * k_pos - 1)), 2)           # 下限�
 - **不變**：`SYSTEM_PROMPT` 不改動；JSON 輸出 schema 不變；DD-12/DD-13/DD-15 的策略買進區間與止損規則完全不受影響。
 - **捨棄**：ranker 端讀 `dimensions` 自行渲染（統計與呈現分散兩模組）；改寫 `SYSTEM_PROMPT`（靜態字串放動態統計，語意錯位）；hints 放進 `<Market_Regime>`（該區塊語意是「當日大盤環境」，混入歷史統計會稀釋 Regime 服從性指令的權威）。→ 詳見 `plans/2026-07-03-analyzer-ai-hints.md`
 
+### DD-17: 候選池新增 Short_Float_Pct 空頭比例標記（不排除）
+
+- **選擇**：候選池表格新增 `Short_Float_Pct` 欄，插入於 `Rev_Growth_YoY` 之後；取自 `fetcher.fetch_info()` 新增的
+  `short_percent_float`（yfinance `shortPercentOfFloat`，不需額外 API 呼叫）；比照 `Beta_60D`/DD-14 三欄先例，
+  缺值填 `N/A` 且**不觸發 AI 排除**；System Prompt 的 N/A 差異化處理規則同步新增一條
+- **原因**：高空頭比例（實務上 >15% 視為高軋空風險）個股的價格行為容易被空頭回補（short squeeze）或持續施壓
+  兩種極端情境主導，波動特性與一般個股不同，AI 目前完全看不到這個維度。比照 DD-14 的基本面欄位定位——不是
+  用來排除股票，而是讓 AI 在給 `confidence`/`risk` 時能額外納入這個風險旗標
+- **不變**：JSON 輸出 schema 不變，`buy_zone`/`stop_loss` 相關的 DD-12/13/15 策略算法完全不受影響；`tracker.py`
+  零改動
+- **捨棄**：以此欄位做 L1 硬排除（高空頭比例不代表個股體質差，貿然排除會誤殺被錯殺的優質股）；新增
+  `sharesShort`/`shortRatio`（Days-to-Cover）等衍生欄位——`shortPercentOfFloat` 單一欄位已足夠表達風險方向，
+  避免表格欄位過度膨脹
+
 ## Acceptance Criteria
 
 - [ ] Prompt 中 `<Market_Regime>` 區塊含有 `5日` 與 `20日` 漲跌的產業 ETF 資訊
 - [ ] Markdown 表格 header 含 `VTF_Score`、`Momentum_ATR`、`Beta_60D`、`Earnings_Days_Left`（原 `Vol_Ratio`、`Price_20D_Pct` 已移除）
+- [ ] Markdown 表格 header 含 `Short_Float_Pct`；缺值填 `N/A` 且不觸發 AI 排除
 - [ ] BEAR_DISTRIBUTION Regime → `rank_candidates()` 回傳 `[]`，不發出 API 請求
 - [ ] AI 輸出包含 `buy_zone`（格式 `$X~$Y`）、`stop_loss`、`hold_period`
 - [ ] `compute_indicators()` 回傳 dict 含 `momentum_atr`、`vtf_score`、`beta_60d`、`earnings_days_left` keys
