@@ -269,7 +269,7 @@ pytest
 
 ### 今日 watchlist 的自動取代機制
 
-同一天重複執行時，`tracker.py` 會自動清除當日新增的 watch 股票（`date_added == today`），再以本次 AI 結果取代。**不需要手動清空 `watchlist.json`**——除非你想清掉跨日累積的所有追蹤記錄。
+同一天重複執行時，`tracker.py` 會自動清除當日新增的 watch 股票（`date_added == today`），再以本次 AI 結果取代。**不需要手動清空 `watchlist.json`**——除非你想清掉跨日累積的所有追蹤記錄。既有跨日追蹤中的 active/watch 部位，同日內重跑幾次都只會被計入一個交易日（`watch_days`/`active_days` 已依 `tracked_dates` 去重，不會因重跑次數而虛增，見 `specs/tracker.md` DD-18）。
 
 ### 重置追蹤記錄（測試初始化）
 

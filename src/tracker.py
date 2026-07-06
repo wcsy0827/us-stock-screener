@@ -537,7 +537,12 @@ def run_tracker(
     for entry in watchlist:
         sym = entry["symbol"]
 
-        if today not in entry["tracked_dates"]:
+        # 同日重跑判定：tracked_dates 是否已含今日（DD-18）。
+        # watch_days/active_days 的遞增必須依此去重，否則同一天內多次執行
+        # （手動重跑並確認繼續）會讓計數器被重複累加，提前觸發 FORCE_EXPIRED
+        # 或 watch 上限，並污染 performance_history.json 的 holding_days。
+        already_tracked_today = today in entry["tracked_dates"]
+        if not already_tracked_today:
             entry["tracked_dates"].append(today)
 
         if sym not in latest:
@@ -624,10 +629,12 @@ def run_tracker(
                 settlement_entry["highest_close_since_active"] = price
 
         # 計數器遞增（直接寫入 entry，確保被 JSON 序列化）
-        if new_status == "watch":
-            entry["watch_days"] = entry.get("watch_days", 0) + 1
-        elif new_status == "active":
-            entry["active_days"] = entry.get("active_days", 0) + 1
+        # 同日重跑（already_tracked_today=True）不重複遞增（DD-18）
+        if not already_tracked_today:
+            if new_status == "watch":
+                entry["watch_days"] = entry.get("watch_days", 0) + 1
+            elif new_status == "active":
+                entry["active_days"] = entry.get("active_days", 0) + 1
 
         # 風控更新：保本鎖定 + 最高收盤追蹤（DD-12、DD-13）；僅持續 active 狀態執行
         if prev_status == "active" and new_status == "active":
