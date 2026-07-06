@@ -77,6 +77,8 @@ def fetch_market_context(
     """
     回傳完整大盤背景，供 _build_prompt() 使用。
     含 regime, market_breadth_pct, vix, sp500, sectors。
+    SPY/產業 ETF 優先從 all_stocks_data（Step 2 已下載）複用，不重複下載；
+    僅缺失的 ticker 才個別補抓，^VIX 一律單獨下載（DD-6）。
     """
 ```
 
@@ -121,6 +123,14 @@ def fetch_market_context(
 - **回傳值不變**：`fetch_regime_quick()` 仍回傳 `(regime, breadth_pct, vix_value, vix_ok)`；`breadth_pct` 改為 N 日均值（更穩定），Step 5.5 照常複用
 - **捨棄**：單日廣度（邊界震盪）；外部狀態檔儲存歷史廣度（增加 I/O，且現有 price_data 已含所需 90 日歷史）；滯後帶（hysteresis band）——需記憶「前次 Regime」狀態，引入狀態依賴，實作更複雜且直覺性低
 
+### DD-6: fetch_market_context 複用 Step 2 已下載的 SPY/產業 ETF 資料，不重複下載
+
+- **選擇**：`fetch_market_context()` 優先從 `all_stocks_data`（pipeline Step 2 批次下載的 `price_data`，含 SPY 與全部 11 個板塊 ETF、90 日歷史）讀取 SPY 與候選產業 ETF 的走勢，只有當某個 ticker 不在 `all_stocks_data` 中才個別發出下載請求；`^VIX` 因為從未包含在 Step 2 的下載範圍內，一律單獨下載。
+- **原因**：Step 2（`fetcher.fetch_batch`）已經下載過 SPY 與全部板塊 ETF（90 日），`fetch_market_context()` 原本卻又對同一批 ticker 重新發出一次 60 日的 `yf.download`，純屬重複下載、浪費 API 配額與執行時間，且與 pipeline 呼叫端唯一的傳入值 `all_stocks_data=price_data`（見 `specs/pipeline.md`）已經提供了所需資料互相矛盾。
+- **實作**：`missing_tickers = [t for t in ({"SPY"} | set(sectors_to_fetch.values())) if t not in all_stocks_data]`；下載清單改為 `["^VIX"] + missing_tickers`；`_get(ticker)` 優先回傳 `all_stocks_data[ticker]`，找不到才退化為原本的下載結果查詢。
+- **向下相容**：`all_stocks_data` 為 `None` 或未提供時，`missing_tickers` 等於全部 SPY/ETF，行為與 DD-6 之前完全相同（一律下載）。
+- **捨棄**：完全移除獨立下載、要求呼叫端保證 `all_stocks_data` 一定含有全部所需 ticker（過於僵化，任何未來新增產業或 Step 2 下載失敗的邊界情況都會直接壞掉；保留「缺失才補抓」的退化路徑更穩健）。
+
 ## Acceptance Criteria
 
 - [ ] 廣度=70%、VIX=15 → `BULL_TREND`
@@ -137,3 +147,6 @@ def fetch_market_context(
 - [ ] 廣度=61%（前日 BULL_TREND）→ 廣度=59%（今日，落在遲滯帶 ±2%）→ 不切換，維持 BULL_TREND
 - [ ] 廣度=59%（前日 BULL_TREND）→ VIX 從 18 升至 28（跨越結構邊界）→ 不套用遲滯，重新計算 Regime
 - [ ] last_run.json 不存在或 market_date 非昨日 → prev_regime=None，不啟用遲滯
+- [ ] **DD-6 複用已下載資料**：`all_stocks_data` 含 SPY 與候選產業 ETF 時，`fetch_market_context()` 觸發的 `yf.download` 只請求 `^VIX`
+- [ ] **DD-6 部分缺失時補抓**：`all_stocks_data` 缺少某個候選產業 ETF 時，下載清單應包含 `^VIX` 與該缺失的 ticker，不含已存在的 SPY
+- [ ] **DD-6 向下相容**：未提供 `all_stocks_data` 時，下載清單應包含 `^VIX`、`SPY` 與全部候選產業 ETF（行為與 DD-6 之前相同）

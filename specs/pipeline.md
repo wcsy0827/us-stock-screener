@@ -57,8 +57,9 @@
 - 近 5 日有成交（避免停牌股）
 
 **第二段（Step 4.5 — 財報防禦牆）**
-- 未來 3 天內無已知財報（`apply_earnings_filter()`）
+- 未來 5 天內無已知財報（`apply_earnings_filter()`，`EARNINGS_BLACKOUT_DAYS`，見 `specs/earnings.md` DD-E4）
 - `earnings_data[sym] is None` → 視為無已知財報，通過
+- 判斷基準日 `today` 由 `pipeline.py` 傳入 `market_date`（非 `datetime.now()`），與專案「一切錨定 market_date」原則一致；`market_date` 缺失時 fallback 為 `date.today()`（見 `specs/earnings.md` DD-E5）
 - 詳見 `specs/earnings.md`
 
 ### 回傳結構（`summary` dict）

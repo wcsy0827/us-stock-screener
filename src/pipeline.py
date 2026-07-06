@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import time
 import traceback
+from datetime import date
 
 from universe import fetch_sp500
 from market import fetch_market_context, fetch_regime_quick, SECTOR_ETF_MAP
@@ -142,7 +143,9 @@ def run(
         earnings_data = fetch_earnings_dates(
             list(price_data.keys()), info_data, post_l1_symbols=liq_filtered
         )
-        l1_passed = apply_earnings_filter(liq_filtered, earnings_data)
+        market_date_str = summary.get("market_date")
+        market_date_obj = date.fromisoformat(market_date_str) if market_date_str else None
+        l1_passed = apply_earnings_filter(liq_filtered, earnings_data, today=market_date_obj)
         summary["l1_count"] = len(l1_passed)
         print(f"[pipeline] 完成 ({_elapsed(t)})｜財報過濾後 {len(l1_passed)} 支")
     except Exception as e:
