@@ -55,6 +55,7 @@
 - 30 日平均日成交額 > $1,000 萬（avg_vol_30 × close，env: MIN_DOLLAR_VOLUME，預設 $10M）
 - 市值 > 3 億（$300M）；市值為 None（API 缺失）視同不足，直接排除
 - 近 5 日有成交（避免停牌股）
+- ATR% ≤ 8%（`ATR14 ÷ 最新收盤價 × 100`，env: `MAX_ATR_PCT`，預設 8）；歷史數據不足 15 筆無法計算時不排除（DD-8）
 
 **第二段（Step 4.5 — 財報防禦牆）**
 - 未來 5 天內無已知財報（`apply_earnings_filter()`，`EARNINGS_BLACKOUT_DAYS`，見 `specs/earnings.md` DD-E4）
@@ -131,6 +132,16 @@ def run(
 - **原因**：hints 的唯一消費者是 Step 6 的 L3 Prompt（ranker DD-16），必須在 ranker 之前生成；VIX Gate 中斷時 L3 不執行，hints 無消費者，放在 Gate 之後可免做白工。tracker 結算在 main.py 的 ranker 之後，analyzer 讀到的是截至前一輪執行的結算資料（1-cycle lag，與 tracker DD-11 一致，見 `specs/analyzer.md` DD-1）。
 - **捨棄**：放在 main.py 的 run_tracker 之後（hints 要等下一輪才被消費，寫入時機與消費時機分離、更難推理）；analyzer 失敗中斷流程（歷史回饋是加分項，不該阻斷選股主流程）。→ 詳見 `plans/2026-07-03-analyzer-ai-hints.md`
 
+### DD-8: L1 新增 ATR% 波動上限風控過濾
+
+- **選擇**：`filter.py` 新增 `_atr_pct()`（沿用各模組各自持有指標計算的既有慣例，不抽共用指標庫），對 `ATR14 ÷ 最新收盤價 × 100 > MAX_ATR_PCT`（預設 8%）的個股直接排除；歷史數據不足 15 筆（無法算 ATR）時視為無法判斷，不排除
+- **原因**：`ranker.py` DD-15 已把動能/突破/反轉三策略的止損統一收斂為「錨點下方 2%」的固定緩衝，但這個緩衝寬度完全沒有對照個股自身的日內波動幅度。日均 ATR% 達 6~8% 以上的個股，2% 止損緩衝形同虛設——正常的單日雜訊擺動就足以觸發 `_check_settlement()` 的 `today_low ≤ effective_stop_loss`（DD-10），使用者掛的限價單／止損單會被雜訊掃損，而非真正的趨勢反轉。在 L1 就排除這類個股，比讓它們進入 L2/L3 後才被 AI 或使用者事後發現「止損邏輯對這支股票不適用」更早攔截問題
+- **捨棄**：
+  1. 用固定百分比止損緩衝隨 ATR% 動態縮放（例如 `max(2%, ATR% × 0.5)`）——需要同步修改 `ranker.py` System Prompt 的三段止損規則與 `tracker.py` 的止損解析，改動範圍超出「L1 補漏」的最小化原則，且 DD-15 才剛把止損統一成固定百分比，不宜短期內又推翻
+  2. 只在 L3 候選池表格新增 ATR% 欄位讓 AI 自行判斷（不排除）——ATR% 與止損緩衝寬度的錯位是機械性的數學關係，不需要 AI 用自然語言推理，L1 硬排除更直接且免費（現有 `price_data` 已有 OHLCV，零額外下載）
+- **驗證**：`pytest`（無回歸）+ `python main.py --dry-run --yes` 實跑確認 L1 通過數量與過濾原因訊息符合預期
+- **備註**：財報防禦牆的 `market_date` 錨定原本也規劃在本 DD 內，實作期間發現已有另一 PR（#59）先行處理並合併為 `apply_earnings_filter(today=...)`（見 `specs/earnings.md` DD-E5），故本 DD 僅保留 ATR% 過濾這一項，避免同一決策重複記錄於兩處
+
 ### DD-3: L3 失敗降級至 L2 前 top_n
 
 - **選擇**：`_enrich_fallback()` 用 L2 分數排序補齊 AI 輸出欄位（buy_zone 等欄位填 "-"）
@@ -146,3 +157,5 @@ def run(
 - [ ] Step 4.5：有財報股票 → 被排除，`summary["l1_count"]` 為財報過濾後的數量
 - [ ] DeepSeek API 失敗：流程繼續，`ranked` 為 `_enrich_fallback()` 的結果（非空列表）
 - [ ] BEAR_DISTRIBUTION → `ranked = []`，`summary["success"] = True`（非錯誤）
+- [ ] ATR% 波動過大個股（ATR14/Close×100 > 8%）→ 被 `apply_filters()` 排除，`reasons` 記錄「波動過大」
+- [ ] 歷史數據不足 15 筆的個股 → ATR% 檢查不排除（無法判斷，回傳 None 視為通過）

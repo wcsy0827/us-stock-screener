@@ -57,15 +57,15 @@ S&P 500 (~503 支)
                               廣度邊界遲滯帶 ±2%（讀取 last_run.json，VIX 跨越結構邊界時強制放行）
   ↓ Step 3   fetcher.py      抓基本面（7 日快取），順帶提取 earningsDate 欄位
   ↓ Step 3.5 earnings.py     財報日查詢（Tier 1+2）→ earnings_registry.json（30 日快取）
-  ↓ Step 4   filter.py       L1 流動性硬篩（股價/日成交額/市值/交易天數）
+  ↓ Step 4   filter.py       L1 流動性硬篩（股價/日成交額/市值/交易天數/ATR% 波動上限）
   ↓ Step 4.5 earnings.py     Tier 3 精準補抓（僅對流動性篩選後倖存個股）
-             filter.py       財報防禦牆（排除 5 天內有財報的個股）
+             filter.py       財報防禦牆（排除 5 天內有財報的個股，cutoff 錨定 market_date）
   ↓ Step 5   scorer.py       L2 技術評分（六維度 100 分；動態門檻依 Regime；相對強度 RS 維度）
                               CONSOLIDATION_VOLATILE 門檻 65 分，PANIC_REVERSAL 40 分
   ↓ Step 5.5 market.py       完整大盤 ETF 背景（直接複用 Step 2.5 的廣度與 VIX，不重算）
   ↓ Step 5.7 analyzer.py     本地績效診斷（讀 performance_history.json，歸納 Regime×策略×產業賺賠關聯
                               → data/ai_hints.json；分組 <3 筆或總樣本 <5 筆不生成回饋；失敗不中斷流程）
-  ↓ Step 6   ranker.py       L3 DeepSeek AI 精選（≤5 支；28 欄 Markdown 表含 RS_vs_Sector 與基本面欄位；每產業 ≤8 支）
+  ↓ Step 6   ranker.py       L3 DeepSeek AI 精選（≤5 支；29 欄 Markdown 表含 RS_vs_Sector、基本面欄位、空頭比例；每產業 ≤8 支）
                               發送前自動讀取 ai_hints.json，非空時在 Prompt 末尾附加 Historical_Performance_Review 區塊
              tracker.py      訊號追蹤（watchlist.json）→ 結算歸檔（performance_history.json）
              publisher.py    HTML 報告 → GitHub Pages（個股浮損益、今日結算區段、策略 Tooltip、歷史績效儀表板）
@@ -161,6 +161,10 @@ S&P 500 (~503 支)
 27. **財報防禦牆判斷基準日錨定 market_date（filter.py DD-E5）**：`apply_earnings_filter()` 原本用 `date.today()` 判斷「未來 5 天內是否有財報」，與專案其餘模組（`main.py`、`tracker.py`）一律錨定 `market_date` 的原則不一致，台灣本地執行時系統時鐘與 `market_date` 可能相差一天，讓財報黑名單窗口偏移。修法：新增 `today: date | None = None` 參數，由 `pipeline.py` 傳入 `market_date`（未提供時 fallback 為 `date.today()` 以保持向下相容）。→ 詳見 `specs/earnings.md`
 
 28. **fetch_market_context 複用 Step 2 已下載的 SPY/產業 ETF 資料，不重複下載（market.py DD-6）**：Step 2（`fetcher.fetch_batch`）已下載過 SPY 與全部板塊 ETF（90 日），`fetch_market_context()` 原本卻對同一批 ticker 重新發出一次 60 日下載，純屬浪費 API 配額與執行時間（無正確性風險，純效率問題）。修法：優先從 `all_stocks_data`（pipeline 呼叫端已傳入 `price_data`）讀取 SPY/產業 ETF，只有缺失的 ticker 才個別補抓；`^VIX` 從未包含在 Step 2 範圍內，一律單獨下載。未提供 `all_stocks_data` 時行為與修法前相同（向下相容）。→ 詳見 `specs/market.md`
+
+29. **L1 新增 ATR% 波動上限風控過濾（filter.py DD-8）**：`ranker.py` DD-15 已把三策略止損統一收斂為「錨點下方 2%」固定緩衝，但緩衝寬度沒有對照個股自身波動——日均 ATR% 達 6~8% 以上的個股，2% 止損形同虛設，正常雜訊就會掃損。新增 `_atr_pct()`（ATR14/收盤價百分比）在 L1 排除 `> MAX_ATR_PCT`（預設 8%，`env: MAX_ATR_PCT`）的個股；歷史數據不足 15 筆無法計算時不排除。→ 詳見 `specs/pipeline.md`
+
+30. **L3 候選池新增 Short_Float_Pct 空頭比例標記（ranker.py DD-17）**：候選池表格新增 `Short_Float_Pct` 欄（`shortPercentOfFloat`，`fetcher.fetch_info()` 免費附帶），比照 DD-14 基本面三欄先例，缺值填 `N/A` 且**不觸發 AI 排除**，僅供 AI 在 `risk`/`confidence` 中納入軋空風險旗標（實務上 >15% 視為高風險）。JSON 輸出 schema 不變，`buy_zone`/止損相關的 DD-12/13/15 策略算法不受影響。→ 詳見 `specs/ranker.md`
 
 12. **報告日期與防重複執行皆錨定 UTC（main.py / tracker.py）**：CI 在 UTC 時區執行；台灣時間 7/1 08:00 = UTC 6/30 24:00，yfinance 此時拿到的最後數據仍是 6/30——報告正確標示 6/30 是預期行為，不是 bug。規則如下：
     - **`main.py`**：`stats["date"]` 必須用 `datetime.strptime(market_date_str, "%Y-%m-%d")`（`market_date_str` 來自 `summary["market_date"]` = `price_data["SPY"].index[-1].date()`），**不得用 `datetime.now()`**。`datetime.now()` 在非 UTC 時區執行時，與 market_date 不一致，會產生「報告標題 7/1、數據內容 6/30」的誤導標籤。

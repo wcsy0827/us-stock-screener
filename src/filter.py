@@ -12,7 +12,31 @@ MIN_PRICE = float(os.getenv("MIN_PRICE", "5"))
 MIN_DOLLAR_VOLUME = float(os.getenv("MIN_DOLLAR_VOLUME", "10000000"))  # $10M/日
 MIN_MARKET_CAP = float(os.getenv("MIN_MARKET_CAP", "300000000"))
 MIN_TRADING_DAYS = 5   # 近5日至少有5筆數據（排除停牌）
+MAX_ATR_PCT = float(os.getenv("MAX_ATR_PCT", "8"))  # ATR14/收盤價百分比上限（DD-8）
 EARNINGS_BLACKOUT_DAYS = 5
+
+
+def _atr_pct(df: pd.DataFrame, length: int = 14) -> float | None:
+    """ATR14 佔最新收盤價的百分比。歷史數據不足時回傳 None（視為無法判斷，不排除）。"""
+    close = df["Close"].dropna()
+    high = df["High"].dropna()
+    low = df["Low"].dropna()
+    if len(close) < length + 1 or len(high) < length + 1 or len(low) < length + 1:
+        return None
+    prev_close = close.shift(1)
+    tr = pd.concat([
+        high - low,
+        (high - prev_close).abs(),
+        (low - prev_close).abs(),
+    ], axis=1).max(axis=1)
+    atr_series = tr.ewm(alpha=1 / length, adjust=False).mean().dropna()
+    if atr_series.empty:
+        return None
+    atr14 = float(atr_series.iloc[-1])
+    latest_close = float(close.iloc[-1])
+    if latest_close == 0:
+        return None
+    return atr14 / latest_close * 100
 
 
 def apply_filters(
@@ -27,6 +51,7 @@ def apply_filters(
     - 近 30 日平均日成交額 > MIN_DOLLAR_VOLUME（股數 × 收盤價）
     - 市值 > MIN_MARKET_CAP；市值 None（API 缺失）視同不足直接排除
     - 近 5 日有交易（至少 5 筆有效數據）
+    - ATR14/收盤價百分比 <= MAX_ATR_PCT；歷史數據不足 15 筆無法計算時不排除（DD-8）
     """
     passed: list[str] = []
     reasons: dict[str, str] = {}
@@ -62,6 +87,11 @@ def apply_filters(
             continue
         if market_cap < MIN_MARKET_CAP:
             reasons[sym] = f"市值偏小(${market_cap/1e6:.0f}M)"
+            continue
+
+        atr_pct = _atr_pct(df)
+        if atr_pct is not None and atr_pct > MAX_ATR_PCT:
+            reasons[sym] = f"波動過大(ATR%={atr_pct:.1f}%)"
             continue
 
         if len(recent_5) < MIN_TRADING_DAYS:

@@ -233,6 +233,7 @@ def fetch_info(symbols: list[str]) -> dict[str, dict]:
                     "forward_pe": info.get("forwardPE") or info.get("trailingPE"),
                     "profit_margin": info.get("profitMargins"),
                     "revenue_growth": info.get("revenueGrowth"),
+                    "short_percent_float": info.get("shortPercentOfFloat"),
                 }
                 break
             except Exception as e:

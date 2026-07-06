@@ -309,7 +309,7 @@ def _generate_candidates_markdown_table(
     current_date: date | None = None,
 ) -> str:
     """
-    將 L2 候選股清單轉換為 28 欄 Markdown 表格（含 RS_vs_Sector DD-10、基本面維度 DD-14）。
+    將 L2 候選股清單轉換為 29 欄 Markdown 表格（含 RS_vs_Sector DD-10、基本面維度 DD-14、Short_Float_Pct DD-17）。
     """
     _SECTOR_ABBR = {
         " Services": "", " Cyclical": "", " Defensive": "",
@@ -329,7 +329,7 @@ def _generate_candidates_markdown_table(
         " | RSI | MACD_Hist | VTF_Score | Price_5D_Pct | Momentum_ATR"
         " | EMA50 | Low_20D | Stoch_K | RSI_5D_Ago"
         " | RS_vs_Sector | 52W_High_Dist | Beta_60D | Earnings_Days_Left"
-        " | Fwd_PE | Profit_Margin | Rev_Growth_YoY |"
+        " | Fwd_PE | Profit_Margin | Rev_Growth_YoY | Short_Float_Pct |"
     )
     sep = (
         "|--------|-------------|--------|----------|--------------|----------"
@@ -337,7 +337,7 @@ def _generate_candidates_markdown_table(
         "|-----|-----------|-----------|--------------|-------------|"
         "-------|---------|---------|------------"
         "|--------------|---------------|----------|-------------------"
-        "|--------|----------------|-----------------|"
+        "|--------|----------------|-----------------|-----------------|"
     )
     rows = [header, sep]
 
@@ -416,6 +416,10 @@ def _generate_candidates_markdown_table(
         rev_growth_v = info.get("revenue_growth")
         rev_growth_str = f"{rev_growth_v * 100:+.1f}%" if rev_growth_v is not None else "N/A"
 
+        # 空頭比例標記（DD-17），不排除，僅供 AI 判斷軋空風險
+        short_float_v = info.get("short_percent_float")
+        short_float_str = f"{short_float_v * 100:.1f}%" if short_float_v is not None else "N/A"
+
         sector_display = sector_raw or "Unknown"
         for k, v in _SECTOR_ABBR.items():
             sector_display = sector_display.replace(k, v)
@@ -426,7 +430,7 @@ def _generate_candidates_markdown_table(
             f" | {rsi_str} | {macd_tag} | {vtf_str}"
             f" | {p5d_str} | {mom_str} | {ema50_str} | {low20_str} | {stoch_str} | {rsi5ago_str}"
             f" | {rs_str} | {dist_str} | {beta_str} | {ed_str}"
-            f" | {fwd_pe_str} | {margin_str} | {rev_growth_str} |"
+            f" | {fwd_pe_str} | {margin_str} | {rev_growth_str} | {short_float_str} |"
         )
 
     return "\n".join(rows)
@@ -540,7 +544,9 @@ def _build_prompt(
         "- Fwd_PE: 預估本益比（缺值時退化為trailing PE）；數值愈高代表市場對獲利的預期愈貴，"
         "同一批候選股橫向比較即可判斷相對貴賤；N/A=數據缺失，不代表不能選\n"
         "- Profit_Margin: 淨利率；正值愈高代表獲利體質愈紮實，負值代表虧損中；N/A=數據缺失，不代表不能選\n"
-        "- Rev_Growth_YoY: 營收年增率；正值代表營收成長，負值代表營收衰退；N/A=數據缺失，不代表不能選"
+        "- Rev_Growth_YoY: 營收年增率；正值代表營收成長，負值代表營收衰退；N/A=數據缺失，不代表不能選\n"
+        "- Short_Float_Pct: 空頭持股佔流通股比例；>15%視為高軋空風險（波動可能被空頭回補放大），"
+        "應在risk中提示；N/A=數據缺失，不代表不能選"
     )
     pool_block = f"{table}\n\n{field_defs}"
 
@@ -637,6 +643,7 @@ N/A 差異化處理：
 - Momentum_ATR = N/A 或 VTF_Score = N/A → 直接排除（技術數據不足）
 - Beta_60D = N/A → 不排除，以 Momentum_ATR 和 VTF_Score 作為核心多空判斷
 - Fwd_PE、Profit_Margin、Rev_Growth_YoY 任一為 N/A → 不排除，僅代表該基本面維度無法評估，改倚重其餘維度判斷
+- Short_Float_Pct = N/A → 不排除，僅代表放空數據缺失
 
 請以如下 JSON 格式輸出（根節點為物件，陣列放在 "selections" key 中），不要其他說明文字：
 {"selections": [ {...}, {...}, ... ]}

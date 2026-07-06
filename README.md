@@ -45,6 +45,7 @@ S&P 500（~503 支）
     │
     ▼  Step 4  filter.py — L1 流動性篩選
     │  股價 > $5、30 日均量美元成交額 > $1,000 萬、市值 > 3 億（None 視為缺失排除）、近 5 日有交易
+    │  ATR14/收盤價 ≤ 8%（波動風控，數據不足 15 筆不排除）
     │  → 通常剩 200~350 支
     │
     ▼  Step 4.5  earnings.py + filter.py — 財報防禦牆
@@ -65,7 +66,7 @@ S&P 500（~503 支）
     ▼  Step 6  ranker.py — L3 DeepSeek AI 精選
        依 Regime 主推策略從候選池選出最多 5 支
        發送前自動讀取 ai_hints.json，非空時在 Prompt 末尾附加歷史績效回饋區塊
-       候選表格同時附基本面欄位（估值 Fwd_PE、獲利品質 Profit_Margin、成長性 Rev_Growth_YoY）供 AI 交叉判斷
+       候選表格同時附基本面欄位（估值 Fwd_PE、獲利品質 Profit_Margin、成長性 Rev_Growth_YoY）與空頭比例（Short_Float_Pct）供 AI 交叉判斷
        每支附：買入區間、目標價、止損、持有天數（純整數）、策略理由
        BEAR_DISTRIBUTION 時直接回傳空列表，不建議任何買入
 ```
@@ -191,6 +192,7 @@ MIN_SCORE=60              # L2 最低評分門檻（程式預設 60，可自行�
 MIN_PRICE=5               # 最低股價
 MIN_DOLLAR_VOLUME=10000000  # 近 30 日均量美元成交額下限（$1,000 萬）
 MIN_MARKET_CAP=300000000  # 最低市值（3 億美元）
+MAX_ATR_PCT=8             # ATR14/收盤價百分比上限（波動風控，數據不足 15 筆不排除）
 MIN_AI_CONFIDENCE=6       # AI 信心分數最低門檻（1-10，低於此分不加入追蹤）
 ```
 
