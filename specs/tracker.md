@@ -288,6 +288,13 @@ def _is_expired(entry: dict) -> bool:
 - **不修復存量資料**：既有 `data/watchlist.json` 條目的 `signal_date_close` 若為舊邏輯寫入的錯位值，不做一次性 migration；此系統目前處於冷啟動期（尚無 active 部位、`performance_history.json` 尚未產生），存量 `watch`/`invalid` 條目會在數個交易日內依既有 watch 上限自然到期，無需回溯修正。
 - **捨棄**：讓 active 部位觸發失效時改以收盤價強制結算歸檔（等同新增第二套結算路徑，與 `_check_settlement()` 職責重疊，複雜化生命週期管理）；把 `_calc_split_factor` 的錨定日從 `tracked_dates[0]` 改為 `tracked_dates[1]`（治標且該索引在條目第一輪評估時尚不存在，需額外邊界處理，比直接修正寫入時機更脆弱）。
 
+### DD-18: 同日重跑不得重複遞增 watch_days/active_days
+
+- **選擇**：`run_tracker()` 的 E 步驟在附加 `tracked_dates` 前，先讀出 `already_tracked_today = today in entry["tracked_dates"]`；`tracked_dates.append(today)` 沿用既有的「未含今日才附加」去重邏輯，但計數器遞增（`watch_days += 1` / `active_days += 1`）額外加上 `if not already_tracked_today` 守衛，讓兩者的去重判斷共用同一個旗標，維持單一事實來源。
+- **原因**：`tracked_dates` 本身已正確去重（`if today not in entry["tracked_dates"]`），但緊接著的計數器遞增沒有比照守衛，是兩段邏輯各自為政、未同步更新的遺漏。使用者的實際操作習慣是收盤後執行一次，但偶爾會在本機重跑核對（`main.py` 對同日重跑僅詢問是否繼續，`--yes` 略過確認），一旦選擇繼續執行，`watch_days`/`active_days` 會在同一天內被多次遞增。後果：`active_days` 可能提前抵達 `hold_period` 觸發 `FORCE_EXPIRED`（同一天內連跑兩次即可能少算一個完整交易日就強制出場），`_max_watch_days()` 的到期判斷同樣受影響；`_archive_to_performance_history()` 的 `holding_days`（DD-8，優先取 `active_days` 計數器）因而失真，多算的重跑次數會被誤記為多出的交易日。
+- **不影響的相鄰邏輯**：`_apply_risk_controls()`（保本鎖定、`highest_close_since_active` 更新）與 `_check_settlement()` 本身即為冪等或以「是否創新高」/「是否已鎖定」判斷，同日重跑重複呼叫不會累積誤差，故不需要疊加 `already_tracked_today` 守衛；新加入的 watch 個股（`base` 字典建立時 `watch_days=0`）不受影響，因為新條目在 B/C 步驟建立、不進入本輪 E 步驟迴圈。
+- **捨棄**：另外新增一個 `_last_counted_date` 欄位或旗標（重複 `tracked_dates` 已有的資訊，違反單一事實來源）；在 `run_tracker()` 開頭偵測 `is_rerun` 後直接整批跳過 E 步驟（會連帶跳過本應執行的 `_check_settlement()`，同日內若股價已觸發止損/停利也無法即時反映）。
+
 ---
 
 ## performance_history.json Schema
@@ -364,3 +371,6 @@ def _is_expired(entry: dict) -> bool:
 - [ ] **DD-17 動能股止損未觸時維持 active**：動能策略 active 部位 `close < ema20` 但 `today_low > effective_stop_loss` → 維持 `active`，不進入 `invalid`/`expired`
 - [ ] **DD-17 signal_date_close 訊號日即時寫入**：`run_tracker()` 處理新訊號（B/C 步驟）當輪，新條目的 `signal_date_close` 應等於該股 L2 訊號日 `price`，不為 `None`
 - [ ] **DD-17 訊號日正常漲跌不誤判拆股**：訊號日與次一評估日之間股價正常波動（漲跌 ≤ 若干 %，未實際拆股），`split_factor` 應 ≈ 1.0，不觸發拆股平移、不影響 active 判定
+- [ ] **DD-18 同日重跑不重複遞增 watch_days**：同一 `market_date` 對同一 watch 條目連續呼叫兩次 `run_tracker()`，`watch_days` 只增加 1，不是 2
+- [ ] **DD-18 同日重跑不重複遞增 active_days**：同一 `market_date` 對同一 active 條目連續呼叫兩次 `run_tracker()`，`active_days` 只增加 1，不是 2
+- [ ] **DD-18 跨日仍正常遞增**：不同 `market_date` 呼叫 `run_tracker()`，`watch_days`/`active_days` 各自正常遞增 1（確認守衛只擋同日重跑，不影響跨日累積）

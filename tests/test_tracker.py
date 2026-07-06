@@ -594,3 +594,85 @@ class TestRunTrackerActiveSettlementDD17:
         assert categories["expired"] == []
         assert categories["settled"] == []
         assert watchlist[0]["status"] == "active"
+
+
+# ── run_tracker：DD-18 同日重跑不得重複遞增 watch_days/active_days ──
+
+class TestRunTrackerSameDayRerunCountersDD18:
+    def _flat_series(self, value=100.0, end="2026-06-30", n=60):
+        idx = pd.bdate_range(end=end, periods=n)
+        return pd.Series([value] * n, index=idx)
+
+    def test_watch_counter_not_double_incremented_on_same_day_rerun(self, monkeypatch):
+        entry = {
+            "symbol": "TEST", "name": "Test Corp", "sector": "Technology",
+            "buy_zone": "$100.00～$105.00", "buy_zone_lower": 100.0, "buy_zone_upper": 105.0,
+            "target": "$130.00", "stop_loss": "$90.00", "hold_period": "10",
+            "strategy": "動能策略",
+            "tracked_dates": ["2026-06-29"],
+            "status": "watch", "invalid_reason": None,
+            "watch_days": 1, "active_days": 0,
+            "signal_date_close": 100.0, "date_added": "2026-06-29",
+        }
+        tracker.save_watchlist([entry])
+        monkeypatch.setattr(tracker, "_fetch_latest", lambda syms: {
+            "TEST": {"price": 108.0, "today_high": 108.5, "today_low": 107.0,
+                     "ema20": 100.0, "ema50": 95.0, "close_series": self._flat_series()},
+        })
+
+        watchlist, _ = tracker.run_tracker([], market_date="2026-06-30")
+        assert watchlist[0]["watch_days"] == 2
+
+        # 同一天再跑一次（模擬使用者手動重跑並確認繼續）
+        watchlist, _ = tracker.run_tracker([], market_date="2026-06-30")
+        assert watchlist[0]["watch_days"] == 2, "同日重跑不應再遞增 watch_days"
+
+    def test_active_counter_not_double_incremented_on_same_day_rerun(self, monkeypatch):
+        entry = {
+            "symbol": "TEST", "name": "Test Corp", "sector": "Technology",
+            "buy_zone": "$100.00～$105.00", "buy_zone_lower": 100.0, "buy_zone_upper": 105.0,
+            "target": "$130.00", "stop_loss": "$90.00", "hold_period": "10",
+            "strategy": "動能策略",
+            "tracked_dates": ["2026-06-25", "2026-06-26", "2026-06-29"],
+            "status": "active", "invalid_reason": None,
+            "watch_days": 1, "active_days": 3,
+            "signal_date_close": 100.0,
+            "active_entry_price": 100.0, "active_start_date": "2026-06-26",
+            "date_added": "2026-06-25",
+            "planned_stop_loss": 90.0, "effective_stop_loss": 90.0,
+            "is_breakeven_locked": False, "highest_close_since_active": 100.0,
+        }
+        tracker.save_watchlist([entry])
+        monkeypatch.setattr(tracker, "_fetch_latest", lambda syms: {
+            "TEST": {"price": 102.0, "today_high": 103.0, "today_low": 101.0,
+                     "ema20": 95.0, "ema50": 90.0, "close_series": self._flat_series()},
+        })
+
+        watchlist, _ = tracker.run_tracker([], market_date="2026-06-30")
+        assert watchlist[0]["active_days"] == 4
+
+        watchlist, _ = tracker.run_tracker([], market_date="2026-06-30")
+        assert watchlist[0]["active_days"] == 4, "同日重跑不應再遞增 active_days"
+
+    def test_counter_still_increments_across_different_days(self, monkeypatch):
+        entry = {
+            "symbol": "TEST", "name": "Test Corp", "sector": "Technology",
+            "buy_zone": "$100.00～$105.00", "buy_zone_lower": 100.0, "buy_zone_upper": 105.0,
+            "target": "$130.00", "stop_loss": "$90.00", "hold_period": "10",
+            "strategy": "動能策略",
+            "tracked_dates": ["2026-06-29"],
+            "status": "watch", "invalid_reason": None,
+            "watch_days": 1, "active_days": 0,
+            "signal_date_close": 100.0, "date_added": "2026-06-29",
+        }
+        tracker.save_watchlist([entry])
+        monkeypatch.setattr(tracker, "_fetch_latest", lambda syms: {
+            "TEST": {"price": 108.0, "today_high": 108.5, "today_low": 107.0,
+                     "ema20": 100.0, "ema50": 95.0, "close_series": self._flat_series()},
+        })
+
+        watchlist, _ = tracker.run_tracker([], market_date="2026-06-30")
+        assert watchlist[0]["watch_days"] == 2
+
+        watchlist, _ = tracker.run_tracker([], market_date="2026-07-01")
+        assert watchlist[0]["watch_days"] == 3, "跨日應正常遞增，守衛不應誤擋非重跑情境"
