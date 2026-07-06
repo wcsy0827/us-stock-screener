@@ -7,6 +7,8 @@ import subprocess
 from datetime import datetime
 from pathlib import Path
 
+from tracker import _max_watch_days, TRAILING_ACTIVATION_PCT, TRAILING_RETRACE_PCT
+
 WEEKDAY_ZH = ["一", "二", "三", "四", "五", "六", "日"]
 
 _ROOT = Path(__file__).parent.parent
@@ -396,7 +398,8 @@ def _build_market_dashboard(market_context: dict) -> str:
 def _tracking_row(e: dict, status_cls: str) -> str:
     sym = _esc(e["symbol"])
     name = _esc(e.get("name", sym))
-    strategy = _esc(e.get("strategy", "-"))
+    strategy_raw = e.get("strategy", "-")
+    strategy = _esc(strategy_raw)
     days = _days(e)
     p = e.get("current_price")
     price_str = f'<span class="cur-price">${p:.2f}</span>｜' if p else ""
@@ -419,13 +422,36 @@ def _tracking_row(e: dict, status_cls: str) -> str:
             pnl_html = f' ｜ <span class="{pnl_cls}" style="font-weight:700">{sign}{pnl:.2f}%</span>'
         status_text = f"持倉 {active_days} / {hold_limit} 天 ✅{pnl_html}"
         entry_str = f'進場 ${entry_p:.2f}｜' if entry_p else ""
-        prices_html = f'<div class="track-prices">{price_str}{entry_str}目標 {tgt}｜止損 {sl}</div>'
+
+        # 動態止損：顯示系統實際用於結算的 effective_stop_loss（保本鎖定後會上移至
+        # buy_zone_upper，見 tracker.py DD-12/13），而非 AI 原始 stop_loss，
+        # 避免使用者手動跟單時止損與系統結算脫節
+        effective_sl = e.get("effective_stop_loss")
+        if effective_sl is not None:
+            lock_tag = " 🔒保本" if e.get("is_breakeven_locked") else ""
+            sl_display = f"${effective_sl:.2f}{lock_tag}"
+        else:
+            sl_display = sl
+
+        # 移動停利觸發線：峰值浮盈達門檻後才「武裝」，顯示回撤觸價供使用者對照（DD-13）
+        trailing_html = ""
+        if strategy_raw != "反轉策略" and entry_p and entry_p > 0:
+            highest = e.get("highest_close_since_active") or entry_p
+            if (highest - entry_p) / entry_p >= TRAILING_ACTIVATION_PCT:
+                trigger = highest * (1 - TRAILING_RETRACE_PCT)
+                trailing_html = f"｜移動停利線 ${trigger:.2f}"
+
+        prices_html = (
+            f'<div class="track-prices">{price_str}{entry_str}目標 {tgt}'
+            f"｜止損 {sl_display}{trailing_html}</div>"
+        )
     elif status_cls == "watch":
-        status_text = f"第 {days} 天（等待回落至買入區間）"
+        remaining = max(0, _max_watch_days(e) - days)
+        status_text = f"第 {days} 天（等待回落至買入區間，剩 {remaining} 天自動移除）"
         prices_html = f'<div class="track-prices">{price_str}買入區間 {bz}｜目標 {tgt}｜止損 {sl}</div>'
     elif status_cls == "invalid":
         reason = _esc(e.get("invalid_reason", ""))
-        remaining = max(0, 5 - days)
+        remaining = max(0, _max_watch_days(e) - days)
         status_text = f"第 {days} 天 ── {reason}（剩 {remaining} 天自動移除）"
         prices_html = f'<div class="track-prices">{price_str}買入區間 {bz}｜目標 {tgt}｜止損 {sl}</div>'
     else:  # expired
@@ -809,8 +835,8 @@ _INFO_HTML = """
     <table class="info-table">
       <tr><td>✅ active</td><td>已落入買入區間，顯示持倉天數與彩色浮損益</td></tr>
       <tr><td>🟡 watch</td><td>略高於買入區間等待回落，或低於下限但尚未跌破止損（繼續觀察）</td></tr>
-      <tr><td>❌ invalid</td><td>趨勢轉弱、跌破止損或開盤跳空攔截，訊號失效</td></tr>
-      <tr><td>🗑 expired</td><td>觀察滿 5 個交易日，自動移除</td></tr>
+      <tr><td>❌ invalid</td><td>趨勢轉弱、跌破止損或開盤跳空攔截，訊號失效（僅發生在 watch 階段；已進場的 active 部位出場只由 settled 控制）</td></tr>
+      <tr><td>🗑 expired</td><td>觀察達策略對應上限自動移除（突破/動能 5 日、反轉 10 日；高波動整理市的突破 3 日、VIX&gt;35 尖底的反轉 5 日）</td></tr>
       <tr><td>📦 settled</td><td>停利／停損／移動停利／到期結算，歸檔績效資料庫</td></tr>
     </table>
   </div>

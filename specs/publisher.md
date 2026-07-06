@@ -66,6 +66,12 @@ def publish(
 - **`sync_index()` 以 `newline="\n"` 固定 LF**：避免 Windows 本機執行產生 CRLF 造成整檔 whitespace diff（CI Linux 輸出即為 LF）；測試端 `read_text` 的 universal newlines 讀入一律為 `\n`，跨平台行為一致。
 - **捨棄**：pre-commit hook（引入額外基礎設施，且繞過 hook 即失守）；測試內自動改寫檔案（CI 綠燈但 repo 內已部署的 Pages 檔案仍是舊的，掩蓋漂移）；維持行子字串比對（守不住 `_CSS`/JS 漂移，修復仍靠人工）。→ 詳見 `plans/2026-07-03-index-html-auto-sync.md`
 
+### DD-7: 每日報告顯示動態止損、移動停利觸發線，watch/invalid 剩餘天數改讀 tracker 的策略上限
+
+- **選擇**：`_tracking_row()` 對 active 部位優先顯示 `effective_stop_loss`（若存在，缺失時 fallback 為 AI 原始 `stop_loss`），`is_breakeven_locked=True` 時附加「🔒保本」標記；動能/突破策略且峰值浮盈已達 `TRAILING_ACTIVATION_PCT`（10%）門檻時，額外顯示移動停利觸發線 `highest_close_since_active × (1 - TRAILING_RETRACE_PCT)`（反轉策略精確排除，與 DD-13 口徑一致）。watch/invalid 狀態的「剩 N 天自動移除」不再寫死 `5 - days`，改呼叫 `tracker._max_watch_days(entry)` 取得該筆訊號實際的策略/Regime/VIX 差異化上限（DD-15/16）。
+- **原因**：使用者的實際操作方式是「收盤後跑篩選、次一交易日盤中依買入區間掛單，並手動遵守停損停利區間」。系統內部（`tracker.py` DD-12/13）早已自動把止損上移做保本鎖定、計算移動停利觸發價，但報告只顯示 AI 原始止損字串，等於使用者手動跟單時用的是過時門檻，與系統實際結算邏輯脫節。同理，watch/invalid 剩餘天數寫死 5 天，反轉策略（10 日）、高波動整理市的突破策略（3 日）、VIX 尖底的反轉策略（5 日）顯示的倒數天數全部錯誤，可能讓使用者誤判某檔訊號已到期或還有餘裕。
+- **捨棄**：只顯示 AI 原始 `stop_loss`（簡單但與系統實際結算門檻不一致）；在 `publisher.py` 內重寫一份 watch 上限查表（DRY 違反，`tracker.py` DD-15/16 已是單一事實來源，直接呼叫 `_max_watch_days()` 即可）。
+
 ## Acceptance Criteria
 
 - [ ] 每日報告頁標題顯示「美股資料截止日：YYYY-MM-DD（週X）」
@@ -77,3 +83,7 @@ def publish(
 - [ ] `docs/data/last_run.json` 在每次 `publish()` 呼叫後更新
 - [ ] `date_str` 始終等於 `market_date`（SPY 最後收盤日），與執行時區無關
 - [ ] `docs/index.html` 與 `_build_index()` 輸出整檔全等；`python src/publisher.py` 可離線一鍵再生成（DD-6）
+- [ ] **DD-7 動態止損**：active 條目有 `effective_stop_loss` 時，報告顯示該值而非原始 `stop_loss`；`is_breakeven_locked=True` 時額外顯示「🔒保本」
+- [ ] **DD-7 動態止損 fallback**：active 條目缺 `effective_stop_loss` 時，退化顯示原始 `stop_loss`
+- [ ] **DD-7 移動停利觸發線**：峰值浮盈達 10% 門檻的動能/突破策略 active 條目顯示「移動停利線 $X」；反轉策略一律不顯示；未達門檻不顯示
+- [ ] **DD-7 watch/invalid 剩餘天數**：反轉策略 watch 顯示剩餘天數以 10 日上限計算（非寫死 5 日）；`entry_regime=CONSOLIDATION_VOLATILE` 的突破策略以 3 日上限計算
