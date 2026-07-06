@@ -108,15 +108,17 @@ def apply_earnings_filter(
     symbols: list[str],
     earnings_data: dict[str, date | None],
     days_ahead: int = EARNINGS_BLACKOUT_DAYS,
-    market_date: date | None = None,
+    today: date | None = None,
 ) -> list[str]:
     """
     排除未來 days_ahead 天內有已知財報的個股。
     earnings_data[sym] is None 視為無已知財報，通過過濾。
-    market_date 為 None 時 fallback date.today()（僅供獨立呼叫/測試使用，
-    pipeline.py 一律傳入 Step 2 算出的 market_date，避免本地時區早於 UTC 一天造成防禦窗前移，DD-8）。
+
+    today 應由呼叫端傳入 market_date（SPY 最後收盤日），與專案「一切錨定
+    market_date、不用 datetime.now()」原則一致；未提供時 fallback 為
+    date.today()，僅供未升級呼叫端或 market_date 缺失時使用。
     """
-    today = market_date or date.today()
+    today = today or date.today()
     cutoff = today + timedelta(days=days_ahead)
     passed: list[str] = []
     excluded = 0

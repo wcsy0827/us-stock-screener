@@ -295,9 +295,12 @@ def fetch_market_context(
     抓取大盤 + 相關產業 ETF 走勢，計算市場廣度並判定市場環境 Regime。
 
     candidate_sectors: 候選股涵蓋的產業集合，只抓相關 ETF；傳 None 則抓全部 11 個。
-    all_stocks_data:   全市場日 K 字典，僅在 breadth_pct 未提供時才重算廣度。
+    all_stocks_data:   Step 2 已下載的全市場日 K 字典（含 SPY 與全部板塊 ETF，90 日），
+                       優先從此複用 SPY/產業 ETF 走勢，不重複下載；缺失時才個別補抓。
+                       僅在 breadth_pct 未提供時才用它重算廣度。
     breadth_pct:       Step 2.5 已計算的廣度，有值時直接複用，不重跑 O(n) 迴圈。
-    vix_value:         Step 2.5 已下載的 VIX，有值時跳過重複下載。
+    vix_value:         Step 2.5 已下載的 VIX 最新值，有值時複用；VIX 5 日走勢
+                       仍需單獨下載（Step 2.5 只保留最新值，未保留歷史序列）。
     回傳結構：
       {
         "sp500": {...},
@@ -315,11 +318,16 @@ def fetch_market_context(
         if candidate_sectors is None or sector in candidate_sectors
     }
 
-    all_tickers = ["SPY", "^VIX"] + list(sectors_to_fetch.values())
+    all_stocks_data = all_stocks_data or {}
+    # SPY/產業 ETF 已在 Step 2 下載且含於 all_stocks_data 時不重複下載，
+    # 只補抓缺失的 ticker；^VIX 從未在 Step 2 範圍內，一律下載
+    reusable_tickers = {"SPY"} | set(sectors_to_fetch.values())
+    missing_tickers = [t for t in reusable_tickers if t not in all_stocks_data]
+    download_tickers = ["^VIX"] + missing_tickers
 
     try:
         raw = yf.download(
-            tickers=all_tickers,
+            tickers=download_tickers,
             period="60d",
             interval="1d",
             group_by="ticker",
@@ -332,8 +340,11 @@ def fetch_market_context(
         return {}
 
     def _get(ticker: str) -> pd.DataFrame:
+        if ticker in all_stocks_data:
+            df = all_stocks_data[ticker]
+            return df.dropna(how="all") if df is not None else pd.DataFrame()
         try:
-            df = raw[ticker] if len(all_tickers) > 1 else raw
+            df = raw[ticker] if len(download_tickers) > 1 else raw
             return df.dropna(how="all")
         except Exception:
             return pd.DataFrame()
