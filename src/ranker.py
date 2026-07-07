@@ -178,6 +178,7 @@ def compute_indicators(
         "macd_hist": _fmt(macd_h, 4),
         "vtf_score": vtf_score,
         "momentum_atr": momentum_atr,
+        "atr14": round(atr14, 2) if atr14 is not None else None,
         "beta_60d": beta_60d,
         "earnings_days_left": earnings_days_left,
         "vol_vs_5d_avg": round(vol_vs_5d_avg, 2),
@@ -309,7 +310,7 @@ def _generate_candidates_markdown_table(
     current_date: date | None = None,
 ) -> str:
     """
-    將 L2 候選股清單轉換為 29 欄 Markdown 表格（含 RS_vs_Sector DD-10、基本面維度 DD-14、Short_Float_Pct DD-17）。
+    將 L2 候選股清單轉換為 30 欄 Markdown 表格（含 RS_vs_Sector DD-10、基本面維度 DD-14、Short_Float_Pct DD-17、ATR14 DD-19）。
     """
     _SECTOR_ABBR = {
         " Services": "", " Cyclical": "", " Defensive": "",
@@ -326,7 +327,7 @@ def _generate_candidates_markdown_table(
     header = (
         "| Ticker | Close_Price | Sector | L2_Score | Strategy_Tag | MA_Trend"
         " | EMA5 | EMA10 | EMA20 | Vol_vs_5DAvg | High_20D | Vol_vs_20DAvg"
-        " | RSI | MACD_Hist | VTF_Score | Price_5D_Pct | Momentum_ATR"
+        " | RSI | MACD_Hist | VTF_Score | Price_5D_Pct | Momentum_ATR | ATR14"
         " | EMA50 | Low_20D | Stoch_K | RSI_5D_Ago"
         " | RS_vs_Sector | 52W_High_Dist | Beta_60D | Earnings_Days_Left"
         " | Fwd_PE | Profit_Margin | Rev_Growth_YoY | Short_Float_Pct |"
@@ -334,7 +335,7 @@ def _generate_candidates_markdown_table(
     sep = (
         "|--------|-------------|--------|----------|--------------|----------"
         "|------|-------|-------|--------------|----------|--------------"
-        "|-----|-----------|-----------|--------------|-------------|"
+        "|-----|-----------|-----------|--------------|-------------|-------|"
         "-------|---------|---------|------------"
         "|--------------|---------------|----------|-------------------"
         "|--------|----------------|-----------------|-----------------|"
@@ -383,6 +384,10 @@ def _generate_candidates_markdown_table(
         mom = indic.get("momentum_atr")
         mom_str = f"{mom:.2f}" if mom is not None else "N/A"
 
+        # ATR14（動能策略買入區間深度與止損距離基準，DD-19）
+        atr14_v = indic.get("atr14")
+        atr14_str = f"${atr14_v:.2f}" if atr14_v is not None else "N/A"
+
         # EMA50/Low_20D/Stoch_K/RSI_5D_Ago（反轉策略右側結構確認依據，DD-13）
         ema50_v = indic.get("ema50")
         ema50_str = f"${ema50_v:.2f}" if ema50_v is not None else "N/A"
@@ -428,7 +433,7 @@ def _generate_candidates_markdown_table(
             f"| {sym} | {price_str} | {sector_display} | {c['total_score']:.0f} | {strategy}"
             f" | {ma_trend} | {ema5_str} | {ema10_str} | {ema20_str} | {vol5_str} | {high20_str} | {vol20_str}"
             f" | {rsi_str} | {macd_tag} | {vtf_str}"
-            f" | {p5d_str} | {mom_str} | {ema50_str} | {low20_str} | {stoch_str} | {rsi5ago_str}"
+            f" | {p5d_str} | {mom_str} | {atr14_str} | {ema50_str} | {low20_str} | {stoch_str} | {rsi5ago_str}"
             f" | {rs_str} | {dist_str} | {beta_str} | {ed_str}"
             f" | {fwd_pe_str} | {margin_str} | {rev_growth_str} | {short_float_str} |"
         )
@@ -522,10 +527,12 @@ def _build_prompt(
     field_defs = (
         "欄位定義：\n"
         "- MA_Trend: BULL_1=EMA5>EMA10>EMA20>EMA50完美多頭｜BULL_2=EMA5>EMA20>EMA50標準多頭｜MIXED=混合｜BEAR=空頭\n"
-        "- EMA5/EMA10/EMA20: 指數移動均線價位（美元）。動能策略買進區間應設在EMA20~EMA10之間的回檔帶；"
-        "股價距EMA5超過+5%視為過度延伸，不宜追價；EMA5附近可作為極端強勢股的探針帶進場價\n"
+        "- EMA5/EMA10/EMA20: 指數移動均線價位（美元）。EMA10為動能策略淺回檔帶的下緣底線；"
+        "股價已自然回落至EMA20~EMA10之間為結構確認最完整的加分情境\n"
         "- Vol_vs_5DAvg: 當日成交量÷5日均量；<0.7代表回檔量縮（拋壓衰竭，無恐慌賣壓），"
         "為動能策略回檔進場的量能確認條件\n"
+        "- ATR14: 14日平均真實波幅（美元），衡量個股日常波動單位；"
+        "動能策略的買入區間深度與止損距離以此為基準\n"
         "- High_20D: 20日最高價（美元），突破策略的壓力位/回測支撐基準\n"
         "- Vol_vs_20DAvg: 當日成交量÷20日均量；>=1.5代表攻擊量確認突破，<1.2假突破機率高\n"
         "- EMA50: 50日均線價位（美元），反轉策略的支撐區判斷基準\n"
@@ -610,12 +617,17 @@ SYSTEM_PROMPT = """你是一位經驗豐富的美股量化分析師，擅長技�
 【動能策略（momentum）】：
 - 條件：均線多頭排列（EMA5>EMA10>EMA20>EMA50）、RSI 50~70、VTF_Score >= 1.0
 - 優先：Momentum_ATR >= 2.0 且 RS_vs_Sector > +1%（板塊內領頭羊動能延續）
-- 買入區間（拒絕盲目追價，優先選有結構確認的回檔）：
-  1. 標準回檔進場：股價已回落至 EMA20~EMA10 之間，且 Vol_vs_5DAvg < 0.7（量縮無賣壓）→ buy_zone 設在該 EMA20~EMA10 區間
-  2. 極端強勢例外：股價緊貼 EMA5（尚未明顯回檔）但 VTF_Score 仍強 → buy_zone 可設在 EMA5 附近（5MA 探針帶）
-  3. 股價距 EMA5 已超過 +5%（過度延伸、未回檔）→ 大幅降低信心分數，禁止以當前收盤價設為買入區間上限
-- 目標：+10%~20%；止損：EMA20 下方 2%（不得設為等於買入區間下緣，須低於 EMA20）
-- 持有：1~4 週
+- 買入區間（以個股自身波動 ATR14 為深度基準，等待淺回檔而非深度回檔）：
+  1. 標準進場（預設）：buy_zone 設在 Close_Price − 1×ATR14 ～ Close_Price − 0.25×ATR14 的淺回檔帶
+     （強勢股的正常日內波動就會觸及，不需要跌破趨勢才能進場）；
+     若該區間下緣低於 EMA10，改以 EMA10 為下緣（不追求超過趨勢結構的深度回檔）
+  2. 已回檔加分情境：股價已自然回落至 EMA20~EMA10 之間，且 Vol_vs_5DAvg < 0.7（量縮無賣壓）
+     → buy_zone 直接設在該 EMA20~EMA10 區間（結構確認最完整，信心分數可上調）
+  3. 過熱例外：RSI > 78 或 VTF_Score < 0（高檔出貨跡象）→ 大幅降低信心分數，不宜進場，寧可錯過
+- 止損：買入區間下緣 − 1×ATR14（以波動單位計，非固定百分比；不得等於買入區間下緣）；
+  若股價回落至 EMA20~EMA10 帶內進場（第 2 情境），止損可改用 EMA20 下方 2%（兩者取較高者，
+  止損不得寬於進場價 −10%）
+- 目標：+10%~20%；持有：1~4 週
 
 【突破策略（breakout）】：
 - 條件：VTF_Score >= 1.5、Close_Price 距 High_20D 在 -2%~+2% 內

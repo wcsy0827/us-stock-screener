@@ -278,7 +278,7 @@ details[open] summary::before { transform: rotate(90deg); }
       <div class="pipe-arrow">↓</div>
       <div class="pipe-step"><span class="pipe-badge">L2</span>技術評分 100 分制，門檻 60 分；恐慌超跌環境（見右側）降至 40 分，RSI &lt; 35 且 20 日跌幅 &gt; 15% 的超賣股強制放行；門檻篩選後再依總分排名取前 55 名，穩定收斂至 50～60 支候選（不受大盤強弱影響通過數量暴增或暴減）</div>
       <div class="pipe-arrow">↓</div>
-      <div class="pipe-step"><span class="pipe-badge">L3</span>DeepSeek AI 依當日大盤環境（Regime）的主推策略精選，最多 5 支；輸入矩陣含 ATR 標準化動能（Momentum_ATR）、量能推進因子（VTF_Score，正值=帶量上攻，負值=高檔出貨）、60 日 Beta 與財報剩餘天數（≤5 天自動排除），跨行業公平評比、避免高 Beta 偏見；並疊加基本面維度（估值 Fwd_PE、獲利品質 Profit_Margin、成長性 Rev_Growth_YoY）與空頭比例（Short_Float_Pct，&gt;15% 視為高軋空風險）輔助取捨，技術面相近時優先選基本面健康的個股；陰跌熊市環境下全面防禦，不輸出任何建議（詳見右側 Regime 表）</div>
+      <div class="pipe-step"><span class="pipe-badge">L3</span>DeepSeek AI 依當日大盤環境（Regime）的主推策略精選，最多 5 支；輸入矩陣含 ATR 標準化動能（Momentum_ATR）、個股波動單位（ATR14，動能策略買入區間與止損的深度基準）、量能推進因子（VTF_Score，正值=帶量上攻，負值=高檔出貨）、60 日 Beta 與財報剩餘天數（≤5 天自動排除），跨行業公平評比、避免高 Beta 偏見；動能策略買入區間錨定收盤價下方 0.25～1×ATR14 淺回檔帶（深度自適應個股波動，不再要求深度回檔至均線帶）；並疊加基本面維度（估值 Fwd_PE、獲利品質 Profit_Margin、成長性 Rev_Growth_YoY）與空頭比例（Short_Float_Pct，&gt;15% 視為高軋空風險）輔助取捨，技術面相近時優先選基本面健康的個股；陰跌熊市環境下全面防禦，不輸出任何建議（詳見右側 Regime 表）</div>
     </div>
   </div>
 
