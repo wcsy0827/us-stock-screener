@@ -342,6 +342,14 @@ vtf_score = round(max(-5.0, vol_ratio * (2 * k_pos - 1)), 2)           # 下限�
   `sharesShort`/`shortRatio`（Days-to-Cover）等衍生欄位——`shortPercentOfFloat` 單一欄位已足夠表達風險方向，
   避免表格欄位過度膨脹
 
+### DD-18: `_enrich_fallback()` 結果標記 `is_fallback: True`，與真實 AI 判斷明確區分
+
+- **選擇**：`_enrich_fallback()`（`DEEPSEEK_API_KEY` 未設定，或 `_call_deepseek()` 回傳空清單時觸發的 L2 分數退化輸出）產生的每個結果新增 `"is_fallback": True` 欄位；真實 AI 排序結果不含此欄位（`stock.get("is_fallback")` 自然為 falsy）。`tracker.py` 的 B/C 步驟改為優先檢查 `is_fallback`，獨立於既有的 `confidence < MIN_AI_CONFIDENCE`（DD-14）門檻之外直接跳過，並印出明確區分的 log（「為 L2 分數 fallback 結果，非信心不足」），不再與真實 AI 給出的低信心分數混用同一句「AI 信心分數 X < 6，跳過」。`main.py` 計算 `stats["ai_count"]` 時排除 `is_fallback` 條目。
+- **原因**：2026-07-06 report 觸發的真實案例——`market.py` DD-7 的大盤背景抓取失敗導致 `market_context={}`，Step 6 送給 DeepSeek 的 Prompt 因而缺少大盤環境背景，AI 當天回傳空結果（`API 回傳 22 字元...取得 0 筆結果`），`rank_candidates()` 依既有邏輯降級為 `_enrich_fallback()`，把 L2 分數前 5 名包成「AI 精選」格式，`confidence` 寫死為 5。DD-14 原本就設計 `MIN_AI_CONFIDENCE=6` 讓這些 fallback 個股（`buy_zone="-"` 等佔位字串，本來就無法解析出真實交易參數）不進入 watchlist——這部分行為正確，不需改變。但 `main.py` 的 `stats["ai_count"] = len(ranked)` 沒有區分 fallback 與真實 AI 結果，把這 5 支 fallback 佔位股當成「5 支 AI 精選」寫入 `last_run.json`；報告卻正確顯示「0 支新增」（fallback 個股全被 DD-14 濾除）。兩者不一致造成使用者誤以為選股流程漏掉了本該出現的個股，實際上當天 AI 完全沒有產出任何真實判斷。
+- **不變**：DD-14 的排除結果不變（fallback 個股本來就不該、也仍然不會進入 watchlist）；JSON 輸出 schema 只新增一個布林欄位，其餘欄位不動。
+- **捨棄**：讓 `stats["ai_count"]` 保持 `len(ranked)` 不變、只修 `market.py` 的資料來源問題（治標不治本——DeepSeek API 本身偶發回傳空清單、或未設定 API Key 時走 `_enrich_fallback()` 的既有分支，與這次 `market_context={}` 是兩條獨立成因，日後任何一條路徑觸發 fallback 都會重現同一種誤導性統計）；把 fallback 判斷邏輯下放到 `tracker.py` 用 `confidence == 5` 猜測（脆弱，未來若 `MIN_AI_CONFIDENCE` 或 fallback 預設分數任一方調整就會誤判，且無法與 AI 剛好給 5 分的真實判斷區分）。
+- → 詳見 [plans/2026-07-07-market-context-single-etf-resilience.md](../plans/2026-07-07-market-context-single-etf-resilience.md)
+
 ## Acceptance Criteria
 
 - [ ] Prompt 中 `<Market_Regime>` 區塊含有 `5日` 與 `20日` 漲跌的產業 ETF 資訊
@@ -365,3 +373,6 @@ vtf_score = round(max(-5.0, vol_ratio * (2 * k_pos - 1)), 2)           # 下限�
 - [ ] 表格 header 含 `High_20D`、`Vol_vs_20DAvg`、`EMA50`、`Low_20D`、`Stoch_K`、`RSI_5D_Ago`
 - [ ] `compute_indicators()` 回傳 dict 含 `vol_vs_20d_avg` key
 - [ ] `avg_vol_20 = 0`（新股或數據不足）→ `vol_vs_20d_avg` 不崩潰，降級為 1.0
+- [ ] **DD-18 fallback 標記**：`_enrich_fallback()` 回傳的每筆結果含 `"is_fallback": True`；真實 AI 排序結果不含此鍵
+- [ ] **DD-18 fallback 不進 watchlist**：`tracker.py` 對 `is_fallback=True` 的個股一律跳過，即使 `confidence` 剛好達到 `MIN_AI_CONFIDENCE` 門檻
+- [ ] **DD-18 ai_count 誠實反映**：`main.py` 的 `stats["ai_count"]` 排除 `is_fallback` 條目；當日全數為 fallback 時 `ai_count == 0`
