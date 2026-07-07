@@ -1,104 +1,5 @@
 [
   {
-    "symbol": "KLAC",
-    "name": "KLA Corporation",
-    "sector": "Technology",
-    "buy_zone": "$295～$302",
-    "buy_zone_lower": 295.0,
-    "buy_zone_upper": 302.0,
-    "target": "$332",
-    "stop_loss": "$285",
-    "hold_period": "15",
-    "strategy": "動能策略",
-    "tracked_dates": [
-      "2026-06-30",
-      "2026-07-01",
-      "2026-07-02",
-      "2026-07-06"
-    ],
-    "status": "invalid",
-    "invalid_reason": "跌破止損價 $285.00，錯過買點",
-    "watch_days": 0,
-    "active_days": 0,
-    "signal_date_close": 283.51,
-    "active_entry_price": null,
-    "active_start_date": null,
-    "date_added": "2026-06-30",
-    "entry_regime": "BULL_TREND",
-    "market_breadth_pct": 64.0,
-    "vix_value": 16.92,
-    "l2_score": 97.75,
-    "ai_confidence": 9,
-    "ai_strategy_reason": "均線多頭排列，RSI=70.9，VTF=0.91，Momentum_ATR=5.52，RS_vs_Sector=+21.4%，符合動能策略條件。",
-    "current_price": 213.46
-  },
-  {
-    "symbol": "AMAT",
-    "name": "Applied Materials, Inc.",
-    "sector": "Technology",
-    "buy_zone": "$710～$723",
-    "buy_zone_lower": 710.0,
-    "buy_zone_upper": 723.0,
-    "target": "$795",
-    "stop_loss": "$690",
-    "hold_period": "15",
-    "strategy": "動能策略",
-    "tracked_dates": [
-      "2026-06-30",
-      "2026-07-01",
-      "2026-07-02",
-      "2026-07-06"
-    ],
-    "status": "invalid",
-    "invalid_reason": "跌破止損價 $690.00，錯過買點",
-    "watch_days": 0,
-    "active_days": 0,
-    "signal_date_close": 689.07,
-    "active_entry_price": null,
-    "active_start_date": null,
-    "date_added": "2026-06-30",
-    "entry_regime": "BULL_TREND",
-    "market_breadth_pct": 64.0,
-    "vix_value": 16.92,
-    "l2_score": 97.75,
-    "ai_confidence": 8,
-    "ai_strategy_reason": "均線多頭排列，RSI=72.4，Momentum_ATR=5.63，RS_vs_Sector=+18.7%，符合動能策略。",
-    "current_price": 534.05
-  },
-  {
-    "symbol": "LRCX",
-    "name": "Lam Research Corporation",
-    "sector": "Technology",
-    "buy_zone": "$425～$433",
-    "buy_zone_lower": 425.0,
-    "buy_zone_upper": 433.0,
-    "target": "$477",
-    "stop_loss": "$415",
-    "hold_period": "15",
-    "strategy": "動能策略",
-    "tracked_dates": [
-      "2026-06-30",
-      "2026-07-01",
-      "2026-07-02",
-      "2026-07-06"
-    ],
-    "status": "invalid",
-    "invalid_reason": "跌破止損價 $415.00，錯過買點",
-    "watch_days": 0,
-    "active_days": 0,
-    "signal_date_close": 407.55,
-    "active_entry_price": null,
-    "active_start_date": null,
-    "date_added": "2026-06-30",
-    "entry_regime": "BULL_TREND",
-    "market_breadth_pct": 64.0,
-    "vix_value": 16.92,
-    "l2_score": 91.38,
-    "ai_confidence": 7,
-    "ai_strategy_reason": "均線多頭排列，RSI=67.1，Momentum_ATR=3.91，RS_vs_Sector=+11.5%，符合動能策略。",
-    "current_price": 319.94
-  },
-  {
     "symbol": "CB",
     "name": "Chubb Limited",
     "sector": "Financial Services",
@@ -112,7 +13,8 @@
     "tracked_dates": [
       "2026-07-01",
       "2026-07-02",
-      "2026-07-06"
+      "2026-07-06",
+      "2026-07-07"
     ],
     "status": "invalid",
     "invalid_reason": "已追高，錯過買點",
@@ -128,7 +30,7 @@
     "l2_score": 91.38,
     "ai_confidence": 9,
     "ai_strategy_reason": "均線多頭排列(EMA5>EMA10>EMA20>EMA50)，RSI=70.1在50~70健康區，VTF=1.03>=1.0，Momentum_ATR=5.61>=2.0，RS_vs_Sector=+3.8%>+1%。",
-    "current_price": 362.94
+    "current_price": 359.3
   },
   {
     "symbol": "V",
@@ -144,7 +46,8 @@
     "tracked_dates": [
       "2026-07-01",
       "2026-07-02",
-      "2026-07-06"
+      "2026-07-06",
+      "2026-07-07"
     ],
     "status": "invalid",
     "invalid_reason": "已追高，錯過買點",
@@ -160,7 +63,7 @@
     "l2_score": 91.38,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭排列，RSI=71.6在50~70區間，VTF=0.90接近1.0，Momentum_ATR=5.11>=2.0，RS_vs_Sector=+3.7%>+1%。",
-    "current_price": 352.8
+    "current_price": 352.2
   },
   {
     "symbol": "KMB",
@@ -176,7 +79,8 @@
     "tracked_dates": [
       "2026-07-01",
       "2026-07-02",
-      "2026-07-06"
+      "2026-07-06",
+      "2026-07-07"
     ],
     "status": "invalid",
     "invalid_reason": "已追高，錯過買點",
@@ -192,7 +96,7 @@
     "l2_score": 85.0,
     "ai_confidence": 7,
     "ai_strategy_reason": "均線多頭排列，RSI=72.6在50~70區間，Momentum_ATR=7.30>=2.0，RS_vs_Sector=+3.9%>+1%。",
-    "current_price": 115.53
+    "current_price": 114.74
   },
   {
     "symbol": "KVUE",
@@ -208,11 +112,12 @@
     "tracked_dates": [
       "2026-07-01",
       "2026-07-02",
-      "2026-07-06"
+      "2026-07-06",
+      "2026-07-07"
     ],
     "status": "watch",
     "invalid_reason": null,
-    "watch_days": 6,
+    "watch_days": 7,
     "active_days": 0,
     "signal_date_close": 19.83,
     "active_entry_price": null,
@@ -224,7 +129,7 @@
     "l2_score": 85.0,
     "ai_confidence": 6,
     "ai_strategy_reason": "均線多頭排列，RSI=71.2在50~70區間，Momentum_ATR=6.94>=2.0，RS_vs_Sector=+2.7%>+1%。",
-    "current_price": 19.93
+    "current_price": 19.78
   },
   {
     "symbol": "GPC",
@@ -239,11 +144,12 @@
     "strategy": "動能策略",
     "tracked_dates": [
       "2026-07-02",
-      "2026-07-06"
+      "2026-07-06",
+      "2026-07-07"
     ],
     "status": "watch",
     "invalid_reason": null,
-    "watch_days": 1,
+    "watch_days": 2,
     "active_days": 0,
     "signal_date_close": 128.66,
     "active_entry_price": null,
@@ -255,7 +161,7 @@
     "l2_score": 91.0,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭排列，RSI=83.6，VTF=1.91，Momentum_ATR=8.2，RS_vs_Sector=+11.9%，符合動能策略。",
-    "current_price": 130.21
+    "current_price": 128.67
   },
   {
     "symbol": "AJG",
@@ -270,7 +176,8 @@
     "strategy": "動能策略",
     "tracked_dates": [
       "2026-07-02",
-      "2026-07-06"
+      "2026-07-06",
+      "2026-07-07"
     ],
     "status": "invalid",
     "invalid_reason": "已追高，錯過買點",
@@ -286,7 +193,7 @@
     "l2_score": 91.38,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭排列，RSI=78.4，VTF=1.33，Momentum_ATR=5.73，RS_vs_Sector=+7.9%，符合動能策略。",
-    "current_price": 254.87
+    "current_price": 254.67
   },
   {
     "symbol": "APD",
@@ -301,11 +208,12 @@
     "strategy": "動能策略",
     "tracked_dates": [
       "2026-07-02",
-      "2026-07-06"
+      "2026-07-06",
+      "2026-07-07"
     ],
     "status": "watch",
     "invalid_reason": null,
-    "watch_days": 1,
+    "watch_days": 2,
     "active_days": 0,
     "signal_date_close": 308.86,
     "active_entry_price": null,
@@ -317,7 +225,7 @@
     "l2_score": 91.38,
     "ai_confidence": 7,
     "ai_strategy_reason": "均線多頭排列，RSI=71.8，VTF=1.19，Momentum_ATR=3.55，RS_vs_Sector=+13.0%，符合動能策略。",
-    "current_price": 308.53
+    "current_price": 305.05
   },
   {
     "symbol": "VTR",
@@ -332,11 +240,12 @@
     "strategy": "動能策略",
     "tracked_dates": [
       "2026-07-02",
-      "2026-07-06"
+      "2026-07-06",
+      "2026-07-07"
     ],
     "status": "watch",
     "invalid_reason": null,
-    "watch_days": 1,
+    "watch_days": 2,
     "active_days": 0,
     "signal_date_close": 92.21,
     "active_entry_price": null,
@@ -348,38 +257,37 @@
     "l2_score": 97.75,
     "ai_confidence": 7,
     "ai_strategy_reason": "均線多頭排列，RSI=71.6，VTF=1.19，Momentum_ATR=6.59，RS_vs_Sector=+5.7%，符合動能策略。",
-    "current_price": 94.39
+    "current_price": 94.07
   },
   {
     "symbol": "WELL",
     "name": "Welltower Inc.",
     "sector": "Real Estate",
-    "buy_zone": "$220～$225",
-    "buy_zone_lower": 220.0,
-    "buy_zone_upper": 225.0,
-    "target": "$250",
-    "stop_loss": "$215",
-    "hold_period": "20",
+    "buy_zone": "$232～$236",
+    "buy_zone_lower": 232.0,
+    "buy_zone_upper": 236.0,
+    "target": "$261",
+    "stop_loss": "$226",
+    "hold_period": "15",
     "strategy": "動能策略",
     "tracked_dates": [
-      "2026-07-02",
-      "2026-07-06"
+      "2026-07-07"
     ],
     "status": "watch",
     "invalid_reason": null,
-    "watch_days": 1,
+    "watch_days": 0,
     "active_days": 0,
-    "signal_date_close": 232.69,
+    "signal_date_close": 237.58999633789062,
     "active_entry_price": null,
     "active_start_date": null,
-    "date_added": "2026-07-02",
+    "date_added": "2026-07-07",
     "entry_regime": "BULL_TREND",
-    "market_breadth_pct": 64.8,
-    "vix_value": 15.81,
+    "market_breadth_pct": 68.0,
+    "vix_value": 16.13,
     "l2_score": 91.38,
-    "ai_confidence": 7,
-    "ai_strategy_reason": "均線多頭排列，RSI=71.9，VTF=1.05，Momentum_ATR=6.17，RS_vs_Sector=+5.1%，符合動能策略。",
-    "current_price": 238.2
+    "ai_confidence": 8,
+    "ai_strategy_reason": "均線多頭，RSI=70.0，VTF=0.52，Momentum_ATR=6.56，RS=+2.7%，動能強勁。",
+    "current_price": 237.59
   },
   {
     "symbol": "PCAR",
@@ -393,22 +301,28 @@
     "hold_period": "15",
     "strategy": "動能策略",
     "tracked_dates": [
-      "2026-07-06"
+      "2026-07-06",
+      "2026-07-07"
     ],
-    "status": "watch",
+    "status": "active",
     "invalid_reason": null,
     "watch_days": 0,
-    "active_days": 0,
+    "active_days": 1,
     "signal_date_close": 125.91000366210938,
-    "active_entry_price": null,
-    "active_start_date": null,
+    "active_entry_price": 124.0,
+    "active_start_date": "2026-07-07",
     "date_added": "2026-07-06",
     "entry_regime": "BULL_TREND",
     "market_breadth_pct": 66.6,
     "vix_value": 16.4,
     "l2_score": 91.38,
     "ai_confidence": 9,
-    "ai_strategy_reason": "均線多頭排列，RSI=63.4健康，VTF=1.11>1.0，Momentum_ATR=2.69強勢。"
+    "ai_strategy_reason": "均線多頭排列，RSI=63.4健康，VTF=1.11>1.0，Momentum_ATR=2.69強勢。",
+    "current_price": 124.46,
+    "planned_stop_loss": 119.0,
+    "effective_stop_loss": 119.0,
+    "is_breakeven_locked": false,
+    "highest_close_since_active": 124.46
   },
   {
     "symbol": "RTX",
@@ -422,22 +336,28 @@
     "hold_period": "15",
     "strategy": "動能策略",
     "tracked_dates": [
-      "2026-07-06"
+      "2026-07-06",
+      "2026-07-07"
     ],
-    "status": "watch",
+    "status": "active",
     "invalid_reason": null,
     "watch_days": 0,
-    "active_days": 0,
+    "active_days": 1,
     "signal_date_close": 201.3699951171875,
-    "active_entry_price": null,
-    "active_start_date": null,
+    "active_entry_price": 199.0,
+    "active_start_date": "2026-07-07",
     "date_added": "2026-07-06",
     "entry_regime": "BULL_TREND",
     "market_breadth_pct": 66.6,
     "vix_value": 16.4,
     "l2_score": 91.38,
     "ai_confidence": 8,
-    "ai_strategy_reason": "均線多頭排列，RSI=70.0健康，VTF=0.59>0，Momentum_ATR=4.36強勢。"
+    "ai_strategy_reason": "均線多頭排列，RSI=70.0健康，VTF=0.59>0，Momentum_ATR=4.36強勢。",
+    "current_price": 200.85,
+    "planned_stop_loss": 192.0,
+    "effective_stop_loss": 192.0,
+    "is_breakeven_locked": false,
+    "highest_close_since_active": 200.85
   },
   {
     "symbol": "SNA",
@@ -451,22 +371,28 @@
     "hold_period": "10",
     "strategy": "動能策略",
     "tracked_dates": [
-      "2026-07-06"
+      "2026-07-06",
+      "2026-07-07"
     ],
-    "status": "watch",
+    "status": "active",
     "invalid_reason": null,
     "watch_days": 0,
-    "active_days": 0,
+    "active_days": 1,
     "signal_date_close": 413.6199951171875,
-    "active_entry_price": null,
-    "active_start_date": null,
+    "active_entry_price": 411.0,
+    "active_start_date": "2026-07-07",
     "date_added": "2026-07-06",
     "entry_regime": "BULL_TREND",
     "market_breadth_pct": 66.6,
     "vix_value": 16.4,
     "l2_score": 91.38,
     "ai_confidence": 8,
-    "ai_strategy_reason": "均線多頭排列，RSI=70.9，VTF=0.71>0，Momentum_ATR=4.20強勢。"
+    "ai_strategy_reason": "均線多頭排列，RSI=70.9，VTF=0.71>0，Momentum_ATR=4.20強勢。",
+    "current_price": 408.74,
+    "planned_stop_loss": 401.0,
+    "effective_stop_loss": 401.0,
+    "is_breakeven_locked": false,
+    "highest_close_since_active": 408.74
   },
   {
     "symbol": "MCO",
@@ -480,11 +406,12 @@
     "hold_period": "15",
     "strategy": "動能策略",
     "tracked_dates": [
-      "2026-07-06"
+      "2026-07-06",
+      "2026-07-07"
     ],
     "status": "watch",
     "invalid_reason": null,
-    "watch_days": 0,
+    "watch_days": 1,
     "active_days": 0,
     "signal_date_close": 498.7799987792969,
     "active_entry_price": null,
@@ -495,7 +422,8 @@
     "vix_value": 16.4,
     "l2_score": 85.0,
     "ai_confidence": 8,
-    "ai_strategy_reason": "均線多頭排列，RSI=70.6，VTF=0.70>0，Momentum_ATR=3.39強勢。"
+    "ai_strategy_reason": "均線多頭排列，RSI=70.6，VTF=0.70>0，Momentum_ATR=3.39強勢。",
+    "current_price": 500.49
   },
   {
     "symbol": "SCHW",
@@ -509,11 +437,12 @@
     "hold_period": "15",
     "strategy": "動能策略",
     "tracked_dates": [
-      "2026-07-06"
+      "2026-07-06",
+      "2026-07-07"
     ],
     "status": "watch",
     "invalid_reason": null,
-    "watch_days": 0,
+    "watch_days": 1,
     "active_days": 0,
     "signal_date_close": 100.62000274658203,
     "active_entry_price": null,
@@ -524,6 +453,123 @@
     "vix_value": 16.4,
     "l2_score": 85.0,
     "ai_confidence": 8,
-    "ai_strategy_reason": "均線多頭排列，RSI=70.8健康，VTF=0.67>0，Momentum_ATR=4.65強勢。"
+    "ai_strategy_reason": "均線多頭排列，RSI=70.8健康，VTF=0.67>0，Momentum_ATR=4.65強勢。",
+    "current_price": 101.93
+  },
+  {
+    "symbol": "STT",
+    "name": "State Street Corporation",
+    "sector": "Financial Services",
+    "buy_zone": "$176～$179",
+    "buy_zone_lower": 176.0,
+    "buy_zone_upper": 179.0,
+    "target": "$198",
+    "stop_loss": "$172",
+    "hold_period": "15",
+    "strategy": "動能策略",
+    "tracked_dates": [
+      "2026-07-07"
+    ],
+    "status": "watch",
+    "invalid_reason": null,
+    "watch_days": 0,
+    "active_days": 0,
+    "signal_date_close": 179.94000244140625,
+    "active_entry_price": null,
+    "active_start_date": null,
+    "date_added": "2026-07-07",
+    "entry_regime": "BULL_TREND",
+    "market_breadth_pct": 68.0,
+    "vix_value": 16.13,
+    "l2_score": 91.38,
+    "ai_confidence": 9,
+    "ai_strategy_reason": "均線多頭排列，RSI=74.1，VTF=0.64，Momentum_ATR=4.4，RS_vs_Sector=+2.1%，符合動能策略條件。"
+  },
+  {
+    "symbol": "XYL",
+    "name": "Xylem Inc.",
+    "sector": "Industrials",
+    "buy_zone": "$117～$119",
+    "buy_zone_lower": 117.0,
+    "buy_zone_upper": 119.0,
+    "target": "$133",
+    "stop_loss": "$114",
+    "hold_period": "15",
+    "strategy": "動能策略",
+    "tracked_dates": [
+      "2026-07-07"
+    ],
+    "status": "watch",
+    "invalid_reason": null,
+    "watch_days": 0,
+    "active_days": 0,
+    "signal_date_close": 120.6500015258789,
+    "active_entry_price": null,
+    "active_start_date": null,
+    "date_added": "2026-07-07",
+    "entry_regime": "BULL_TREND",
+    "market_breadth_pct": 68.0,
+    "vix_value": 16.13,
+    "l2_score": 91.38,
+    "ai_confidence": 8,
+    "ai_strategy_reason": "均線多頭，RSI=68.5，VTF=0.98，Momentum_ATR=4.08，RS=+3.6%，動能策略條件完備。"
+  },
+  {
+    "symbol": "WM",
+    "name": "Waste Management, Inc.",
+    "sector": "Industrials",
+    "buy_zone": "$226～$231",
+    "buy_zone_lower": 226.0,
+    "buy_zone_upper": 231.0,
+    "target": "$261",
+    "stop_loss": "$221",
+    "hold_period": "15",
+    "strategy": "動能策略",
+    "tracked_dates": [
+      "2026-07-07"
+    ],
+    "status": "watch",
+    "invalid_reason": null,
+    "watch_days": 0,
+    "active_days": 0,
+    "signal_date_close": 237.2100067138672,
+    "active_entry_price": null,
+    "active_start_date": null,
+    "date_added": "2026-07-07",
+    "entry_regime": "BULL_TREND",
+    "market_breadth_pct": 68.0,
+    "vix_value": 16.13,
+    "l2_score": 85.0,
+    "ai_confidence": 7,
+    "ai_strategy_reason": "均線多頭，RSI=69.7，VTF=0.66，Momentum_ATR=4.29，RS=+8.0%，動能策略條件符合。"
+  },
+  {
+    "symbol": "RSG",
+    "name": "Republic Services, Inc.",
+    "sector": "Industrials",
+    "buy_zone": "$214～$218",
+    "buy_zone_lower": 214.0,
+    "buy_zone_upper": 218.0,
+    "target": "$245",
+    "stop_loss": "$209",
+    "hold_period": "15",
+    "strategy": "動能策略",
+    "tracked_dates": [
+      "2026-07-07"
+    ],
+    "status": "watch",
+    "invalid_reason": null,
+    "watch_days": 0,
+    "active_days": 0,
+    "signal_date_close": 222.4600067138672,
+    "active_entry_price": null,
+    "active_start_date": null,
+    "date_added": "2026-07-07",
+    "entry_regime": "BULL_TREND",
+    "market_breadth_pct": 68.0,
+    "vix_value": 16.13,
+    "l2_score": 85.0,
+    "ai_confidence": 7,
+    "ai_strategy_reason": "均線多頭，RSI=65.7，VTF=0.64，Momentum_ATR=4.02，RS=+6.2%，動能策略條件符合。"
   }
 ]
