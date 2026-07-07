@@ -30,7 +30,7 @@
     "l2_score": 97.75,
     "ai_confidence": 9,
     "ai_strategy_reason": "均線多頭排列，RSI=70.9，VTF=0.91，Momentum_ATR=5.52，RS_vs_Sector=+21.4%，符合動能策略條件。",
-    "current_price": 233.31
+    "current_price": 213.46
   },
   {
     "symbol": "AMAT",
@@ -63,37 +63,7 @@
     "l2_score": 97.75,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭排列，RSI=72.4，Momentum_ATR=5.63，RS_vs_Sector=+18.7%，符合動能策略。",
-    "current_price": 592.79
-  },
-  {
-    "symbol": "AXON",
-    "name": "Axon Enterprise, Inc.",
-    "sector": "Industrials",
-    "buy_zone": "$576～$590",
-    "buy_zone_lower": 576.0,
-    "buy_zone_upper": 590.0,
-    "target": "$680",
-    "stop_loss": "$560",
-    "hold_period": "15",
-    "strategy": "動能策略",
-    "tracked_dates": [
-      "2026-07-06"
-    ],
-    "status": "watch",
-    "invalid_reason": null,
-    "watch_days": 0,
-    "active_days": 0,
-    "signal_date_close": 622.3499755859375,
-    "active_entry_price": null,
-    "active_start_date": null,
-    "date_added": "2026-07-06",
-    "entry_regime": "BULL_TREND",
-    "market_breadth_pct": 66.6,
-    "vix_value": 15.9,
-    "l2_score": 85.0,
-    "ai_confidence": 7,
-    "ai_strategy_reason": "均線多頭排列，RSI=79.2，VTF=0.89>0，Momentum_ATR=4.09>=2.0，RS_vs_Sector=+20.4%>+1%。",
-    "current_price": 622.35
+    "current_price": 534.05
   },
   {
     "symbol": "LRCX",
@@ -126,7 +96,7 @@
     "l2_score": 91.38,
     "ai_confidence": 7,
     "ai_strategy_reason": "均線多頭排列，RSI=67.1，Momentum_ATR=3.91，RS_vs_Sector=+11.5%，符合動能策略。",
-    "current_price": 350.2
+    "current_price": 319.94
   },
   {
     "symbol": "CB",
@@ -158,7 +128,7 @@
     "l2_score": 91.38,
     "ai_confidence": 9,
     "ai_strategy_reason": "均線多頭排列(EMA5>EMA10>EMA20>EMA50)，RSI=70.1在50~70健康區，VTF=1.03>=1.0，Momentum_ATR=5.61>=2.0，RS_vs_Sector=+3.8%>+1%。",
-    "current_price": 356.53
+    "current_price": 362.94
   },
   {
     "symbol": "V",
@@ -190,7 +160,7 @@
     "l2_score": 91.38,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭排列，RSI=71.6在50~70區間，VTF=0.90接近1.0，Momentum_ATR=5.11>=2.0，RS_vs_Sector=+3.7%>+1%。",
-    "current_price": 357.25
+    "current_price": 352.8
   },
   {
     "symbol": "KMB",
@@ -222,7 +192,7 @@
     "l2_score": 85.0,
     "ai_confidence": 7,
     "ai_strategy_reason": "均線多頭排列，RSI=72.6在50~70區間，Momentum_ATR=7.30>=2.0，RS_vs_Sector=+3.9%>+1%。",
-    "current_price": 113.01
+    "current_price": 115.53
   },
   {
     "symbol": "KVUE",
@@ -254,7 +224,7 @@
     "l2_score": 85.0,
     "ai_confidence": 6,
     "ai_strategy_reason": "均線多頭排列，RSI=71.2在50~70區間，Momentum_ATR=6.94>=2.0，RS_vs_Sector=+2.7%>+1%。",
-    "current_price": 19.56
+    "current_price": 19.93
   },
   {
     "symbol": "GPC",
@@ -285,7 +255,7 @@
     "l2_score": 91.0,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭排列，RSI=83.6，VTF=1.91，Momentum_ATR=8.2，RS_vs_Sector=+11.9%，符合動能策略。",
-    "current_price": 128.66
+    "current_price": 130.21
   },
   {
     "symbol": "AJG",
@@ -316,7 +286,7 @@
     "l2_score": 91.38,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭排列，RSI=78.4，VTF=1.33，Momentum_ATR=5.73，RS_vs_Sector=+7.9%，符合動能策略。",
-    "current_price": 249.77
+    "current_price": 254.87
   },
   {
     "symbol": "APD",
@@ -347,7 +317,7 @@
     "l2_score": 91.38,
     "ai_confidence": 7,
     "ai_strategy_reason": "均線多頭排列，RSI=71.8，VTF=1.19，Momentum_ATR=3.55，RS_vs_Sector=+13.0%，符合動能策略。",
-    "current_price": 308.86
+    "current_price": 308.53
   },
   {
     "symbol": "VTR",
@@ -378,7 +348,7 @@
     "l2_score": 97.75,
     "ai_confidence": 7,
     "ai_strategy_reason": "均線多頭排列，RSI=71.6，VTF=1.19，Momentum_ATR=6.59，RS_vs_Sector=+5.7%，符合動能策略。",
-    "current_price": 92.21
+    "current_price": 94.39
   },
   {
     "symbol": "WELL",
@@ -409,17 +379,17 @@
     "l2_score": 91.38,
     "ai_confidence": 7,
     "ai_strategy_reason": "均線多頭排列，RSI=71.9，VTF=1.05，Momentum_ATR=6.17，RS_vs_Sector=+5.1%，符合動能策略。",
-    "current_price": 232.69
+    "current_price": 238.2
   },
   {
-    "symbol": "HOOD",
-    "name": "Robinhood Markets, Inc.",
-    "sector": "Financial Services",
-    "buy_zone": "$109～$112",
-    "buy_zone_lower": 109.0,
-    "buy_zone_upper": 112.0,
-    "target": "$130",
-    "stop_loss": "$106",
+    "symbol": "PCAR",
+    "name": "PACCAR Inc.",
+    "sector": "Industrials",
+    "buy_zone": "$122～$124",
+    "buy_zone_lower": 122.0,
+    "buy_zone_upper": 124.0,
+    "target": "$138",
+    "stop_loss": "$119",
     "hold_period": "15",
     "strategy": "動能策略",
     "tracked_dates": [
@@ -429,84 +399,26 @@
     "invalid_reason": null,
     "watch_days": 0,
     "active_days": 0,
-    "signal_date_close": 117.55000305175781,
+    "signal_date_close": 125.91000366210938,
     "active_entry_price": null,
     "active_start_date": null,
     "date_added": "2026-07-06",
     "entry_regime": "BULL_TREND",
     "market_breadth_pct": 66.6,
-    "vix_value": 15.9,
-    "l2_score": 85.0,
-    "ai_confidence": 8,
-    "ai_strategy_reason": "均線多頭排列(EMA5>EMA10>EMA20>EMA50)，RSI=69.9，VTF=0.53>0，Momentum_ATR=5.11>=2.0，RS_vs_Sector=+10.9%>+1%。"
-  },
-  {
-    "symbol": "SPGI",
-    "name": "S&P Global Inc.",
-    "sector": "Financial Services",
-    "buy_zone": "$422～$430",
-    "buy_zone_lower": 422.0,
-    "buy_zone_upper": 430.0,
-    "target": "$490",
-    "stop_loss": "$410",
-    "hold_period": "15",
-    "strategy": "動能策略",
-    "tracked_dates": [
-      "2026-07-06"
-    ],
-    "status": "watch",
-    "invalid_reason": null,
-    "watch_days": 0,
-    "active_days": 0,
-    "signal_date_close": 447.2200012207031,
-    "active_entry_price": null,
-    "active_start_date": null,
-    "date_added": "2026-07-06",
-    "entry_regime": "BULL_TREND",
-    "market_breadth_pct": 66.6,
-    "vix_value": 15.9,
-    "l2_score": 85.0,
-    "ai_confidence": 8,
-    "ai_strategy_reason": "均線多頭排列，RSI=71.3，VTF=0.93>0，Momentum_ATR=3.15>=2.0，RS_vs_Sector=+11.2%>+1%。"
-  },
-  {
-    "symbol": "AMP",
-    "name": "Ameriprise Financial, Inc.",
-    "sector": "Financial Services",
-    "buy_zone": "$484～$490",
-    "buy_zone_lower": 484.0,
-    "buy_zone_upper": 490.0,
-    "target": "$550",
-    "stop_loss": "$475",
-    "hold_period": "15",
-    "strategy": "動能策略",
-    "tracked_dates": [
-      "2026-07-06"
-    ],
-    "status": "watch",
-    "invalid_reason": null,
-    "watch_days": 0,
-    "active_days": 0,
-    "signal_date_close": 507.5,
-    "active_entry_price": null,
-    "active_start_date": null,
-    "date_added": "2026-07-06",
-    "entry_regime": "BULL_TREND",
-    "market_breadth_pct": 66.6,
-    "vix_value": 15.9,
-    "l2_score": 85.0,
-    "ai_confidence": 8,
-    "ai_strategy_reason": "均線多頭排列，RSI=72.6，VTF=0.97>0，Momentum_ATR=4.15>=2.0，RS_vs_Sector=+9.1%>+1%。"
+    "vix_value": 16.4,
+    "l2_score": 91.38,
+    "ai_confidence": 9,
+    "ai_strategy_reason": "均線多頭排列，RSI=63.4健康，VTF=1.11>1.0，Momentum_ATR=2.69強勢。"
   },
   {
     "symbol": "RTX",
     "name": "RTX Corporation",
     "sector": "Industrials",
-    "buy_zone": "$191～$195",
-    "buy_zone_lower": 191.0,
-    "buy_zone_upper": 195.0,
+    "buy_zone": "$196～$199",
+    "buy_zone_lower": 196.0,
+    "buy_zone_upper": 199.0,
     "target": "$220",
-    "stop_loss": "$186",
+    "stop_loss": "$192",
     "hold_period": "15",
     "strategy": "動能策略",
     "tracked_dates": [
@@ -522,9 +434,96 @@
     "date_added": "2026-07-06",
     "entry_regime": "BULL_TREND",
     "market_breadth_pct": 66.6,
-    "vix_value": 15.9,
+    "vix_value": 16.4,
     "l2_score": 91.38,
     "ai_confidence": 8,
-    "ai_strategy_reason": "均線多頭排列，RSI=69.9，VTF=0.59>0，Momentum_ATR=4.36>=2.0，RS_vs_Sector=+6.0%>+1%。"
+    "ai_strategy_reason": "均線多頭排列，RSI=70.0健康，VTF=0.59>0，Momentum_ATR=4.36強勢。"
+  },
+  {
+    "symbol": "SNA",
+    "name": "Snap-On Incorporated",
+    "sector": "Industrials",
+    "buy_zone": "$408～$411",
+    "buy_zone_lower": 408.0,
+    "buy_zone_upper": 411.0,
+    "target": "$450",
+    "stop_loss": "$401",
+    "hold_period": "10",
+    "strategy": "動能策略",
+    "tracked_dates": [
+      "2026-07-06"
+    ],
+    "status": "watch",
+    "invalid_reason": null,
+    "watch_days": 0,
+    "active_days": 0,
+    "signal_date_close": 413.6199951171875,
+    "active_entry_price": null,
+    "active_start_date": null,
+    "date_added": "2026-07-06",
+    "entry_regime": "BULL_TREND",
+    "market_breadth_pct": 66.6,
+    "vix_value": 16.4,
+    "l2_score": 91.38,
+    "ai_confidence": 8,
+    "ai_strategy_reason": "均線多頭排列，RSI=70.9，VTF=0.71>0，Momentum_ATR=4.20強勢。"
+  },
+  {
+    "symbol": "MCO",
+    "name": "Moody's Corporation",
+    "sector": "Financial Services",
+    "buy_zone": "$480～$485",
+    "buy_zone_lower": 480.0,
+    "buy_zone_upper": 485.0,
+    "target": "$540",
+    "stop_loss": "$470",
+    "hold_period": "15",
+    "strategy": "動能策略",
+    "tracked_dates": [
+      "2026-07-06"
+    ],
+    "status": "watch",
+    "invalid_reason": null,
+    "watch_days": 0,
+    "active_days": 0,
+    "signal_date_close": 498.7799987792969,
+    "active_entry_price": null,
+    "active_start_date": null,
+    "date_added": "2026-07-06",
+    "entry_regime": "BULL_TREND",
+    "market_breadth_pct": 66.6,
+    "vix_value": 16.4,
+    "l2_score": 85.0,
+    "ai_confidence": 8,
+    "ai_strategy_reason": "均線多頭排列，RSI=70.6，VTF=0.70>0，Momentum_ATR=3.39強勢。"
+  },
+  {
+    "symbol": "SCHW",
+    "name": "Charles Schwab Corporation (The",
+    "sector": "Financial Services",
+    "buy_zone": "$98～$100",
+    "buy_zone_lower": 98.0,
+    "buy_zone_upper": 100.0,
+    "target": "$110",
+    "stop_loss": "$96",
+    "hold_period": "15",
+    "strategy": "動能策略",
+    "tracked_dates": [
+      "2026-07-06"
+    ],
+    "status": "watch",
+    "invalid_reason": null,
+    "watch_days": 0,
+    "active_days": 0,
+    "signal_date_close": 100.62000274658203,
+    "active_entry_price": null,
+    "active_start_date": null,
+    "date_added": "2026-07-06",
+    "entry_regime": "BULL_TREND",
+    "market_breadth_pct": 66.6,
+    "vix_value": 16.4,
+    "l2_score": 85.0,
+    "ai_confidence": 8,
+    "ai_strategy_reason": "均線多頭排列，RSI=70.8健康，VTF=0.67>0，Momentum_ATR=4.65強勢。"
   }
 ]
