@@ -191,7 +191,7 @@ details[open] summary::before { transform: rotate(90deg); }
     <div class="scan-bar">
       掃描 <strong>S&amp;P500 503支</strong>
       <span class="arrow">→</span> L1 <strong>483支</strong>
-      <span class="arrow">→</span> L2 <strong>69支</strong>
+      <span class="arrow">→</span> L2 <strong>56支</strong>
       <span class="arrow">→</span> AI精選 <strong>5支</strong>
     </div>
     <a class="back-link" href="../index.html">← 返回首頁</a>
@@ -253,13 +253,34 @@ function toggleRunInfo() {
 </script>
 
   
+<div class="market-dashboard bull">
+  <div class="regime-header">
+    <span class="regime-name">📈 強勢牛市</span>
+    <span class="regime-strategy"><span class="tip-wrap">主推：動能策略<span class="tip-icon">?</span><span class="tip-box">條件：市場廣度 ≥ 60% 且 VIX &lt; 20<br>選強勢領頭羊、均線多頭排列標的</span></span></span>
+  </div>
+  <div class="regime-metrics">
+    <div class="regime-metric">
+      <div class="regime-metric-label">市場廣度</div>
+      <div class="regime-metric-val">66.6%</div>
+    </div>
+    <div class="regime-metric">
+      <div class="regime-metric-label">VIX</div>
+      <div class="regime-metric-val">15.9</div>
+      <div class="regime-metric-sub">正常</div>
+    </div>
+    <div class="regime-metric">
+      <div class="regime-metric-label">SPY 位置</div>
+      <div class="regime-metric-val spy-above">✅ EMA20 之上</div>
+    </div>
+  </div>
+</div>
 
   
 
   
 <div class="section">
   <div class="section-title">
-    🟡 留意清單<span class="section-count">（5支）</span>
+    🟡 留意清單<span class="section-count">（9支）</span>
   </div>
   
 <div class="track-item watch">
@@ -311,10 +332,50 @@ function toggleRunInfo() {
   <div class="track-status">第 2 天（等待回落至買入區間，剩 3 天自動移除）</div>
   <div class="track-prices"><span class="cur-price">$232.69</span>｜買入區間 $220～$225｜目標 $250｜止損 $215</div>
 </div>
+
+<div class="track-item watch">
+  <div class="track-header">
+    <span class="track-symbol">HOOD</span>
+    <span class="track-name">Robinhood Markets, Inc.</span>
+    <span class="strategy-tag">動能策略</span>
+  </div>
+  <div class="track-status">第 1 天（等待回落至買入區間，剩 4 天自動移除）</div>
+  <div class="track-prices">買入區間 $109～$112｜目標 $130｜止損 $106</div>
+</div>
+
+<div class="track-item watch">
+  <div class="track-header">
+    <span class="track-symbol">SPGI</span>
+    <span class="track-name">S&amp;P Global Inc.</span>
+    <span class="strategy-tag">動能策略</span>
+  </div>
+  <div class="track-status">第 1 天（等待回落至買入區間，剩 4 天自動移除）</div>
+  <div class="track-prices">買入區間 $422～$430｜目標 $490｜止損 $410</div>
+</div>
+
+<div class="track-item watch">
+  <div class="track-header">
+    <span class="track-symbol">AMP</span>
+    <span class="track-name">Ameriprise Financial, Inc.</span>
+    <span class="strategy-tag">動能策略</span>
+  </div>
+  <div class="track-status">第 1 天（等待回落至買入區間，剩 4 天自動移除）</div>
+  <div class="track-prices">買入區間 $484～$490｜目標 $550｜止損 $475</div>
+</div>
+
+<div class="track-item watch">
+  <div class="track-header">
+    <span class="track-symbol">RTX</span>
+    <span class="track-name">RTX Corporation</span>
+    <span class="strategy-tag">動能策略</span>
+  </div>
+  <div class="track-status">第 1 天（等待回落至買入區間，剩 4 天自動移除）</div>
+  <div class="track-prices">買入區間 $191～$195｜目標 $220｜止損 $186</div>
+</div>
 </div>
 <div class="section">
   <div class="section-title">
-    ❌ 失效訊號<span class="section-count">（8支，仍在追蹤期內）</span>
+    ❌ 失效訊號<span class="section-count">（7支，仍在追蹤期內）</span>
   </div>
   
 <div class="track-item invalid">
@@ -335,16 +396,6 @@ function toggleRunInfo() {
   </div>
   <div class="track-status">第 4 天 ── 跌破止損價 $690.00，錯過買點（剩 1 天自動移除）</div>
   <div class="track-prices"><span class="cur-price">$592.79</span>｜買入區間 $710～$723｜目標 $795｜止損 $690</div>
-</div>
-
-<div class="track-item invalid">
-  <div class="track-header">
-    <span class="track-symbol">AXON</span>
-    <span class="track-name">Axon Enterprise, Inc.</span>
-    <span class="strategy-tag">動能策略</span>
-  </div>
-  <div class="track-status">第 4 天 ── 已追高，錯過買點（剩 1 天自動移除）</div>
-  <div class="track-prices"><span class="cur-price">$622.35</span>｜買入區間 $550～$561｜目標 $617｜止損 $530</div>
 </div>
 
 <div class="track-item invalid">
@@ -397,17 +448,237 @@ function toggleRunInfo() {
   <div class="track-prices"><span class="cur-price">$249.77</span>｜買入區間 $222～$230｜目標 $270｜止損 $218</div>
 </div>
 </div>
+<div class="section">
+  <div class="section-title">
+    🆕 今日新進觀察名單<span class="section-count">（4支）</span>
+  </div>
+  
+<div class="stock-card ">
+  <div class="card-header">
+    <div class="card-rank">1</div>
+    <div class="card-title">
+      <div class="card-symbol">HOOD</div>
+      <div class="card-company">Robinhood Markets, Inc.</div>
+    </div>
+    <div class="card-price">
+      <span class="price-val">$117.55</span>
+      <span class="price-chg up">▲4.28%</span>
+    </div>
+  </div>
+  <div class="card-badges">
+    <span class="badge">📊 評分 85</span>
+    <span class="badge">信心 8/10</span>
+    <span class="badge">🏭 Financial Services</span>
+    <span class="badge">📋 動能策略</span>
+  </div>
+  <div class="reason-box">🤖 完美多頭排列，RSI=69.9健康，VTF=0.53帶量推進，Momentum_ATR=5.11強勁，RS_vs_Sector=+10.9%板塊領頭羊，基本面營收成長15.1%且獲利佳。</div>
+  <div class="detail-box">📋 策略依據：均線多頭排列(EMA5&gt;EMA10&gt;EMA20&gt;EMA50)，RSI=69.9，VTF=0.53&gt;0，Momentum_ATR=5.11&gt;=2.0，RS_vs_Sector=+10.9%&gt;+1%。</div>
+  <div class="trade-grid">
+    <div class="trade-cell">
+      <div class="trade-label">買入區間</div>
+      <div class="trade-val buy">$109～$112</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">目標價</div>
+      <div class="trade-val tgt">$130</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">止損</div>
+      <div class="trade-val stop">$106</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">持有週期</div>
+      <div class="trade-val">15</div>
+    </div>
+  </div>
+  <div class="risk-box">⚠️ 股價距EMA5達+6.9%過度延伸，短線追高風險；Fwd_PE=39.7偏高。</div>
+  <div class="detail-box">💡 信心評分依據：技術面強勢且為板塊領頭羊，但股價過度延伸且估值偏高，扣1分。</div>
+</div>
+
+<div class="stock-card ">
+  <div class="card-header">
+    <div class="card-rank">2</div>
+    <div class="card-title">
+      <div class="card-symbol">SPGI</div>
+      <div class="card-company">S&amp;P Global Inc.</div>
+    </div>
+    <div class="card-price">
+      <span class="price-val">$447.22</span>
+      <span class="price-chg up">▲1.67%</span>
+    </div>
+  </div>
+  <div class="card-badges">
+    <span class="badge">📊 評分 85</span>
+    <span class="badge">信心 8/10</span>
+    <span class="badge">🏭 Financial Services</span>
+    <span class="badge">📋 動能策略</span>
+  </div>
+  <div class="reason-box">🤖 完美多頭排列，RSI=71.3，VTF=0.93帶量推進，Momentum_ATR=3.15強勢，RS_vs_Sector=+11.2%領先板塊，基本面營收成長10.4%且淨利率30.4%優異。</div>
+  <div class="detail-box">📋 策略依據：均線多頭排列，RSI=71.3，VTF=0.93&gt;0，Momentum_ATR=3.15&gt;=2.0，RS_vs_Sector=+11.2%&gt;+1%。</div>
+  <div class="trade-grid">
+    <div class="trade-cell">
+      <div class="trade-label">買入區間</div>
+      <div class="trade-val buy">$422～$430</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">目標價</div>
+      <div class="trade-val tgt">$490</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">止損</div>
+      <div class="trade-val stop">$410</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">持有週期</div>
+      <div class="trade-val">15</div>
+    </div>
+  </div>
+  <div class="risk-box">⚠️ 股價距EMA5達+5.9%略為延伸；Fwd_PE=21.6合理但偏高。</div>
+  <div class="detail-box">💡 信心評分依據：技術面強勁且基本面優異，但股價略延伸，扣1分。</div>
+</div>
+
+<div class="stock-card ">
+  <div class="card-header">
+    <div class="card-rank">3</div>
+    <div class="card-title">
+      <div class="card-symbol">AMP</div>
+      <div class="card-company">Ameriprise Financial, Inc.</div>
+    </div>
+    <div class="card-price">
+      <span class="price-val">$507.50</span>
+      <span class="price-chg up">▲3.75%</span>
+    </div>
+  </div>
+  <div class="card-badges">
+    <span class="badge">📊 評分 85</span>
+    <span class="badge">信心 8/10</span>
+    <span class="badge">🏭 Financial Services</span>
+    <span class="badge">📋 動能策略</span>
+  </div>
+  <div class="reason-box">🤖 完美多頭排列，RSI=72.6，VTF=0.97帶量推進，Momentum_ATR=4.15強勢，RS_vs_Sector=+9.1%領先板塊，基本面營收成長9%且淨利率20.2%穩健。</div>
+  <div class="detail-box">📋 策略依據：均線多頭排列，RSI=72.6，VTF=0.97&gt;0，Momentum_ATR=4.15&gt;=2.0，RS_vs_Sector=+9.1%&gt;+1%。</div>
+  <div class="trade-grid">
+    <div class="trade-cell">
+      <div class="trade-label">買入區間</div>
+      <div class="trade-val buy">$484～$490</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">目標價</div>
+      <div class="trade-val tgt">$550</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">止損</div>
+      <div class="trade-val stop">$475</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">持有週期</div>
+      <div class="trade-val">15</div>
+    </div>
+  </div>
+  <div class="risk-box">⚠️ 股價距EMA5達+4.9%接近延伸；Fwd_PE=10.5偏低，但短線漲幅13.6%可能回調。</div>
+  <div class="detail-box">💡 信心評分依據：技術面強勢且估值低，但短線漲幅較大，扣1分。</div>
+</div>
+
+<div class="stock-card ">
+  <div class="card-header">
+    <div class="card-rank">4</div>
+    <div class="card-title">
+      <div class="card-symbol">RTX</div>
+      <div class="card-company">RTX Corporation</div>
+    </div>
+    <div class="card-price">
+      <span class="price-val">$201.37</span>
+      <span class="price-chg up">▲1.06%</span>
+    </div>
+  </div>
+  <div class="card-badges">
+    <span class="badge">📊 評分 91</span>
+    <span class="badge">信心 8/10</span>
+    <span class="badge">🏭 Industrials</span>
+    <span class="badge">📋 動能策略</span>
+  </div>
+  <div class="reason-box">🤖 完美多頭排列，RSI=69.9健康，VTF=0.59帶量推進，Momentum_ATR=4.36強勢，RS_vs_Sector=+6.0%領先板塊，基本面營收成長8.7%且淨利率8%穩健。</div>
+  <div class="detail-box">📋 策略依據：均線多頭排列，RSI=69.9，VTF=0.59&gt;0，Momentum_ATR=4.36&gt;=2.0，RS_vs_Sector=+6.0%&gt;+1%。</div>
+  <div class="trade-grid">
+    <div class="trade-cell">
+      <div class="trade-label">買入區間</div>
+      <div class="trade-val buy">$191～$195</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">目標價</div>
+      <div class="trade-val tgt">$220</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">止損</div>
+      <div class="trade-val stop">$186</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">持有週期</div>
+      <div class="trade-val">15</div>
+    </div>
+  </div>
+  <div class="risk-box">⚠️ 股價距EMA5達+3.0%尚可；Fwd_PE=26.6略高；產業ETF XLI 5日+1.5%支撐。</div>
+  <div class="detail-box">💡 信心評分依據：技術面強勢且基本面穩健，延伸幅度適中，估值略高扣1分。</div>
+</div>
+</div>
+<div class="section">
+  <div class="section-title">
+    🔄 重新入選，重置追蹤<span class="section-count">（1支）</span>
+  </div>
+  
+<div class="stock-card reset-card">
+  <div class="card-header">
+    <div class="card-rank">1</div>
+    <div class="card-title">
+      <div class="card-symbol">AXON</div>
+      <div class="card-company">Axon Enterprise, Inc.</div>
+    </div>
+    <div class="card-price">
+      <span class="price-val">$622.35</span>
+      <span class="price-chg up">▲4.24%</span>
+    </div>
+  </div>
+  <div class="card-badges">
+    <span class="badge">📊 評分 85</span>
+    <span class="badge">信心 7/10</span>
+    <span class="badge">🏭 Industrials</span>
+    <span class="badge">📋 動能策略</span>
+  </div>
+  <div class="reason-box">🤖 完美多頭排列，RSI=79.2偏強但未超買，VTF=0.89帶量推進，Momentum_ATR=4.09強勢，RS_vs_Sector=+20.4%極強領先，基本面營收成長33.7%高速。</div>
+  <div class="detail-box">📋 策略依據：均線多頭排列，RSI=79.2，VTF=0.89&gt;0，Momentum_ATR=4.09&gt;=2.0，RS_vs_Sector=+20.4%&gt;+1%。</div>
+  <div class="trade-grid">
+    <div class="trade-cell">
+      <div class="trade-label">買入區間</div>
+      <div class="trade-val buy">$576～$590</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">目標價</div>
+      <div class="trade-val tgt">$680</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">止損</div>
+      <div class="trade-val stop">$560</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">持有週期</div>
+      <div class="trade-val">15</div>
+    </div>
+  </div>
+  <div class="risk-box">⚠️ 股價距EMA5達+8.0%過度延伸；Fwd_PE=58.9偏高；短線漲幅21.9%回調風險大。</div>
+  <div class="detail-box">💡 信心評分依據：技術面極強但股價過度延伸且估值高，扣2分。</div>
+</div>
+</div>
 
   <div class="summary-box">
     <h2>📈 今日統計</h2>
     <div class="stat-row">
       <div class="stat-group"><span class="stat-num c-active">0</span><span class="stat-lbl">支有效</span></div>
-      <div class="stat-group"><span class="stat-num c-watch">5</span><span class="stat-lbl">支留意</span></div>
-      <div class="stat-group"><span class="stat-num c-invalid">8</span><span class="stat-lbl">支失效</span></div>
+      <div class="stat-group"><span class="stat-num c-watch">9</span><span class="stat-lbl">支留意</span></div>
+      <div class="stat-group"><span class="stat-num c-invalid">7</span><span class="stat-lbl">支失效</span></div>
     </div>
     <div class="stat-row">
-      <div class="stat-group"><span class="stat-num c-new">0</span><span class="stat-lbl">支新增</span></div>
-      <div class="stat-group"><span class="stat-num c-reset">0</span><span class="stat-lbl">支重新入選</span></div>
+      <div class="stat-group"><span class="stat-num c-new">4</span><span class="stat-lbl">支新增</span></div>
+      <div class="stat-group"><span class="stat-num c-reset">1</span><span class="stat-lbl">支重新入選</span></div>
       <div class="stat-group"><span class="stat-num c-removed">0</span><span class="stat-lbl">支移除</span></div>
       
     </div>
