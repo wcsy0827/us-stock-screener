@@ -101,7 +101,9 @@ if __name__ == "__main__":
         "total":    summary.get("total", 0),
         "l1_count": summary.get("l1_count", 0),
         "l2_count": summary.get("l2_count", 0),
-        "ai_count": len(ranked),
+        # fallback（AI 排序失敗時的 L2 分數退化輸出）不算真正的 AI 精選，
+        # 否則 last_run.json 會出現「ai_count>0 但報告 0 支新增」的誤導性落差（DD-20）
+        "ai_count": sum(1 for r in ranked if not r.get("is_fallback")),
         "date":     datetime.strptime(market_date_str, "%Y-%m-%d"),
     }
     publish(categories, stats, dry_run=args.dry_run, market_context=market_context)

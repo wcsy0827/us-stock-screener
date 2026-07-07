@@ -73,3 +73,32 @@ class TestFetchMarketContextReusesExistingData:
         market.fetch_market_context(candidate_sectors={"Technology"})
 
         assert set(captured["tickers"]) == {"^VIX", "SPY", "XLK"}
+
+
+class TestFetchMarketContextResilientToSingleTickerFailure:
+    def test_missing_close_column_on_one_etf_does_not_crash_whole_context(self, monkeypatch):
+        """DD-7：某支板塊 ETF 補抓失敗（回傳無 Close 欄位的空 DataFrame，
+        真實案例為 2026-07-06 report 觸發的 KeyError: 'Close'）時，
+        不得讓整個 fetch_market_context() 崩潰，SPY/VIX/其他正常 ETF 與 Regime 判定仍須正常回傳。"""
+        all_stocks_data = {"SPY": _make_df(500.0)}  # XLK/XLV 皆缺失，需補抓
+
+        def fake_download(tickers, **kwargs):
+            if len(tickers) == 1:
+                return _make_df(20.0, n=5)
+            return pd.concat(
+                {t: (pd.DataFrame() if t == "XLV" else _make_df(20.0, n=5)) for t in tickers},
+                axis=1,
+            )
+
+        monkeypatch.setattr(market.yf, "download", fake_download)
+        context = market.fetch_market_context(
+            candidate_sectors={"Technology", "Healthcare"},
+            all_stocks_data=all_stocks_data,
+            breadth_pct=55.0,
+            vix_value=18.0,
+        )
+
+        assert "sp500" in context
+        assert "Technology" in context["sectors"]
+        assert "Healthcare" not in context["sectors"]
+        assert context.get("regime")  # 單一 ETF 失敗不得拖垮 Regime 判定

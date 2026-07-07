@@ -691,6 +691,11 @@ def run_tracker(
 
     for stock in new_ranked:
         sym = stock["symbol"]
+        if stock.get("is_fallback"):
+            # L2 分數 fallback（AI 排序失敗/回傳空結果時的退化輸出），非真實 AI 判斷，
+            # 不得與信心分數不足混為一談，也不納入追蹤（DD-20）
+            print(f"[tracker] {sym} 為 L2 分數 fallback 結果（AI 未產生有效判斷），不納入追蹤")
+            continue
         confidence = stock.get("confidence") or 0
         if confidence < MIN_AI_CONFIDENCE:
             print(f"[tracker] {sym} AI 信心分數 {confidence} < {MIN_AI_CONFIDENCE}，跳過")

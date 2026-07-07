@@ -587,6 +587,15 @@ class TestRunTrackerNewSignals:
         watchlist, categories = tracker.run_tracker([stock], market_date="2024-01-01")
         assert watchlist == []
 
+    def test_fallback_result_skipped_via_distinct_path_not_confidence_gate(self):
+        """DD-20：is_fallback=True（AI 排序失敗的 L2 分數退化輸出）一律跳過，
+        且不得與「信心分數不足」混為一談——即使 confidence 剛好達標也要擋下，
+        因為 5 分是寫死的佔位值，不是 AI 真實判斷。"""
+        stock = self._stock(is_fallback=True, confidence=tracker.MIN_AI_CONFIDENCE)
+        watchlist, categories = tracker.run_tracker([stock], market_date="2024-01-01")
+        assert categories["new"] == []
+        assert watchlist == []
+
     def test_new_signal_captures_regime_and_vix_snapshot(self):
         stock = self._stock()
         market_context = {"regime": "CONSOLIDATION_VOLATILE",

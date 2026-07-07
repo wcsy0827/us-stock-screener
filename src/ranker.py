@@ -733,6 +733,7 @@ def _enrich_fallback(
             "reason": "L2 技術指標評分排名",
             "risk": "請手動確認各項指標",
             "confidence": 5,
+            "is_fallback": True,  # 非真實 AI 判斷，僅 L2 分數排序頂替（DD-18）
             "buy_zone": "-",
             "target": "-",
             "stop_loss": "-",

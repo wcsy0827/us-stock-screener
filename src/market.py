@@ -68,7 +68,9 @@ def _trend_label(chg_5d: float) -> str:
 
 
 def _analyze(df: pd.DataFrame) -> dict:
-    """從 OHLCV DataFrame 計算走勢摘要。"""
+    """從 OHLCV DataFrame 計算走勢摘要。單一 ticker 資料異常時回傳 {}，不得拋錯拖垮整個大盤背景（DD-7）。"""
+    if df is None or df.empty or "Close" not in df.columns:
+        return {}
     close = df["Close"].dropna()
     if len(close) < 5:
         return {}
@@ -359,7 +361,7 @@ def fetch_market_context(
     # VIX（Step 2.5 已提供則直接複用，避免重複下載）
     vix_final = vix_value if vix_value is not None else 20.0
     vix_df = _get("^VIX")
-    if not vix_df.empty:
+    if not vix_df.empty and "Close" in vix_df.columns:
         vix_close = vix_df["Close"].dropna()
         if not vix_close.empty:
             vix_5d_ago = float(vix_close.iloc[-5]) if len(vix_close) >= 5 else float(vix_close.iloc[-1])

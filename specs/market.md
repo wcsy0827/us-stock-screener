@@ -131,6 +131,14 @@ def fetch_market_context(
 - **向下相容**：`all_stocks_data` 為 `None` 或未提供時，`missing_tickers` 等於全部 SPY/ETF，行為與 DD-6 之前完全相同（一律下載）。
 - **捨棄**：完全移除獨立下載、要求呼叫端保證 `all_stocks_data` 一定含有全部所需 ticker（過於僵化，任何未來新增產業或 Step 2 下載失敗的邊界情況都會直接壞掉；保留「缺失才補抓」的退化路徑更穩健）。
 
+### DD-7: `_analyze()` 對缺失 Close 欄位防呆，避免單一 ETF 異常拖垮整個大盤背景
+
+- **選擇**：`_analyze(df)` 開頭新增 `if df is None or df.empty or "Close" not in df.columns: return {}`；VIX 區塊的 `vix_df["Close"]` 存取前也加上 `"Close" in vix_df.columns` 檢查。
+- **原因**：2026-07-06 CI 執行時，515 支請求 ticker 中有 1 支（板塊 ETF）在 Step 2 下載失敗，`fetch_market_context()` 補抓時該 ticker 再次失敗，`_get()` 依既有防呆回傳完全無欄位的空 `pd.DataFrame()`；但 `_analyze()` 內的 `df["Close"].dropna()` 沒有任何防呆，直接拋出 `KeyError: 'Close'`，且此例外未被 `_analyze()` 自己捕捉，而是一路往外傳到 `fetch_market_context()` 唯一的外層 `try/except`，導致當天已成功抓到的 SPY、VIX、其餘 10 支正常板塊 ETF 資料全數被丟棄，`market_context` 整個退化為 `{}`。後果連鎖：`last_run.json` 的 `regime` 欄位變成空字串；更嚴重的是這個空 `market_context` 被原封不動送進 Step 6 的 AI Prompt，讓 DeepSeek 在完全缺少大盤環境背景的情況下做判斷，當天 AI 回傳空選股清單（間接觸發 `ranker.py` DD-18 的 fallback 降級）。
+- **設計原則**：任何單一 ticker 的資料異常只應影響該 ticker 自身的欄位（`sp500`/`vix`/`sectors[X]` 其中之一缺席），不得讓整個 `fetch_market_context()` 函式層級的例外吞掉其他 ticker 已經抓到的正常資料。
+- **捨棄**：在 `fetch_market_context()` 內對每個 `_analyze()` 呼叫個別包 `try/except`（治標不治本，`_analyze()` 本身仍是一個對外部輸入零防禦的函式，未來任何新呼叫點都會重踩同樣的坑）；改讓 `_get()` 保證回傳值一定含 `Close` 欄位（需要對 `yf.download` 各種失敗形態做窮舉分類，複雜度遠高於在消費端做一行防呆）。
+- → 詳見 [plans/2026-07-07-market-context-single-etf-resilience.md](../plans/2026-07-07-market-context-single-etf-resilience.md)
+
 ## Acceptance Criteria
 
 - [ ] 廣度=70%、VIX=15 → `BULL_TREND`
@@ -150,3 +158,4 @@ def fetch_market_context(
 - [ ] **DD-6 複用已下載資料**：`all_stocks_data` 含 SPY 與候選產業 ETF 時，`fetch_market_context()` 觸發的 `yf.download` 只請求 `^VIX`
 - [ ] **DD-6 部分缺失時補抓**：`all_stocks_data` 缺少某個候選產業 ETF 時，下載清單應包含 `^VIX` 與該缺失的 ticker，不含已存在的 SPY
 - [ ] **DD-6 向下相容**：未提供 `all_stocks_data` 時，下載清單應包含 `^VIX`、`SPY` 與全部候選產業 ETF（行為與 DD-6 之前相同）
+- [ ] **DD-7 單一 ETF 失敗不拖垮大盤背景**：某支候選產業 ETF 補抓後仍回傳無 `Close` 欄位的空 DataFrame → `fetch_market_context()` 不拋錯，`sp500`/`vix`/其他正常 ETF 與 `regime` 判定皆正常回傳，僅該支 ETF 缺席於 `context["sectors"]`
