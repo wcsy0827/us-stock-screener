@@ -65,7 +65,7 @@ S&P 500 (~503 支)
   ↓ Step 5.5 market.py       完整大盤 ETF 背景（直接複用 Step 2.5 的廣度與 VIX，不重算）
   ↓ Step 5.7 analyzer.py     本地績效診斷（讀 performance_history.json，歸納 Regime×策略×產業賺賠關聯
                               → data/ai_hints.json；分組 <3 筆或總樣本 <5 筆不生成回饋；失敗不中斷流程）
-  ↓ Step 6   ranker.py       L3 DeepSeek AI 精選（≤5 支；29 欄 Markdown 表含 RS_vs_Sector、基本面欄位、空頭比例；每產業 ≤8 支）
+  ↓ Step 6   ranker.py       L3 DeepSeek AI 精選（≤5 支；30 欄 Markdown 表含 RS_vs_Sector、基本面欄位、空頭比例、ATR14；每產業 ≤8 支）
                               發送前自動讀取 ai_hints.json，非空時在 Prompt 末尾附加 Historical_Performance_Review 區塊
              tracker.py      訊號追蹤（watchlist.json）→ 結算歸檔（performance_history.json）
              publisher.py    HTML 報告 → GitHub Pages（個股浮損益、今日結算區段、策略 Tooltip、歷史績效儀表板）
@@ -165,6 +165,8 @@ S&P 500 (~503 支)
 29. **L1 新增 ATR% 波動上限風控過濾（filter.py DD-8）**：`ranker.py` DD-15 已把三策略止損統一收斂為「錨點下方 2%」固定緩衝，但緩衝寬度沒有對照個股自身波動——日均 ATR% 達 6~8% 以上的個股，2% 止損形同虛設，正常雜訊就會掃損。新增 `_atr_pct()`（ATR14/收盤價百分比）在 L1 排除 `> MAX_ATR_PCT`（預設 8%，`env: MAX_ATR_PCT`）的個股；歷史數據不足 15 筆無法計算時不排除。→ 詳見 `specs/pipeline.md`
 
 30. **L3 候選池新增 Short_Float_Pct 空頭比例標記（ranker.py DD-17）**：候選池表格新增 `Short_Float_Pct` 欄（`shortPercentOfFloat`，`fetcher.fetch_info()` 免費附帶），比照 DD-14 基本面三欄先例，缺值填 `N/A` 且**不觸發 AI 排除**，僅供 AI 在 `risk`/`confidence` 中納入軋空風險旗標（實務上 >15% 視為高風險）。JSON 輸出 schema 不變，`buy_zone`/止損相關的 DD-12/13/15 策略算法不受影響。→ 詳見 `specs/ranker.md`
+
+32. **動能策略買進區間改為 ATR 錨定淺回檔帶（ranker.py DD-19）**：使用者實測觀察「篩選出來的股票太強勢、等不到回檔」（2026-07-06 報告：4 支死於「已追高」）——根因是 L2 的職責就是挑強勢股（均線多頭、還沒回檔），DD-12 卻要求買入區間設在 `EMA20~EMA10` 深度回檔帶（現價下方 4~8%），5 日 watch 窗口內等到的機率極低，越強的股票越買不到；且固定 EMA 帶不看個股波動，低波動股回檔 1~2% 就續漲卻被要求等 4~8%。修法（對應機構「ATR 比例回檔 + ATR 動態止損」實務）：候選池表格新增 `ATR14` 欄（`compute_indicators()` 原本已算出、僅供 `Momentum_ATR` 除法後即丟棄，本次曝露）；買入區間預設改為 `Close − 1×ATR14 ～ Close − 0.25×ATR14` 淺回檔帶（下緣不低於 EMA10），深度自適應個股波動；原 EMA20~EMA10 帶降級為「已回檔加分情境」；「距 EMA5 超過 +5% 一律禁止」改為「RSI > 78 或 VTF < 0 過熱熔斷」（距離均線遠近不等於危險，量價結構才是）；止損改為買入區間下緣 − 1×ATR14（加分情境可用 EMA20 下方 2%，取較高者）。`scorer.py`/`tracker.py`/突破/反轉策略零改動；L1 既有 `MAX_ATR_PCT=8%` 上限保證 ATR 錨定寬度有天然上界。→ 詳見 `specs/ranker.md`、`plans/2026-07-07-momentum-atr-anchored-buy-zone.md`
 
 31. **單一 ETF 資料異常不得拖垮整個大盤背景 + fallback 標記不再誤記為 AI 精選（market.py DD-7、ranker.py DD-18）**：2026-07-06 report 排查發現：Step 2 一支板塊 ETF 下載失敗、Step 5.5 補抓再度失敗後，`market.py` 的 `_analyze()` 對缺失 `Close` 欄位無防呆直接拋 `KeyError`，導致該例外一路傳到 `fetch_market_context()` 唯一的外層 `try/except`，把當天已抓到的 SPY/VIX/其餘 10 支正常 ETF 全部一併丟棄，`market_context` 整個退化為 `{}`（`last_run.json` 的 `regime` 因此變空字串），且這個空背景被原封不動送進 Step 6 的 AI Prompt，疑似導致 DeepSeek 當天回傳空結果、觸發 `ranker.py` 既有的 `_enrich_fallback()` 降級（L2 分數前 N 名包成「AI 精選」格式，`confidence` 寫死 5）。`tracker.py` 既有 `MIN_AI_CONFIDENCE=6` 門檻（DD-14）正確濾掉這些 fallback 個股（不進 watchlist，這部分行為本來就對），但 `main.py` 的 `ai_count = len(ranked)` 沒有區分 fallback 與真實 AI 判斷，把 5 支佔位股計入「AI 精選」寫進 `last_run.json`，與報告「0 支新增」互相矛盾，誤導使用者以為選股流程漏掉了東西。修法：(1) `_analyze()` 開頭加防呆，缺失 `Close` 欄位回傳 `{}`，單一 ETF 異常只影響該 ETF 自己的欄位；(2) `_enrich_fallback()` 結果標記 `"is_fallback": True`，`tracker.py` 用獨立路徑（非「信心分數不足」措辭）明確跳過，`main.py` 的 `ai_count` 排除這些條目。不改變任何一支股票最終是否出現在報告上，只修正資料層韌性與統計數字的準確性。→ 詳見 `specs/market.md`、`specs/ranker.md`、`plans/2026-07-07-market-context-single-etf-resilience.md`
 

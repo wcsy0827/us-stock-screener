@@ -23,7 +23,7 @@
 </Output_Constraint>
 ```
 
-### Markdown 候選池表格欄位（29 欄）
+### Markdown 候選池表格欄位（30 欄）
 
 | 欄位 | 說明 |
 |------|------|
@@ -34,8 +34,8 @@
 | Strategy_Tag | 系統預判策略（僅供參考） |
 | MA_Trend | BULL_1/BULL_2/MIXED/BEAR |
 | EMA5 | 5 日指數移動均線價位（美元）；DD-12 |
-| EMA10 | 10 日指數移動均線價位（美元）；動能策略標準回檔買進區間上緣；DD-12 |
-| EMA20 | 20 日指數移動均線價位（美元）；動能策略標準回檔買進區間下緣；DD-12 |
+| EMA10 | 10 日指數移動均線價位（美元）；動能策略淺回檔帶的下緣底線（DD-19）；已回檔加分情境的區間上緣（DD-12） |
+| EMA20 | 20 日指數移動均線價位（美元）；動能策略已回檔加分情境的區間下緣（DD-12）；該情境的止損基準 |
 | Vol_vs_5DAvg | 當日成交量 ÷ 5 日均量；`.round(2)`；<0.7 代表回檔量縮確認；DD-12 |
 | High_20D | 20 日最高價（美元）；突破策略的壓力位/回測支撐基準；DD-13 |
 | Vol_vs_20DAvg | 當日成交量 ÷ 20 日均量；`.round(2)`；>=1.5 代表攻擊量確認突破，<1.2 假突破機率高；DD-13 |
@@ -44,6 +44,7 @@
 | VTF_Score | 量能推進因子：`max(-5.0, Vol_Ratio × (2×K_pos − 1))`，下限 -5.0、上限不設；`.round(2)`；分母為零時安全降級 `vol_ratio = 1.0`；正值=帶量推進（> 5.0 為史詩級機構建倉），負值=高檔派發；缺值填 `N/A` |
 | Price_5D_Pct | 5 日漲跌幅（短線爆發力） |
 | Momentum_ATR | ATR 標準化動能：20 日價格位移 ÷ 14 日 ATR；`.round(2)`；缺值填 `N/A` |
+| ATR14 | 14 日平均真實波幅（美元，Wilder 平滑）；動能策略買入區間深度與止損距離的波動基準；缺值填 `N/A`（此時 `Momentum_ATR` 必同為 `N/A`，既有排除規則已涵蓋，不需獨立 N/A 規則）；DD-19 |
 | EMA50 | 50 日均線價位（美元）；反轉策略的支撐區判斷基準；DD-13 |
 | Low_20D | 20 日最低價（美元）；反轉策略的左側關鍵支撐與止損基準；DD-13 |
 | Stoch_K | 隨機指標 KD 的 K 值；`.round(1)`；<25 代表超賣區；DD-13 |
@@ -59,7 +60,7 @@
 
 ### 策略指引（System Prompt 約束）
 
-**動能策略（Momentum）**：優先挑選 `Momentum_ATR >= 2.0` 且 `VTF_Score > 1.0` 的標的，跨行業公平挑選，不以絕對漲幅百分比作為依據。買入區間依 `EMA5`/`EMA10`/`EMA20`/`Vol_vs_5DAvg` 三段式判斷（DD-12）：標準回檔進場設在 `EMA20~EMA10` 且需 `Vol_vs_5DAvg < 0.7`；極端強勢例外可設在 `EMA5` 附近（5MA 探針帶）；股價距 `EMA5` 超過 +5% 視為過度延伸，禁止以收盤價設定買入區間上限。
+**動能策略（Momentum）**：優先挑選 `Momentum_ATR >= 2.0` 且 `VTF_Score > 1.0` 的標的，跨行業公平挑選，不以絕對漲幅百分比作為依據。買入區間以個股自身 `ATR14` 為深度基準三段式判斷（DD-19，取代 DD-12 的 EMA 帶預設）：標準進場（預設）設在 `Close_Price − 1×ATR14 ～ Close_Price − 0.25×ATR14` 淺回檔帶（下緣不低於 `EMA10`）；已回檔加分情境——股價已自然回落至 `EMA20~EMA10` 且 `Vol_vs_5DAvg < 0.7`（量縮）→ 直接用該區間，信心分數可上調；過熱例外——`RSI > 78` 或 `VTF_Score < 0` → 大幅降低信心分數，不宜進場。止損：買入區間下緣 − 1×ATR14（加分情境可改用 `EMA20` 下方 2%，兩者取較高者，不得寬於進場價 −10%）。
 
 **突破策略（Breakout）**：強烈關注 `VTF_Score >= 1.5` 且 `Close_Price` 距 `High_20D` 在 -2%~+2% 內的標的。買入區間依 `High_20D`/`Vol_vs_20DAvg` 四段式判斷（DD-13）：優先選回測確認（曾站上 `High_20D` 後回落至 `High_20D~High_20D×1.02` 企穩）；次選標準突破緩衝（`High_20D` 之上 +0.5%~+1.5%）；距 `High_20D` 超過 +3% 視為追高；`Vol_vs_20DAvg >= 1.5` 才視為攻擊量確認。`VTF_Score < 0` 一律視為假突破派發陷阱，禁止入選。
 
@@ -262,6 +263,8 @@ vtf_score = round(max(-5.0, vol_ratio * (2 * k_pos - 1)), 2)           # 下限�
 
 ### DD-12: 動能策略買進區間結構化（EMA10~EMA20 回檔帶）
 
+> **註**：本 DD 的三段式規則已被 DD-19 部分取代——EMA20~EMA10 回檔帶從「預設進場」降級為「已回檔加分情境」，預設改為 ATR 錨定淺回檔帶。表格四欄（EMA5/EMA10/EMA20/Vol_vs_5DAvg）與「buy_zone 由 AI 輸出」的架構取捨仍然有效。
+
 - **選擇**：候選池表格新增 `EMA5`、`EMA10`、`EMA20`（美元原始價位）與 `Vol_vs_5DAvg`（當日量 ÷ 5日均量）四欄；System Prompt 動能策略段落改為三段式規則：
   1. 標準回檔進場：股價已回落至 `EMA20~EMA10` 之間，且 `Vol_vs_5DAvg < 0.7`（量縮無賣壓）→ `buy_zone` 設在該區間
   2. 極端強勢例外：股價緊貼 `EMA5`（尚未明顯回檔）但 `VTF_Score` 仍強 → `buy_zone` 可設在 `EMA5` 附近（5MA 探針帶）
@@ -302,6 +305,8 @@ vtf_score = round(max(-5.0, vol_ratio * (2 * k_pos - 1)), 2)           # 下限�
 - → 詳見 `plans/2026-07-02-fundamental-dimension-l3-prompt.md`
 
 ### DD-15: 動能/反轉策略止損改為明確百分比緩衝，避免等於買入區間下緣
+
+> **註**：動能策略部分已被 DD-19 部分取代——預設路徑（ATR 淺回檔帶進場）的止損改為「買入區間下緣 − 1×ATR14」；「EMA20 下方 2%」僅保留於已回檔加分情境。「止損不得等於買入區間下緣」的核心原則不變。反轉策略部分完全不受影響。
 
 - **選擇**：動能策略止損由「跌破 EMA20」改為「EMA20 下方 2%（不得設為等於買入區間下緣，須低於 EMA20）」；
   反轉策略止損由「Low_20D 下方」改為「Low_20D 下方 2%（不得設在 EMA50 之上，避免止損過寬；不得等於買入
@@ -350,6 +355,20 @@ vtf_score = round(max(-5.0, vol_ratio * (2 * k_pos - 1)), 2)           # 下限�
 - **捨棄**：讓 `stats["ai_count"]` 保持 `len(ranked)` 不變、只修 `market.py` 的資料來源問題（治標不治本——DeepSeek API 本身偶發回傳空清單、或未設定 API Key 時走 `_enrich_fallback()` 的既有分支，與這次 `market_context={}` 是兩條獨立成因，日後任何一條路徑觸發 fallback 都會重現同一種誤導性統計）；把 fallback 判斷邏輯下放到 `tracker.py` 用 `confidence == 5` 猜測（脆弱，未來若 `MIN_AI_CONFIDENCE` 或 fallback 預設分數任一方調整就會誤判，且無法與 AI 剛好給 5 分的真實判斷區分）。
 - → 詳見 [plans/2026-07-07-market-context-single-etf-resilience.md](../plans/2026-07-07-market-context-single-etf-resilience.md)
 
+### DD-19: 動能策略買進區間改為 ATR 錨定淺回檔帶（部分取代 DD-12/DD-15 的動能段落）
+
+- **選擇**：候選池表格新增 `ATR14` 欄（14 日平均真實波幅美元值，Wilder 平滑；`compute_indicators()` 原本已計算此值供 `Momentum_ATR` 使用，只是計算後即丟棄，本次僅需曝露）；System Prompt 動能策略買進區間改為三段式新規則：
+  1. 標準進場（預設）：`buy_zone` 設在 `Close_Price − 1×ATR14 ～ Close_Price − 0.25×ATR14` 的淺回檔帶；若區間下緣低於 `EMA10`，改以 `EMA10` 為下緣（不追求超過趨勢結構的深度回檔）
+  2. 已回檔加分情境：股價已自然回落至 `EMA20~EMA10` 之間且 `Vol_vs_5DAvg < 0.7`（量縮無賣壓）→ `buy_zone` 直接設在該區間，信心分數可上調（原 DD-12 的「標準回檔進場」降級至此）
+  3. 過熱例外：`RSI > 78` 或 `VTF_Score < 0`（高檔出貨跡象）→ 大幅降低信心分數，不宜進場（取代原 DD-12 的「距 EMA5 超過 +5% 一律禁止」——距離均線遠近不等於危險，量價結構與超買程度才是）
+
+  止損同步改為波動基準：買入區間下緣 − 1×ATR14（不得等於買入區間下緣，DD-15 核心原則不變）；已回檔加分情境可改用 `EMA20` 下方 2%（兩者取較高者，止損不得寬於進場價 −10%）。
+- **原因**：使用者實測觀察（2026-07-06 報告驗證：13 支追蹤股中 4 支死於「已追高，錯過買點」，另有多支 watch 到期）——L2 的職責就是挑「均線多頭、RSI 健康、板塊領先」的強勢股，這批股票的共同特徵正是「正在噴出、還沒回檔」；DD-12 卻要求買入區間設在 `EMA20~EMA10`（對強勢股而言是現價下方 4~8% 的深度回檔），5 個交易日 watch 窗口內等到的機率極低，**越強的股票越買不到**，與系統目的（找出可操作的買入機會）直接矛盾。固定 EMA 帶的第二個缺陷是不看個股波動：低波動強勢股可能只回檔 1~2% 就續漲，卻被要求等 4~8%。改用 ATR 錨定後，區間深度自動適應個股節奏（ATR 2% 的股票等 0.5~2% 回檔、ATR 6% 的股票等 1.5~6%），對應專業機構「ATR 比例回檔進場 + ATR 動態止損」的實務做法。上緣保留 0.25×ATR 緩衝而非直接用 `Close_Price`，避免訊號日收盤價本身就是進場價（盲目追價）；L1 既有 `MAX_ATR_PCT=8%` 上限（filter.py DD-8）保證 ATR 錨定的區間與止損寬度有天然上界。
+- **不變**：`buy_zone`/`stop_loss` 仍由 AI 輸出字串（DD-12 架構取捨不變）；`tracker.py` 解析邏輯與「已追高」1.08 門檻、5 日 watch 上限全部不動（買入區間貼近現價後，這些機制的誤殺率自然下降）；突破/反轉策略買進區間規則不受影響（突破本就錨定 High_20D 貼近現價，反轉本質是等超跌，無此問題）；`scorer.py` L2 選股邏輯不動（挑強勢股是正確職責，問題在 L3 進場邏輯不匹配）。
+- **N/A 連帶涵蓋**：`atr14=None` 時 `momentum_atr` 必為 `None`（後者以前者為分母），既有「`Momentum_ATR = N/A` → 直接排除」規則已連帶涵蓋，不需為 `ATR14` 新增獨立 N/A 排除規則。
+- **捨棄**：無條件允許以現價追進（違反「拒絕盲目追價」原始精神，失去任何結構確認）；只加「極端強勢例外」而保留 EMA 帶為預設（治標——大部分強勢股仍會先撞上預設規則等回檔，watch 到期問題依舊）；改由 Python 端確定性計算 `buy_zone`（偏離「AI 給出完整交易計畫」架構，DD-12 已做過同樣取捨）；調整 tracker 的 watch 天數或「已追高」門檻（治標——區間錨點不改，等再久還是等不到）。
+- → 詳見 [plans/2026-07-07-momentum-atr-anchored-buy-zone.md](../plans/2026-07-07-momentum-atr-anchored-buy-zone.md)
+
 ## Acceptance Criteria
 
 - [ ] Prompt 中 `<Market_Regime>` 區塊含有 `5日` 與 `20日` 漲跌的產業 ETF 資訊
@@ -373,6 +392,8 @@ vtf_score = round(max(-5.0, vol_ratio * (2 * k_pos - 1)), 2)           # 下限�
 - [ ] 表格 header 含 `High_20D`、`Vol_vs_20DAvg`、`EMA50`、`Low_20D`、`Stoch_K`、`RSI_5D_Ago`
 - [ ] `compute_indicators()` 回傳 dict 含 `vol_vs_20d_avg` key
 - [ ] `avg_vol_20 = 0`（新股或數據不足）→ `vol_vs_20d_avg` 不崩潰，降級為 1.0
+- [ ] **DD-19 ATR14 欄位**：表格 header 含 `ATR14`，資料列為 `$` 格式美元值；`compute_indicators()` 回傳 dict 含 `atr14` key（>=15 筆歷史為正 float，不足時為 `None`）
+- [ ] **DD-19 新規則生效**：SYSTEM_PROMPT 含「淺回檔」與 ATR 錨定買進區間規則，不再含「距 EMA5 已超過 +5%」「5MA 探針帶」舊規則字樣
 - [ ] **DD-18 fallback 標記**：`_enrich_fallback()` 回傳的每筆結果含 `"is_fallback": True`；真實 AI 排序結果不含此鍵
 - [ ] **DD-18 fallback 不進 watchlist**：`tracker.py` 對 `is_fallback=True` 的個股一律跳過，即使 `confidence` 剛好達到 `MIN_AI_CONFIDENCE` 門檻
 - [ ] **DD-18 ai_count 誠實反映**：`main.py` 的 `stats["ai_count"]` 排除 `is_fallback` 條目；當日全數為 fallback 時 `ai_count == 0`
