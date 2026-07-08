@@ -1,0 +1,39 @@
+{
+  "history_records": [
+    {
+      "meta_data": {
+        "ticker": "SNA",
+        "company_name": "Snap-On Incorporated",
+        "sector": "Industrials"
+      },
+      "signal_details": {
+        "signal_date": "2026-07-06",
+        "entry_regime": "BULL_TREND",
+        "market_breadth_pct": 66.6,
+        "vix_value": 16.4,
+        "l2_score": 91.38,
+        "assigned_strategy": "動能策略",
+        "ai_confidence": 8,
+        "ai_strategy_reason": "均線多頭排列，RSI=70.9，VTF=0.71>0，Momentum_ATR=4.20強勢。"
+      },
+      "execution_plan": {
+        "buy_zone_lower": 408.0,
+        "buy_zone_upper": 411.0,
+        "planned_target": "$450",
+        "planned_stop_loss": "$401.00"
+      },
+      "actual_outcome": {
+        "triggered_date": "2026-07-07",
+        "actual_entry_price": 411.0,
+        "exit_date": "2026-07-08",
+        "actual_exit_price": 401.0,
+        "exit_reason": "CLOSED_LOSS",
+        "holding_days": 2
+      },
+      "performance_metrics": {
+        "return_pct": -2.43,
+        "is_win": false
+      }
+    }
+  ]
+}
