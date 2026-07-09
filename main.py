@@ -32,9 +32,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--top",
         type=int,
-        default=int(os.getenv("MAX_OUTPUT", "5")),
+        default=int(os.getenv("MAX_OUTPUT", "3")),
         metavar="N",
-        help="輸出幾支候選股（預設 5）",
+        help="輸出幾支候選股（預設 3）",
     )
     parser.add_argument(
         "--min-score",
