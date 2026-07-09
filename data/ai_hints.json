@@ -1,11 +1,32 @@
 {
-  "generated_at_utc": "2026-07-08T22:36:21Z",
+  "generated_at_utc": "2026-07-09T12:38:04Z",
   "market_date": "2026-07-08",
-  "total_settled": 0,
+  "total_settled": 1,
   "dimensions": {
-    "by_regime": [],
-    "by_strategy": [],
-    "by_sector": []
+    "by_regime": [
+      {
+        "key": "BULL_TREND",
+        "trades": 1,
+        "win_rate": 0.0,
+        "avg_return_pct": -2.43
+      }
+    ],
+    "by_strategy": [
+      {
+        "key": "動能策略",
+        "trades": 1,
+        "win_rate": 0.0,
+        "avg_return_pct": -2.43
+      }
+    ],
+    "by_sector": [
+      {
+        "key": "Industrials",
+        "trades": 1,
+        "win_rate": 0.0,
+        "avg_return_pct": -2.43
+      }
+    ]
   },
   "prompt_lines": []
 }

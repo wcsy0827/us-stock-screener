@@ -53,10 +53,10 @@
     "date": "2026-07-08",
     "weekday": "三",
     "active": 8,
-    "watch": 8,
+    "watch": 6,
     "invalid": 1,
-    "new": 4,
+    "new": 2,
     "reset": 0,
-    "removed": 4
+    "removed": 0
   }
 ]
