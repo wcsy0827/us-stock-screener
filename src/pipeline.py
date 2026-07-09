@@ -30,7 +30,7 @@ def _elapsed(start: float) -> str:
 
 def run(
     min_score: float = 60.0,
-    top_n: int = 10,
+    top_n: int = 3,
     dry_run: bool = False,
     use_cache: bool = True,
     use_ai_cache: bool = True,

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-將 L2 候選股透過結構化 XML Prompt 送給 DeepSeek AI，依當日 Regime 主推策略選出最多 5 支，附帶具體的買入區間、目標價、止損、持有週期與策略理由。
+將 L2 候選股透過結構化 XML Prompt 送給 DeepSeek AI，依當日 Regime 主推策略選出最多 3 支（DD-20），附帶具體的買入區間、目標價、止損、持有週期與策略理由。
 
 ## Behavior
 
@@ -126,7 +126,7 @@ def rank_candidates(
     candidates: list[dict],       # scorer 輸出，含 total_score、sector
     price_data: dict[str, pd.DataFrame],
     info_data: dict[str, dict],
-    top_n: int = 5,
+    top_n: int = 3,
     market_context: dict | None = None,
     earnings_data: dict | None = None,  # {sym: date_str | None}，供 Earnings_Days_Left 計算
 ) -> list[dict]:
@@ -369,6 +369,19 @@ vtf_score = round(max(-5.0, vol_ratio * (2 * k_pos - 1)), 2)           # 下限�
 - **捨棄**：無條件允許以現價追進（違反「拒絕盲目追價」原始精神，失去任何結構確認）；只加「極端強勢例外」而保留 EMA 帶為預設（治標——大部分強勢股仍會先撞上預設規則等回檔，watch 到期問題依舊）；改由 Python 端確定性計算 `buy_zone`（偏離「AI 給出完整交易計畫」架構，DD-12 已做過同樣取捨）；調整 tracker 的 watch 天數或「已追高」門檻（治標——區間錨點不改，等再久還是等不到）。
 - → 詳見 [plans/2026-07-07-momentum-atr-anchored-buy-zone.md](../plans/2026-07-07-momentum-atr-anchored-buy-zone.md)
 
+### DD-20: L3 精選上限由 5 支調降為 3 支
+
+- **選擇**：`<Output_Constraint>` 與 System Prompt 的選股數量上限文字由「最多 5 支」改為「最多 3 支」；`main.py --top` 的預設值（env `MAX_OUTPUT`）由 5 改為 3；`pipeline.run()` 與 `rank_candidates()` 的 `top_n` 預設同步改為 3（`.env.example` 一併更新）。既有「不足時只輸出實際符合條件的數量、不勉強湊數」規則沿用不變。
+- **原因**：使用者要求聚焦——每日手動跟單操作下 5 支偏多；上限收緊也迫使 AI 在同質化候選池中做更嚴格的橫向取捨，與 DD-21 的理由深化方向互補（支數減少，單支理由可以寫得更充分而不撐爆 token 預算）。
+- **不變**：`MAX_CANDIDATES_TO_AI = 40`、`MAX_SECTOR_CANDIDATES = 8`、L2 排名上限 55（scorer DD-10）均不動——候選池廣度不變，只收緊最終輸出；`_enrich_fallback()` 沿用 `[:top_n]` 截斷，自然變 3 支，無需獨立修改。
+
+### DD-21: reason 欄位敘事化——技術指標數值下放 strategy_reason，reason 聚焦非技術論述
+
+- **選擇**：`reason` 欄位字數上限由 50 字放寬至 80~120 字，內容指引改為聚焦技術指標數值**以外**的論述——基本面體質（`Fwd_PE`/`Profit_Margin`/`Rev_Growth_YoY` 相對同批候選股的優劣與意涵）、產業 ETF 趨勢對個股的支撐或壓制、與當日 Regime 主推策略的契合度、`Short_Float_Pct` 等特殊風險背景——並明文禁止在 reason 中重複羅列技術指標數字（RSI/VTF/EMA 等數值的引用職責已由 `strategy_reason` 承載），技術面最多以一句定性描述帶過。`risk`/`strategy_reason`/`confidence_reason` 維持 50 字上限不變。
+- **原因**：使用者回饋——實際報告中 reason 幾乎被技術指標數字複述佔滿，與 `strategy_reason` 高度重複，「為什麼是這家公司」的論述缺乏。DD-14 已把基本面三欄、DD-17 已把空頭比例送進候選池，但輸出端只給 50 字、且指引以「聚焦策略依據」開頭，AI 自然優先塞技術數字，非技術維度沒有敘事空間。
+- **不變**：JSON 輸出 schema 不變（純 Prompt 文字修正）；`tracker.py`/`publisher.py` 零改動（reason 僅展示用、無解析邏輯，`reason-box` 版面不限長度）；`max_tokens=6000` 不需調整（DD-20 支數減少已釋放預算）。
+- **捨棄**：新增獨立 `fundamental_reason` 欄位（DD-14 已捨棄過同構方案，欄位膨脹且與 reason 語意重疊）；要求 AI 引用候選池以外的新聞/事件/公司業務細節（資料不在 Prompt 內，幻覺風險高於敘事收益）。
+
 ## Acceptance Criteria
 
 - [ ] Prompt 中 `<Market_Regime>` 區塊含有 `5日` 與 `20日` 漲跌的產業 ETF 資訊
@@ -387,6 +400,8 @@ vtf_score = round(max(-5.0, vol_ratio * (2 * k_pos - 1)), 2)           # 下限�
 - [ ] 極端出貨（VTF_raw = -8.0）→ 表格顯示 `-5.00`（下限保護）
 - [ ] 浮點數欄位（Momentum_ATR、VTF_Score、Beta_60D）均保留 2 位小數
 - [ ] 表格 header 含 `EMA5`、`EMA10`、`EMA20`、`Vol_vs_5DAvg`
+- [ ] `<Output_Constraint>` 與 System Prompt 的選股數量上限為 3 支（DD-20）
+- [ ] reason 欄位指引聚焦非技術論述（基本面/產業趨勢/Regime 契合度）且禁止重複羅列技術指標數字；`strategy_reason` 仍要求引用指標數值（DD-21）
 - [ ] `compute_indicators()` 回傳 dict 含 `vol_vs_5d_avg` key
 - [ ] `avg_vol_5 = 0`（新股或數據不足）→ `vol_vs_5d_avg` 不崩潰，降級為 1.0
 - [ ] 表格 header 含 `High_20D`、`Vol_vs_20DAvg`、`EMA50`、`Low_20D`、`Stoch_K`、`RSI_5D_Ago`

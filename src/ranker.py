@@ -565,7 +565,7 @@ def _build_prompt(
     constraint_block = (
         f"必須無條件服從 <Market_Regime> 的策略方向。\n"
         f"{strategy_line}\n"
-        f"從 <Candidate_Pool> 中篩選最多 5 支最佳標的。\n"
+        f"從 <Candidate_Pool> 中篩選最多 3 支最佳標的。\n"
         f"【型態限制】hold_period 必須輸出純整數（Integer），代表預期持有的美股交易日天數，"
         f"嚴禁輸出任何非數字字元（禁止如 '5 days'、'2 weeks'、'5~7' 等字串格式）。\n"
         f'以 JSON 格式輸出，不附加任何說明文字：{{"selections": [{{...}}, ...]}}'
@@ -594,8 +594,8 @@ def _build_prompt(
 SYSTEM_PROMPT = """你是一位經驗豐富的美股量化分析師，擅長技術面與動能選股。
 候選池（<Candidate_Pool>）已經過系統流動性與技術強度雙重篩選，技術面同質性偏高，
 你的任務是從中根據技術指標、量價關係、趨勢動能，並疊加基本面（估值、獲利品質、成長性）作最終取捨，
-挑選出你認為值得「買入」的標的（最多 5 支），並給出具體操作建議。
-若符合買入條件的標的不足 5 支，只輸出實際符合條件的數量，不要勉強湊數。
+挑選出你認為值得「買入」的標的（最多 3 支），並給出具體操作建議。
+若符合買入條件的標的不足 3 支，只輸出實際符合條件的數量，不要勉強湊數。
 
 選股原則：
 1. 優先選擇均線多頭排列完整、RSI 健康（50~70）、MACD 向上的個股
@@ -663,7 +663,10 @@ N/A 差異化處理：
 每個元素包含：
 - rank: 排名（整數，從 1 開始）
 - ticker: 股票代號
-- reason: 繁體中文選股理由，綜合技術面與基本面（估值/獲利/成長）優勢，聚焦策略依據（50字以內）
+- reason: 繁體中文選股理由（80~120字）。聚焦技術指標數值「以外」的論述：基本面體質（Fwd_PE/Profit_Margin/Rev_Growth_YoY
+  相對同批候選股的優劣及其意涵）、所屬產業 ETF 趨勢對個股的支撐或壓制、與當日 Market_Regime 主推策略的契合度、
+  Short_Float_Pct 等特殊風險背景。技術指標數值（RSI/VTF/EMA/Momentum_ATR 等）一律放在 strategy_reason，
+  reason 中禁止重複羅列指標數字，技術面最多以一句定性描述帶過（例如「量價結構健康」）
 - risk: 繁體中文風險提示（50字以內）
 - confidence: 信心分數（整數 1~10）
 - buy_zone: 建議買入價格區間，格式如 "$185～$188"
@@ -762,7 +765,7 @@ def rank_candidates(
     candidates: list[dict],
     price_data: dict[str, pd.DataFrame],
     info_data: dict[str, dict],
-    top_n: int = 10,
+    top_n: int = 3,
     market_context: dict | None = None,
     market_date: str | None = None,
     use_ai_cache: bool = True,
