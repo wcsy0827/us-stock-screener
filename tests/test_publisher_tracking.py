@@ -78,3 +78,34 @@ class TestWatchInvalidRemainingDaysUsesStrategyLimit:
                        tracked_dates=["d1"], invalid_reason="趨勢轉弱，訊號失效")
         html = publisher._tracking_row(entry, "invalid")
         assert "剩 2 天自動移除" in html
+
+
+class TestWatchSlotBlockedDisplay:
+    """tracker DD-20 / publisher DD-8：滿倉未進場的 watch 條目顯示觸價被擋註記。"""
+
+    def test_blocked_watch_shows_slot_full_text_with_remaining_days(self):
+        entry = _entry(slot_blocked_today=True, tracked_dates=["d1", "d2"])
+        html = publisher._tracking_row(entry, "watch")
+        assert f"今日觸價但持倉已滿 {publisher.MAX_ACTIVE_POSITIONS} 支，未進場" in html
+        assert "剩 3 天自動移除" in html
+        assert "等待回落至買入區間" not in html
+
+    def test_unblocked_watch_keeps_waiting_text(self):
+        entry = _entry(slot_blocked_today=False)
+        html = publisher._tracking_row(entry, "watch")
+        assert "等待回落至買入區間" in html
+        assert "持倉已滿" not in html
+
+    def test_legacy_entry_without_flag_keeps_waiting_text(self):
+        """存量條目缺 slot_blocked_today 欄位時，維持既有顯示不拋錯。"""
+        entry = _entry()
+        entry.pop("slot_blocked_today", None)
+        html = publisher._tracking_row(entry, "watch")
+        assert "等待回落至買入區間" in html
+
+    def test_blocked_text_reflects_patched_cap(self, monkeypatch):
+        # 注意 patch publisher 的綁定（from tracker import 已複製），非 tracker 的
+        monkeypatch.setattr(publisher, "MAX_ACTIVE_POSITIONS", 3)
+        entry = _entry(slot_blocked_today=True)
+        html = publisher._tracking_row(entry, "watch")
+        assert "持倉已滿 3 支" in html
