@@ -846,3 +846,306 @@ class TestRunTrackerIntradayTouchEntryDD19:
         assert len(records) == 1
         assert records[0]["actual_outcome"]["exit_reason"] == tracker.EXIT_LOSS
         assert records[0]["performance_metrics"]["return_pct"] < 0
+
+
+# ── _slot_priority_key：tracker DD-20 名額競爭優先序 ────────────────
+
+class TestSlotPriorityKey:
+    def test_orders_by_confidence_then_l2_then_symbol(self):
+        entries = [
+            {"symbol": "LOW",  "ai_confidence": 7, "l2_score": 95.0},
+            {"symbol": "TIE2", "ai_confidence": 9, "l2_score": 85.0},
+            {"symbol": "TIE1", "ai_confidence": 9, "l2_score": 85.0},
+            {"symbol": "MID",  "ai_confidence": 9, "l2_score": 91.0},
+        ]
+        ordered = sorted(entries, key=tracker._slot_priority_key)
+        assert [e["symbol"] for e in ordered] == ["MID", "TIE1", "TIE2", "LOW"]
+
+    def test_none_confidence_sorts_last_without_typeerror(self):
+        entries = [
+            {"symbol": "NONE", "ai_confidence": None, "l2_score": None},
+            {"symbol": "HAS",  "ai_confidence": 6,    "l2_score": 80.0},
+        ]
+        ordered = sorted(entries, key=tracker._slot_priority_key)
+        assert [e["symbol"] for e in ordered] == ["HAS", "NONE"]
+
+
+# ── run_tracker：tracker DD-20 組合層級 active 持倉上限（槽位制）─────
+
+class TestRunTrackerActiveCapDD20:
+    def _flat_series(self, value=100.0, end="2026-06-30", n=60):
+        idx = pd.bdate_range(end=end, periods=n)
+        return pd.Series([value] * n, index=idx)
+
+    def _watch_entry(self, symbol="W1", confidence=8, l2=85.0, **overrides) -> dict:
+        base = {
+            "symbol": symbol, "name": f"{symbol} Corp", "sector": "Technology",
+            "buy_zone": "$100.00～$105.00", "buy_zone_lower": 100.0, "buy_zone_upper": 105.0,
+            "target": "$130.00", "stop_loss": "$95.00", "hold_period": "10",
+            "strategy": "動能策略",
+            "tracked_dates": ["2026-06-29"],
+            "status": "watch", "invalid_reason": None, "slot_blocked_today": False,
+            "watch_days": 1, "active_days": 0,
+            "signal_date_close": 100.0, "date_added": "2026-06-29",
+            "active_entry_price": None, "active_start_date": None,
+            "entry_regime": "BULL_TREND", "market_breadth_pct": 65.0, "vix_value": 15.0,
+            "l2_score": l2, "ai_confidence": confidence, "ai_strategy_reason": "",
+        }
+        base.update(overrides)
+        return base
+
+    def _active_entry(self, symbol="ACT", **overrides) -> dict:
+        base = {
+            "symbol": symbol, "name": f"{symbol} Corp", "sector": "Technology",
+            "buy_zone": "$100.00～$105.00", "buy_zone_lower": 100.0, "buy_zone_upper": 105.0,
+            "target": "$130.00", "stop_loss": "$90.00", "hold_period": "10",
+            "strategy": "動能策略",
+            "tracked_dates": ["2026-06-25", "2026-06-26", "2026-06-29"],
+            "status": "active", "invalid_reason": None, "slot_blocked_today": False,
+            "watch_days": 1, "active_days": 3,
+            "signal_date_close": 100.0,
+            "active_entry_price": 100.0, "active_start_date": "2026-06-26",
+            "date_added": "2026-06-25",
+            "entry_regime": "BULL_TREND", "market_breadth_pct": 65.0, "vix_value": 15.0,
+            "l2_score": 80, "ai_confidence": 8, "ai_strategy_reason": "",
+            "planned_stop_loss": 90.0, "effective_stop_loss": 90.0,
+            "is_breakeven_locked": False, "highest_close_since_active": 100.0,
+        }
+        base.update(overrides)
+        return base
+
+    def _safe_active_quote(self):
+        """既有 active 部位的無事件報價：不觸止損/停利/移動停利/到期。"""
+        return {"price": 100.0, "today_high": 101.0, "today_low": 99.0,
+                "ema20": 98.0, "ema50": 95.0, "close_series": self._flat_series()}
+
+    def _touch_quote(self):
+        """watch 條目觸價報價：today_low <= upper，收盤在買入區間內。"""
+        return {"price": 104.0, "today_high": 106.0, "today_low": 103.0,
+                "ema20": 98.0, "ema50": 95.0, "close_series": self._flat_series()}
+
+    def _no_touch_quote(self):
+        """watch 條目未觸價報價：today_low > upper，收盤略高於區間（等回落）。"""
+        return {"price": 107.0, "today_high": 108.0, "today_low": 106.0,
+                "ema20": 98.0, "ema50": 95.0, "close_series": self._flat_series()}
+
+    def test_touch_blocked_when_cap_full_stays_watch_with_flag(self, monkeypatch):
+        """滿倉觸價被擋：維持 watch、旗標 True、無任何進場副作用、watch_days 照常遞增。"""
+        monkeypatch.setattr(tracker, "MAX_ACTIVE_POSITIONS", 1)
+        tracker.save_watchlist([self._active_entry(), self._watch_entry()])
+        monkeypatch.setattr(tracker, "_fetch_latest", lambda syms: {
+            "ACT": self._safe_active_quote(), "W1": self._touch_quote(),
+        })
+        watchlist, categories = tracker.run_tracker([], market_date="2026-06-30")
+
+        w1 = next(e for e in watchlist if e["symbol"] == "W1")
+        assert w1["status"] == "watch"
+        assert w1["slot_blocked_today"] is True
+        assert w1["active_entry_price"] is None
+        assert w1["watch_days"] == 2
+        assert [e["symbol"] for e in categories["watch"]] == ["W1"]
+        assert [e["symbol"] for e in categories["active"]] == ["ACT"]
+        assert categories["settled"] == []
+        assert not tracker._PERF_PATH.exists()
+
+    def test_touch_enters_when_slot_free(self, monkeypatch):
+        monkeypatch.setattr(tracker, "MAX_ACTIVE_POSITIONS", 2)
+        tracker.save_watchlist([self._active_entry(), self._watch_entry()])
+        monkeypatch.setattr(tracker, "_fetch_latest", lambda syms: {
+            "ACT": self._safe_active_quote(), "W1": self._touch_quote(),
+        })
+        watchlist, categories = tracker.run_tracker([], market_date="2026-06-30")
+
+        w1 = next(e for e in watchlist if e["symbol"] == "W1")
+        assert w1["status"] == "active"
+        assert w1["slot_blocked_today"] is False
+        assert w1["active_entry_price"] == 105.0
+        assert sorted(e["symbol"] for e in categories["active"]) == ["ACT", "W1"]
+
+    def test_priority_higher_ai_confidence_wins_single_free_slot(self, monkeypatch):
+        monkeypatch.setattr(tracker, "MAX_ACTIVE_POSITIONS", 1)
+        tracker.save_watchlist([
+            self._watch_entry(symbol="LOWC", confidence=7),
+            self._watch_entry(symbol="HIGHC", confidence=9),
+        ])
+        monkeypatch.setattr(tracker, "_fetch_latest", lambda syms: {
+            "LOWC": self._touch_quote(), "HIGHC": self._touch_quote(),
+        })
+        watchlist, categories = tracker.run_tracker([], market_date="2026-06-30")
+
+        assert [e["symbol"] for e in categories["active"]] == ["HIGHC"]
+        lowc = next(e for e in watchlist if e["symbol"] == "LOWC")
+        assert lowc["status"] == "watch"
+        assert lowc["slot_blocked_today"] is True
+        assert lowc["watch_days"] == 2
+
+    def test_priority_tiebreak_l2_score(self, monkeypatch):
+        monkeypatch.setattr(tracker, "MAX_ACTIVE_POSITIONS", 1)
+        tracker.save_watchlist([
+            self._watch_entry(symbol="LOWL2", confidence=9, l2=85.0),
+            self._watch_entry(symbol="HIGHL2", confidence=9, l2=91.0),
+        ])
+        monkeypatch.setattr(tracker, "_fetch_latest", lambda syms: {
+            "LOWL2": self._touch_quote(), "HIGHL2": self._touch_quote(),
+        })
+        _, categories = tracker.run_tracker([], market_date="2026-06-30")
+        assert [e["symbol"] for e in categories["active"]] == ["HIGHL2"]
+
+    def test_blocked_close_below_stop_becomes_invalid_not_settled(self, monkeypatch):
+        """被擋 + 收盤跌破止損 → invalid 清除（沒掛單的死訊號），不結算、不寫績效。
+        對照 DD-19 的 gap-through 測試：有名額時同樣報價會進場並當日 CLOSED_LOSS。"""
+        monkeypatch.setattr(tracker, "MAX_ACTIVE_POSITIONS", 1)
+        tracker.save_watchlist([self._active_entry(), self._watch_entry()])
+        monkeypatch.setattr(tracker, "_fetch_latest", lambda syms: {
+            "ACT": self._safe_active_quote(),
+            "W1": {"price": 92.0, "today_high": 104.0, "today_low": 90.0,
+                   "ema20": 91.0, "ema50": 95.0, "close_series": self._flat_series()},
+        })
+        watchlist, categories = tracker.run_tracker([], market_date="2026-06-30")
+
+        assert [e["symbol"] for e in categories["invalid"]] == ["W1"]
+        w1 = next(e for e in watchlist if e["symbol"] == "W1")
+        assert "止損" in w1["invalid_reason"]
+        assert categories["settled"] == []
+        assert not tracker._PERF_PATH.exists()
+
+    def test_blocked_chase_high_close_becomes_invalid(self, monkeypatch):
+        """被擋 + 收盤已追高（> upper*1.08）→ invalid：沒掛到單且股價跑遠，訊號作廢。"""
+        monkeypatch.setattr(tracker, "MAX_ACTIVE_POSITIONS", 1)
+        tracker.save_watchlist([self._active_entry(), self._watch_entry()])
+        monkeypatch.setattr(tracker, "_fetch_latest", lambda syms: {
+            "ACT": self._safe_active_quote(),
+            "W1": {"price": 118.0, "today_high": 119.0, "today_low": 103.0,
+                   "ema20": 95.0, "ema50": 90.0, "close_series": self._flat_series()},
+        })
+        watchlist, categories = tracker.run_tracker([], market_date="2026-06-30")
+
+        assert [e["symbol"] for e in categories["invalid"]] == ["W1"]
+        w1 = next(e for e in watchlist if e["symbol"] == "W1")
+        assert "追高" in w1["invalid_reason"]
+
+    def test_blocked_close_recovered_stays_watch(self, monkeypatch):
+        """被擋 + 收盤介於止損與區間下緣之間 → 維持 watch 續觀察。"""
+        monkeypatch.setattr(tracker, "MAX_ACTIVE_POSITIONS", 1)
+        tracker.save_watchlist([self._active_entry(), self._watch_entry()])
+        monkeypatch.setattr(tracker, "_fetch_latest", lambda syms: {
+            "ACT": self._safe_active_quote(),
+            "W1": {"price": 97.0, "today_high": 101.0, "today_low": 96.0,
+                   "ema20": 96.0, "ema50": 95.0, "close_series": self._flat_series()},
+        })
+        watchlist, categories = tracker.run_tracker([], market_date="2026-06-30")
+
+        w1 = next(e for e in watchlist if e["symbol"] == "W1")
+        assert w1["status"] == "watch"
+        assert w1["slot_blocked_today"] is True
+
+    def test_settlement_same_run_does_not_refund_slot(self, monkeypatch):
+        """既有 active 當日結算出場，同日觸價的 watch 仍被擋：名額次日才釋放（1-day lag）。"""
+        monkeypatch.setattr(tracker, "MAX_ACTIVE_POSITIONS", 1)
+        tracker.save_watchlist([self._active_entry(), self._watch_entry()])
+        monkeypatch.setattr(tracker, "_fetch_latest", lambda syms: {
+            "ACT": {"price": 89.0, "today_high": 100.0, "today_low": 88.0,
+                    "ema20": 98.0, "ema50": 95.0, "close_series": self._flat_series()},
+            "W1": self._touch_quote(),
+        })
+        watchlist, categories = tracker.run_tracker([], market_date="2026-06-30")
+
+        assert [e["symbol"] for e in categories["settled"]] == ["ACT"]
+        w1 = next(e for e in watchlist if e["symbol"] == "W1")
+        assert w1["status"] == "watch"
+        assert w1["slot_blocked_today"] is True
+        assert categories["active"] == []
+
+    def test_over_cap_existing_actives_not_liquidated(self, monkeypatch):
+        """既有 active 數超過上限：不強制平倉，全數維持 active 由結算自然收斂。"""
+        monkeypatch.setattr(tracker, "MAX_ACTIVE_POSITIONS", 1)
+        tracker.save_watchlist([
+            self._active_entry(symbol="A1"),
+            self._active_entry(symbol="A2"),
+            self._active_entry(symbol="A3"),
+        ])
+        monkeypatch.setattr(tracker, "_fetch_latest", lambda syms: {
+            s: self._safe_active_quote() for s in syms
+        })
+        _, categories = tracker.run_tracker([], market_date="2026-06-30")
+
+        assert sorted(e["symbol"] for e in categories["active"]) == ["A1", "A2", "A3"]
+        assert categories["settled"] == []
+        assert categories["expired"] == []
+
+    def test_slot_blocked_flag_reset_next_day_without_touch(self, monkeypatch):
+        monkeypatch.setattr(tracker, "MAX_ACTIVE_POSITIONS", 1)
+        tracker.save_watchlist([self._active_entry(), self._watch_entry()])
+        monkeypatch.setattr(tracker, "_fetch_latest", lambda syms: {
+            "ACT": self._safe_active_quote(), "W1": self._touch_quote(),
+        })
+        watchlist, _ = tracker.run_tracker([], market_date="2026-06-30")
+        assert next(e for e in watchlist if e["symbol"] == "W1")["slot_blocked_today"] is True
+
+        monkeypatch.setattr(tracker, "_fetch_latest", lambda syms: {
+            "ACT": self._safe_active_quote(), "W1": self._no_touch_quote(),
+        })
+        watchlist, _ = tracker.run_tracker([], market_date="2026-07-01")
+        w1 = next(e for e in watchlist if e["symbol"] == "W1")
+        assert w1["slot_blocked_today"] is False
+        assert w1["status"] == "watch"
+
+    def test_slot_blocked_flag_reset_even_when_symbol_missing_from_latest(self, monkeypatch):
+        """F1 回歸：下載失敗（symbol 不在 latest）仍須重置旗標，不殘留昨日 True。"""
+        entry = self._watch_entry(slot_blocked_today=True)
+        tracker.save_watchlist([entry])
+        monkeypatch.setattr(tracker, "_fetch_latest", lambda syms: {})
+        watchlist, _ = tracker.run_tracker([], market_date="2026-06-30")
+        assert watchlist[0]["slot_blocked_today"] is False
+
+    def test_new_signals_still_added_as_watch_at_cap(self, monkeypatch):
+        """滿倉時當日 L3 新訊號照常加入 watchlist（B/C 步驟不受名額影響）。"""
+        monkeypatch.setattr(tracker, "MAX_ACTIVE_POSITIONS", 1)
+        tracker.save_watchlist([self._active_entry()])
+        monkeypatch.setattr(tracker, "_fetch_latest", lambda syms: {
+            "ACT": self._safe_active_quote(),
+        })
+        stock = {"symbol": "NEW1", "name": "New Co", "sector": "Technology",
+                 "buy_zone": "$100～$105", "target": "$120", "stop_loss": "$90",
+                 "hold_period": "10", "strategy": "突破策略",
+                 "confidence": 8, "total_score": 80, "price": 102.0,
+                 "strategy_reason": ""}
+        watchlist, categories = tracker.run_tracker([stock], market_date="2026-06-30")
+
+        assert len(categories["new"]) == 1
+        new1 = next(e for e in watchlist if e["symbol"] == "NEW1")
+        assert new1["status"] == "watch"
+        assert new1["slot_blocked_today"] is False
+
+    def test_reset_path_clears_slot_blocked_flag(self, monkeypatch):
+        """F2 回歸：今日被擋（旗標 True）的 watch 條目同日被 L3 覆寫展期（reset），
+        旗標須隨 base 字典清為 False（新買入區間下「今日觸價被擋」已不成立）。"""
+        monkeypatch.setattr(tracker, "MAX_ACTIVE_POSITIONS", 1)
+        tracker.save_watchlist([self._active_entry(), self._watch_entry()])
+        monkeypatch.setattr(tracker, "_fetch_latest", lambda syms: {
+            "ACT": self._safe_active_quote(), "W1": self._touch_quote(),
+        })
+        stock = {"symbol": "W1", "name": "W1 Corp", "sector": "Technology",
+                 "buy_zone": "$106～$110", "target": "$130", "stop_loss": "$98",
+                 "hold_period": "10", "strategy": "動能策略",
+                 "confidence": 9, "total_score": 88, "price": 107.0,
+                 "strategy_reason": ""}
+        watchlist, categories = tracker.run_tracker([stock], market_date="2026-06-30")
+
+        assert len(categories["reset"]) == 1
+        w1 = next(e for e in watchlist if e["symbol"] == "W1")
+        assert w1["slot_blocked_today"] is False
+        assert w1["buy_zone_upper"] == 110.0
+
+    def test_watchlist_saved_order_preserved_after_priority_evaluation(self, monkeypatch):
+        """優先序排序只影響評估順序，save_watchlist 寫出順序與讀入一致。"""
+        tracker.save_watchlist([
+            self._watch_entry(symbol="CCC", confidence=5),
+            self._watch_entry(symbol="AAA", confidence=9),
+            self._watch_entry(symbol="BBB", confidence=7),
+        ])
+        monkeypatch.setattr(tracker, "_fetch_latest", lambda syms: {
+            s: self._no_touch_quote() for s in syms
+        })
+        watchlist, _ = tracker.run_tracker([], market_date="2026-06-30")
+        assert [e["symbol"] for e in watchlist] == ["CCC", "AAA", "BBB"]

@@ -72,6 +72,17 @@ def publish(
 - **原因**：使用者的實際操作方式是「收盤後跑篩選、次一交易日盤中依買入區間掛單，並手動遵守停損停利區間」。系統內部（`tracker.py` DD-12/13）早已自動把止損上移做保本鎖定、計算移動停利觸發價，但報告只顯示 AI 原始止損字串，等於使用者手動跟單時用的是過時門檻，與系統實際結算邏輯脫節。同理，watch/invalid 剩餘天數寫死 5 天，反轉策略（10 日）、高波動整理市的突破策略（3 日）、VIX 尖底的反轉策略（5 日）顯示的倒數天數全部錯誤，可能讓使用者誤判某檔訊號已到期或還有餘裕。
 - **捨棄**：只顯示 AI 原始 `stop_loss`（簡單但與系統實際結算門檻不一致）；在 `publisher.py` 內重寫一份 watch 上限查表（DRY 違反，`tracker.py` DD-15/16 已是單一事實來源，直接呼叫 `_max_watch_days()` 即可）。
 
+### DD-8: 留意清單顯示滿倉未進場狀態 + 今日統計顯示持倉上限
+
+- **背景**：tracker DD-20 引入組合層級持倉上限（`MAX_ACTIVE_POSITIONS`，槽位制）後，watch 條目可能「今日觸價但因持倉已滿被擋下、未進場」。使用者依報告隔日掛單，若報告不呈現這個狀態，使用者無從得知該檔今天其實觸價過、也無從得知目前持倉相對上限還有多少名額。
+- **選擇**：
+  1. `_tracking_row()` watch 分支：`entry.get("slot_blocked_today")` 為 True 時，狀態文字改為「第 N 天（今日觸價但持倉已滿 X 支，未進場；剩 M 天自動移除）」；False 時維持既有「等待回落」文字。沿用 `.track-item.watch` 既有樣式，不改 `_CSS`。
+  2. 「有效追蹤清單」段落標題經 `_section_html` 的 `note` 參數附加「上限 X 支」。
+  3. 「今日統計」的有效持倉格顯示 `{active 數} / {MAX_ACTIVE_POSITIONS}`。
+  4. 常數自 `tracker` import（`from tracker import MAX_ACTIVE_POSITIONS`），沿用 DD-7 的 `_max_watch_days` 單一事實來源先例，不在 publisher 內重複定義。
+- **`_INFO_HTML` 只寫靜態文字，不插值 runtime 常數**：`docs/index.html` 由 `tests/test_publisher_info_sync.py` 全等比對守門；若 `_INFO_HTML` 插值 `MAX_ACTIVE_POSITIONS`，任何 `.env` 設了不同值的環境跑 pytest 都會誤紅。系統說明卡片寫「預設 5 支（`MAX_ACTIVE_POSITIONS` 可調）」的字面文字；每日報告（非全等守門範圍）才使用 runtime 常數。
+- **捨棄**：在 `last_run.json` 加 `active_count`/`max_positions` 欄位（`_write_last_run` 不接觸 categories，需擴 plumbing，且今日統計已呈現同一資訊）；為被擋條目新增獨立 CSS badge（既有 track-status 文字已足夠傳達，避免 `_CSS` 變動觸發 index.html 再生成的額外面積）。
+
 ## Acceptance Criteria
 
 - [ ] 每日報告頁標題顯示「美股資料截止日：YYYY-MM-DD（週X）」
@@ -87,3 +98,7 @@ def publish(
 - [ ] **DD-7 動態止損 fallback**：active 條目缺 `effective_stop_loss` 時，退化顯示原始 `stop_loss`
 - [ ] **DD-7 移動停利觸發線**：峰值浮盈達 10% 門檻的動能/突破策略 active 條目顯示「移動停利線 $X」；反轉策略一律不顯示；未達門檻不顯示
 - [ ] **DD-7 watch/invalid 剩餘天數**：反轉策略 watch 顯示剩餘天數以 10 日上限計算（非寫死 5 日）；`entry_regime=CONSOLIDATION_VOLATILE` 的突破策略以 3 日上限計算
+- [ ] **DD-8 滿倉未進場註記**：`slot_blocked_today=True` 的 watch 條目顯示「今日觸價但持倉已滿 X 支，未進場」；False 或缺欄位時維持既有「等待回落」文字
+- [ ] **DD-8 持倉上限顯示**：今日統計的有效持倉格顯示「N / X」；有效追蹤清單標題含「上限 X 支」
+- [ ] **DD-8 常數單一來源**：報告內所有上限數字取自 `tracker.MAX_ACTIVE_POSITIONS` import，publisher 內無第二份定義
+- [ ] **DD-8 index.html 不受 env 影響**：`_INFO_HTML` 為靜態文字，`MAX_ACTIVE_POSITIONS` 設為任意值時 `_build_index()` 輸出不變

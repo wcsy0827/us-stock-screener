@@ -10,8 +10,10 @@
 
 ```
 [新加入] → watch
-  watch  → active   （次日 today_low <= buy_zone_upper 即視為觸價成交，1-day lag，DD-19）
-  watch  → invalid  （失效條件觸發，僅當今日未觸價成交時才可能發生）
+  watch  → active   （次日 today_low <= buy_zone_upper 即視為觸價成交，1-day lag，DD-19；
+                      且需有空餘持倉名額，同日多支觸價時依優先序競爭，DD-20）
+  watch  → watch    （今日觸價但持倉已滿被擋下：slot_blocked_today=True，watch_days 照常累計，DD-20）
+  watch  → invalid  （失效條件觸發，僅當今日未觸價成交、或觸價被擋且收盤價判定失效時發生，DD-20）
   watch  → expired  （watch_days >= 策略對應 watch 上限：突破/動能=5日，反轉=10日）
   active → settled  （CLOSED_PROFIT / CLOSED_LOSS / CLOSED_TRAILING_STOP / FORCE_EXPIRED，歸檔至 performance_history.json）
   invalid → expired （_days() >= 策略對應 watch 上限）
@@ -42,9 +44,11 @@
 status == "invalid"?                         → invalid（不重新判定）
 status == "active"?                          → active（不判定，交給 _check_settlement）
 today_low <= buy_zone_upper?                 → active（DD-19：盤中觸價成交，優先於下方一切收盤價判定）
-─── 以下僅在今日未觸價成交（today_low > upper，或未提供 today_low）時才會執行 ───
-price < stop_loss?                           → invalid（反轉策略；正常參數配置下此分支實務不可達，見 DD-19）
-price < ema20?                               → invalid（動能/突破策略；同上，實務不可達）
+─── 以下僅在今日未觸價成交（today_low > upper，或未提供 today_low）時才會執行；
+    另外 DD-20 的滿倉擋下路徑會以 today_low=None 重跑本函式，此時下方分支對
+    「觸價但被擋」的條目重新可達，不再是純 dormant 防禦網 ───
+price < stop_loss?                           → invalid（反轉策略；未被 DD-20 重跑時實務不可達，見 DD-19）
+price < ema20?                               → invalid（動能/突破策略；同上）
 price > upper * 1.08?                        → invalid（追高）
 price > upper * 1.01?                        → watch（等回落）
 price >= lower 且 price <= stop_loss?        → invalid（開盤跳空安全攔截，DD-7，已被 DD-19 取代並列為 dormant）
@@ -319,7 +323,7 @@ def _is_expired(entry: dict) -> bool:
 ### DD-19: 盤中限價單模擬進場（觸價優先於收盤價判定）
 
 - **背景**：使用者的實際操作方式是收盤後跑選股，次一交易日盤中依 AI 給的買入區間掛限價單，價位設在區間**上緣**（`buy_zone_upper`）。原本 `_eval_status()` 只認收盤價：股價盤中回落到區間、使用者的限價單已經成交，但收盤又彈出區間上緣以上時，系統仍判 `watch`（等回落）；若隔日續漲超過 8%，系統甚至會判「已追高，錯過買點」而移除，使用者手上的真實部位從此不被追蹤，`performance_history.json` 記錄的也不是使用者的真實交易。
-- **選擇**：`_eval_status()` 新增 `today_low: float | None = None` 參數，在 `status=="invalid"`/`"active"` 短路之後、其餘所有判定之前，插入一行檢查：`if today_low is not None and today_low <= entry["buy_zone_upper"]: return "active", None`。此檢查優先於下方所有以收盤價為準的判定（反轉止損失效、動能 EMA20 失效、追高失效）。今日未觸價（`today_low > upper`）或呼叫端未提供 `today_low`（`None`）時，完全退化為插入前的原始邏輯，逐行為不變——**下方所有原本分支（含 DD-7 的開盤跳空攔截、`lower` 相關判斷）全部保留，不刪除**，僅在正常情境下變成實務不可達的 dormant 程式碼，作為 AI 給出異常參數或呼叫端未升級時的防禦網。
+- **選擇**：`_eval_status()` 新增 `today_low: float | None = None` 參數，在 `status=="invalid"`/`"active"` 短路之後、其餘所有判定之前，插入一行檢查：`if today_low is not None and today_low <= entry["buy_zone_upper"]: return "active", None`。此檢查優先於下方所有以收盤價為準的判定（反轉止損失效、動能 EMA20 失效、追高失效）。今日未觸價（`today_low > upper`）或呼叫端未提供 `today_low`（`None`）時，完全退化為插入前的原始邏輯，逐行為不變——**下方所有原本分支（含 DD-7 的開盤跳空攔截、`lower` 相關判斷）全部保留，不刪除**，僅在正常情境下變成實務不可達的 dormant 程式碼，作為 AI 給出異常參數或呼叫端未升級時的防禦網。（DD-20 補充：滿倉擋下路徑會以 `today_low=None` 重跑本函式取收盤價判定，這些分支對「觸價但被擋」的條目因此重新可達，**不得**以「dormant 可清理」為由刪除。）
 - **同日跳空穿越止損的處理**：若同日觸價成交、`today_low` 也同時跌破止損（例如跳空急殺直接開盤在止損之下），`_eval_status()` 仍直接回傳 `active`；`_check_settlement()`（無需任何修改）會在同一輪迭代內立即以 `today_low <= effective_stop_loss` 判定 `CLOSED_LOSS`，比照既有 DD-10 黑天鵝保守原則同日結算歸檔。此為使用者明確選擇的處理方式（保守記為真實交易），取代 DD-7 原本「拒絕進場、完全不留紀錄」的做法——後者與 DD-17 已修復的「虧損繞過結算」屬同一類缺陷（真實經濟事件未被記錄）。
 - **進場代理價改為 `buy_zone_upper`**：不再是收盤價（DD-5 原始選擇），而是使用者實際掛單的價位，拆股情境下讀取已由 `split_factor` 縮放的 `settlement_entry["buy_zone_upper"]`，與 `active_entry_price` 既有「以當下現值標尺存儲」的慣例一致。**不使用 `min(今日開盤, buy_zone_upper)`**：抗辯審查中發現此方案需額外抓取 `today_open` 欄位，換來的精確度僅在「開盤即跳空至限價之下」的罕見情境才有意義，卻引入開盤價異常值（熔斷/停牌）污染 `return_pct` 的風險；`buy_zone_upper` 是 AI 輸出、已由 `_parse_buy_zone()` 驗證過的乾淨數值，無此風險。
 - **前置修正：`_fetch_latest()` 的 High/Low 讀取列對齊**：原本 `price` 取自 `df["Close"].dropna().iloc[-1]`（若最後一列 Close 為 NaN 會回退至前一列），但 `today_high`/`today_low` 卻不論 Close 是否為 NaN，一律取 `df["High"/"Low"].iloc[-1]`（literal 最後一列）。當最後一列 Close 缺值時，`price` 與 `today_high`/`today_low` 會來自不同日期，破壞 DD-19 的觸價判定所依賴的 `today_low <= price <= today_high` 恆等式。修正為 `high_raw = df["High"].loc[price_date]`（`price_date = close.index[-1]`），確保三者一律取自同一列。
@@ -329,6 +333,23 @@ def _is_expired(entry: dict) -> bool:
 - **既有 `data/watchlist.json` 存量條目立即套用新規則，不做 migration**：`status=="invalid"` 的短路嚴格位於觸價檢查之前，既有 invalid 條目（例如買入區間已遠低於現價的個股）不會被追溯認定「今日觸價成交」，不受影響（抗辯審查曾提出此疑慮，經確認為虛驚一場，但仍將順序要求明文寫入本規格與 `_eval_status()` 函式頂部註解，避免未來實作變更時因記憶而非約束而出錯）。
 - **捨棄**：`min(today_open, buy_zone_upper)` 進場代理價（見上，換取的精確度不敵新增的異常值風險與額外欄位）；把觸價檢查改寫進 `_eval_status()` 既有分支結構內部（改為插入獨立前置檢查，改動面最小、既有 8 個回歸測試與規格全數不受影響）；刪除因觸價檢查而變成事實不可達的舊分支（保留作防禦網成本趨近於零，刪除需同步改規格與重寫測試，且失去異常參數防禦）。
 - → 本設計經 skeptic/red-team/simplifier 三方抗辯審查（含 OHLC 恆等式前提驗證、`_fetch_latest` 列對齊缺陷、存量資料相容性、`hold_period` 邊界），最終方案為三方收斂後的最小化版本。
+
+### DD-20: 組合層級 active 持倉上限（槽位制：觸價但滿倉時延後進場）
+
+> 注意：`specs/ranker.md` 另有一個編號相同但完全無關的 DD-20（L3 精選上限 5→3）；`tracker.py` 程式碼註解中既有的「不納入追蹤（DD-20）」引用的是 ranker 的 `is_fallback` 決策，非本條。
+
+- **背景**：watchlist 持倉數原本沒有任何組合層級上限：每日 L3 流入 ≤3 支 × DD-19 淺回檔帶造成的 ~100% 觸價成交率 × 常見 15 交易日持有期，穩態推算約 45 支同時持倉，與使用者真實資金操作（同時最多持有數支）完全脫節，`performance_history.json` 的績效統計隱含「資金無限」假設。業界標準做法是在訊號層之上加組合建構層：訊號多於名額時按強度排序取前 N（ranking-based selection），而非回頭調鈍訊號層（單日漏斗 503→3 已極挑剔，收緊入口只會犧牲樣本累積，且穩態 = 流量 × 持有天數的數學不因入口寬窄改變）。
+- **選擇**：新增模組常數 `MAX_ACTIVE_POSITIONS`（`env: MAX_ACTIVE_POSITIONS`，預設 5）。`run_tracker()` E 步驟迴圈**開始前**計算 `active_count`（`status=="active"` 條目數）與 `free_slots = max(0, MAX_ACTIVE_POSITIONS - active_count)`；E 迴圈改為依 `_slot_priority_key()` 優先序排序迭代（`-ai_confidence`、次序 `-l2_score`、再次序 `symbol` 字母序；缺值以 0 處理，兩欄位自 B/C 步驟建立條目時即存在）。條目就地變異，存檔的 watchlist 列表順序不變。
+- **名額閘門**：`_eval_status()` 回傳後、status 寫回前，若 `new_status=="active" and prev_status=="watch"`：`free_slots > 0` 時扣 1 照常進場；否則（blocked）以 `settlement_entry` 重跑 `_eval_status(..., today_low=None)` 取**收盤價判定**——回傳 invalid（收盤跌破止損／已追高等）時照 invalid 處理（沒掛單的死訊號直接清除，防止次日以遠高於現價的 `buy_zone_upper` 幽靈進場後即時 CLOSED_LOSS 污染績效），否則強制維持 `watch` 並設 `entry["slot_blocked_today"] = True`。被擋條目不進 active 副作用區塊、不進 `_check_settlement()`，`watch_days` 照常遞增、次日以當日名額重新競爭。
+- **語意對應真實操作**：使用者依前晚報告隔日盤中掛限價單；滿倉時根本不會掛新單，故被擋條目「無真實成交、無紀錄」是正確語意（對照 DD-19 的取捨：已成交的真實部位必須記錄）。
+- **當日結算不退還名額**：同一輪 E 步驟中結算出場的 active 部位不即時釋放 `free_slots`（使用者掛單當下無從得知當日稍晚的止損），名額於次一交易日自然釋放，與 DD-11 的 1-day lag 口徑一致。
+- **超額不強平**：既有 active 數已超過上限時（上線當下 12 > 5），`free_slots=0`，超額部位不強制平倉，由四態結算自然收斂降回上限以下。
+- **B/C 步驟不變**：滿倉時當日 L3 新訊號照常以 watch 加入（報告仍完整呈現 AI 判斷，次日名額釋出即可競爭）。
+- **`slot_blocked_today` 旗標生命週期**：於 E 迴圈每條目處理最頂端（早於 `sym not in latest` 的 continue）重置為 False，確保下載失敗日不殘留昨日的 True；B/C `base` 字典含 `"slot_blocked_today": False`，reset 展期路徑（`existing[sym].update(base)`）因共用 base 同步清除。旗標僅供 publisher 當日渲染「觸價但持倉已滿」註記。
+- **與 DD-19 dormant 分支的交互**：blocked 重跑讓 DD-19 宣告實務不可達的收盤價分支（反轉止損、動能 EMA20、追高、DD-7 跳空攔截）對「觸價但被擋」條目重新可達，該等分支自此**不得**以 dormant 為由清理（DD-19 措辭已同步修訂）。
+- **同日重跑的已知邊界（接受，不另做機制）**：同日手動重跑時，run 1 已結算的條目已移出 watchlist，run 2 的 `active_count` 較低，可能放行 run 1 被擋的條目（等於名額經後門當日退還）；且 run 2 才放行的條目因 DD-18 計數器守衛，轉 active 當日 `active_days` 不遞增，`holding_days` 少記 1 日。兩者僅發生在手動重跑驗證路徑（CI 一天一跑），影響有界，不為此建立 run 1 快照持久化機制。
+- **捨棄**：當日結算即退還名額（違反「掛單當下不可知未來」的現實語意）；強平超額 active 部位（人為製造非市場事件的出場紀錄，污染績效資料庫）；滿倉時直接不加新訊號進 watchlist（報告失去 AI 判斷完整性，且次日名額釋出時無候選可用）；迴圈前 pre-pass 預先評估全部條目再排序（`_eval_status` 需連同拆股 adj 邏輯執行兩次，複雜度高於「排序迭代 + 計數器」且無行為差異）。
+- → 詳見 `plans/2026-07-10-max-active-positions-cap.md`
 
 ---
 
@@ -416,3 +437,17 @@ def _is_expired(entry: dict) -> bool:
 - [ ] **DD-19 同日跳空穿越止損結算為 CLOSED_LOSS**：watch 條目當日 `today_low` 同時 `<= buy_zone_upper` 與 `<= stop_loss`，`run_tracker()` 應產生 `CLOSED_LOSS` 結算並寫入 `performance_history.json`，不應落入 `invalid` 分類
 - [ ] **DD-19 前置修正：High/Low 與 Close 同列對齊**：`_fetch_latest()` 遇最後一列 Close 為 NaN 的殘缺列時，`today_high`/`today_low` 應取自 `price` 所屬的同一列，不得誤用殘缺列的異常值
 - [ ] **DD-19 hold_period 下界**：`_parse_hold_period(0)` 與 `_parse_hold_period(-5)` 皆回傳 `1`，不回傳 `0` 或負數
+- [ ] **DD-20 滿倉觸價被擋**：`MAX_ACTIVE_POSITIONS=1`、1 支既有 active + 1 支 watch 當日觸價 → watch 條目維持 `watch`、`slot_blocked_today=True`、`active_entry_price` 仍為 None、`watch_days` 遞增、無結算紀錄
+- [ ] **DD-20 有名額正常進場**：`MAX_ACTIVE_POSITIONS=2`、1 支既有 active + 1 支 watch 觸價 → 轉 active，`active_entry_price = buy_zone_upper`
+- [ ] **DD-20 優先序競爭**：兩支 watch 同日觸價、僅 1 個名額 → `ai_confidence` 較高者進場，另一支被擋；同分時 `l2_score` 高者勝，再同分時 symbol 字母序小者勝
+- [ ] **DD-20 優先序缺值容錯**：`ai_confidence=None` 的條目參與排序不拋 TypeError，且排在有值條目之後
+- [ ] **DD-20 被擋 + 收盤破止損 → invalid**：滿倉觸價被擋且收盤 < stop_loss → 條目進 `invalid`（附止損原因），不進 settled、不寫 performance_history
+- [ ] **DD-20 被擋 + 已追高 → invalid**：滿倉觸價被擋且收盤 > upper×1.08 → 條目進 `invalid`（已追高）
+- [ ] **DD-20 被擋 + 收盤回穩 → watch**：滿倉觸價被擋且收盤介於 stop_loss 與區間之間 → 維持 watch、旗標 True
+- [ ] **DD-20 當日結算不退名額**：`MAX_ACTIVE_POSITIONS=1`、既有 active 當日觸發止損結算，同日另一支 watch 觸價 → 該 watch 仍被擋（名額次日才釋放）
+- [ ] **DD-20 超額不強平**：`MAX_ACTIVE_POSITIONS=1`、3 支既有 active 未觸發任何結算條件 → 3 支全數維持 active，無強制出場
+- [ ] **DD-20 旗標次日重置**：day1 被擋（旗標 True 已存檔），day2 未觸價 → 旗標 False
+- [ ] **DD-20 下載失敗仍重置旗標**：昨日旗標 True 的條目今日 `_fetch_latest` 未回傳該 symbol → 旗標仍被重置為 False
+- [ ] **DD-20 滿倉時新訊號照常入 watch**：active 數已達上限，當日 L3 新訊號 → 正常加入 watchlist（status=watch）
+- [ ] **DD-20 reset 路徑清旗標**：旗標 True 的 watch 條目再次入選 L3（覆寫展期）→ `slot_blocked_today=False`
+- [ ] **DD-20 存檔順序不變**：優先序排序僅影響評估順序，`save_watchlist` 寫出的條目順序與讀入時一致

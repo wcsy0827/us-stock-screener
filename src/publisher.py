@@ -7,7 +7,12 @@ import subprocess
 from datetime import datetime
 from pathlib import Path
 
-from tracker import _max_watch_days, TRAILING_ACTIVATION_PCT, TRAILING_RETRACE_PCT
+from tracker import (
+    _max_watch_days,
+    MAX_ACTIVE_POSITIONS,
+    TRAILING_ACTIVATION_PCT,
+    TRAILING_RETRACE_PCT,
+)
 
 WEEKDAY_ZH = ["一", "二", "三", "四", "五", "六", "日"]
 
@@ -447,7 +452,14 @@ def _tracking_row(e: dict, status_cls: str) -> str:
         )
     elif status_cls == "watch":
         remaining = max(0, _max_watch_days(e) - days)
-        status_text = f"第 {days} 天（等待回落至買入區間，剩 {remaining} 天自動移除）"
+        if e.get("slot_blocked_today"):
+            # 滿倉被擋（tracker DD-20 / publisher DD-8）：讓使用者知道今日其實觸價過
+            status_text = (
+                f"第 {days} 天（今日觸價但持倉已滿 {MAX_ACTIVE_POSITIONS} 支，未進場；"
+                f"剩 {remaining} 天自動移除）"
+            )
+        else:
+            status_text = f"第 {days} 天（等待回落至買入區間，剩 {remaining} 天自動移除）"
         prices_html = f'<div class="track-prices">{price_str}買入區間 {bz}｜目標 {tgt}｜止損 {sl}</div>'
     elif status_cls == "invalid":
         reason = _esc(e.get("invalid_reason", ""))
@@ -618,7 +630,7 @@ def _build_daily_report(
 
     if active:
         rows = [_tracking_row(e, "active") for e in active]
-        sections += _section_html("✅", "有效追蹤清單", rows)
+        sections += _section_html("✅", "有效追蹤清單", rows, f"上限 {MAX_ACTIVE_POSITIONS} 支")
 
     if watch:
         rows = [_tracking_row(e, "watch") for e in watch]
@@ -762,7 +774,7 @@ function toggleRunInfo() {{
   <div class="summary-box">
     <h2>📈 今日統計</h2>
     <div class="stat-row">
-      <div class="stat-group"><span class="stat-num c-active">{na}</span><span class="stat-lbl">支有效</span></div>
+      <div class="stat-group"><span class="stat-num c-active">{na} / {MAX_ACTIVE_POSITIONS}</span><span class="stat-lbl">持倉／上限</span></div>
       <div class="stat-group"><span class="stat-num c-watch">{nw}</span><span class="stat-lbl">支留意</span></div>
       <div class="stat-group"><span class="stat-num c-invalid">{ni}</span><span class="stat-lbl">支失效</span></div>
     </div>
@@ -852,8 +864,8 @@ _INFO_HTML = """
   <div class="info-card">
     <h3>🚦 訊號追蹤狀態</h3>
     <table class="info-table">
-      <tr><td>✅ active</td><td>當日最低價已觸及買入區間上緣（模擬限價單成交），顯示持倉天數與彩色浮損益</td></tr>
-      <tr><td>🟡 watch</td><td>今日未觸及買入區間，等待回落</td></tr>
+      <tr><td>✅ active</td><td>當日最低價已觸及買入區間上緣（模擬限價單成交），且持倉未滿上限（預設 5 支，MAX_ACTIVE_POSITIONS 可調；同日多支觸價時依 AI 信心分數優先進場），顯示持倉天數與彩色浮損益</td></tr>
+      <tr><td>🟡 watch</td><td>今日未觸及買入區間等待回落；或已觸價但持倉已滿，暫不進場（觀察期照常倒數，次日名額釋出時重新競爭）</td></tr>
       <tr><td>❌ invalid</td><td>趨勢轉弱或跌破止損，訊號失效（僅發生在今日未觸價成交的 watch 階段；已進場的 active 部位出場只由 settled 控制）</td></tr>
       <tr><td>🗑 expired</td><td>觀察達策略對應上限自動移除（突破/動能 5 日、反轉 10 日；高波動整理市的突破 3 日、VIX&gt;35 尖底的反轉 5 日）</td></tr>
       <tr><td>📦 settled</td><td>停利／停損／移動停利／到期結算，歸檔績效資料庫</td></tr>
