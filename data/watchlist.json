@@ -35,7 +35,8 @@
     "planned_stop_loss": 108.0,
     "effective_stop_loss": 108.0,
     "is_breakeven_locked": false,
-    "highest_close_since_active": 124.73
+    "highest_close_since_active": 124.73,
+    "slot_blocked_today": false
   },
   {
     "symbol": "APD",
@@ -73,7 +74,8 @@
     "planned_stop_loss": 280.0,
     "effective_stop_loss": 280.0,
     "is_breakeven_locked": false,
-    "highest_close_since_active": 296.75
+    "highest_close_since_active": 296.75,
+    "slot_blocked_today": false
   },
   {
     "symbol": "WELL",
@@ -109,7 +111,8 @@
     "planned_stop_loss": 226.0,
     "effective_stop_loss": 226.0,
     "is_breakeven_locked": false,
-    "highest_close_since_active": 233.9
+    "highest_close_since_active": 233.9,
+    "slot_blocked_today": false
   },
   {
     "symbol": "PCAR",
@@ -146,7 +149,8 @@
     "planned_stop_loss": 119.0,
     "effective_stop_loss": 119.0,
     "is_breakeven_locked": false,
-    "highest_close_since_active": 124.46
+    "highest_close_since_active": 124.46,
+    "slot_blocked_today": false
   },
   {
     "symbol": "RTX",
@@ -183,7 +187,8 @@
     "planned_stop_loss": 192.0,
     "effective_stop_loss": 192.0,
     "is_breakeven_locked": false,
-    "highest_close_since_active": 200.85
+    "highest_close_since_active": 200.85,
+    "slot_blocked_today": false
   },
   {
     "symbol": "MCO",
@@ -220,7 +225,8 @@
     "planned_stop_loss": 470.0,
     "effective_stop_loss": 470.0,
     "is_breakeven_locked": false,
-    "highest_close_since_active": 487.02
+    "highest_close_since_active": 487.02,
+    "slot_blocked_today": false
   },
   {
     "symbol": "SCHW",
@@ -253,7 +259,8 @@
     "l2_score": 85.0,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭排列，RSI=70.8健康，VTF=0.67>0，Momentum_ATR=4.65強勢。",
-    "current_price": 101.91
+    "current_price": 101.91,
+    "slot_blocked_today": false
   },
   {
     "symbol": "STT",
@@ -289,7 +296,8 @@
     "planned_stop_loss": 172.0,
     "effective_stop_loss": 172.0,
     "is_breakeven_locked": false,
-    "highest_close_since_active": 180.16
+    "highest_close_since_active": 180.16,
+    "slot_blocked_today": false
   },
   {
     "symbol": "XYL",
@@ -325,7 +333,8 @@
     "planned_stop_loss": 114.0,
     "effective_stop_loss": 114.0,
     "is_breakeven_locked": false,
-    "highest_close_since_active": 118.89
+    "highest_close_since_active": 118.89,
+    "slot_blocked_today": false
   },
   {
     "symbol": "WM",
@@ -361,7 +370,8 @@
     "planned_stop_loss": 221.0,
     "effective_stop_loss": 221.0,
     "is_breakeven_locked": false,
-    "highest_close_since_active": 231.67
+    "highest_close_since_active": 231.67,
+    "slot_blocked_today": false
   },
   {
     "symbol": "RSG",
@@ -397,7 +407,8 @@
     "planned_stop_loss": 209.0,
     "effective_stop_loss": 209.0,
     "is_breakeven_locked": false,
-    "highest_close_since_active": 218.69
+    "highest_close_since_active": 218.69,
+    "slot_blocked_today": false
   },
   {
     "symbol": "ANET",
@@ -432,7 +443,8 @@
     "planned_stop_loss": 170.0,
     "effective_stop_loss": 170.0,
     "is_breakeven_locked": false,
-    "highest_close_since_active": 184.69
+    "highest_close_since_active": 184.69,
+    "slot_blocked_today": false
   },
   {
     "symbol": "AAPL",
@@ -467,46 +479,18 @@
     "planned_stop_loss": 300.0,
     "effective_stop_loss": 300.0,
     "is_breakeven_locked": false,
-    "highest_close_since_active": 316.22
-  },
-  {
-    "symbol": "RJF",
-    "name": "Raymond James Financial, Inc.",
-    "sector": "Financial Services",
-    "buy_zone": "$165～$168",
-    "buy_zone_lower": 165.0,
-    "buy_zone_upper": 168.0,
-    "target": "$186",
-    "stop_loss": "$161",
-    "hold_period": "15",
-    "strategy": "動能策略",
-    "tracked_dates": [
-      "2026-07-09"
-    ],
-    "status": "watch",
-    "invalid_reason": null,
-    "watch_days": 0,
-    "active_days": 0,
-    "signal_date_close": 168.72000122070312,
-    "active_entry_price": null,
-    "active_start_date": null,
-    "date_added": "2026-07-09",
-    "entry_regime": "BULL_TREND",
-    "market_breadth_pct": 65.7,
-    "vix_value": 15.84,
-    "l2_score": 85.0,
-    "ai_confidence": 9,
-    "ai_strategy_reason": "均線多頭排列，RSI=69.2健康，Momentum_ATR=4.51強勁，VTF=0.01量能中性。"
+    "highest_close_since_active": 316.22,
+    "slot_blocked_today": false
   },
   {
     "symbol": "MPC",
     "name": "Marathon Petroleum Corporation",
     "sector": "Energy",
-    "buy_zone": "$274～$280",
-    "buy_zone_lower": 274.0,
-    "buy_zone_upper": 280.0,
+    "buy_zone": "$278～$281",
+    "buy_zone_lower": 278.0,
+    "buy_zone_upper": 281.0,
     "target": "$312",
-    "stop_loss": "$266",
+    "stop_loss": "$270",
     "hold_period": "15",
     "strategy": "動能策略",
     "tracked_dates": [
@@ -514,6 +498,7 @@
     ],
     "status": "watch",
     "invalid_reason": null,
+    "slot_blocked_today": false,
     "watch_days": 0,
     "active_days": 0,
     "signal_date_close": 283.29998779296875,
@@ -524,18 +509,18 @@
     "market_breadth_pct": 65.7,
     "vix_value": 15.84,
     "l2_score": 85.0,
-    "ai_confidence": 8,
-    "ai_strategy_reason": "均線多頭排列，RSI=69.5，Momentum_ATR=2.38強勢，VTF=0.63量能推進。"
+    "ai_confidence": 9,
+    "ai_strategy_reason": "均線多頭排列，RSI=69.5，VTF=0.63，Momentum_ATR=2.38，RS_vs_Sector=+3.4%，符合動能策略條件。"
   },
   {
-    "symbol": "FFIV",
-    "name": "F5, Inc.",
-    "sector": "Technology",
-    "buy_zone": "$420～$425",
-    "buy_zone_lower": 420.0,
-    "buy_zone_upper": 425.0,
-    "target": "$473",
-    "stop_loss": "$407",
+    "symbol": "EBAY",
+    "name": "eBay Inc.",
+    "sector": "Consumer Cyclical",
+    "buy_zone": "$115～$116",
+    "buy_zone_lower": 115.0,
+    "buy_zone_upper": 116.0,
+    "target": "$129",
+    "stop_loss": "$112",
     "hold_period": "15",
     "strategy": "動能策略",
     "tracked_dates": [
@@ -543,6 +528,37 @@
     ],
     "status": "watch",
     "invalid_reason": null,
+    "slot_blocked_today": false,
+    "watch_days": 0,
+    "active_days": 0,
+    "signal_date_close": 117.33000183105469,
+    "active_entry_price": null,
+    "active_start_date": null,
+    "date_added": "2026-07-09",
+    "entry_regime": "BULL_TREND",
+    "market_breadth_pct": 65.7,
+    "vix_value": 15.84,
+    "l2_score": 85.0,
+    "ai_confidence": 8,
+    "ai_strategy_reason": "均線多頭排列，RSI=66.2，VTF=0.42，Momentum_ATR=3.53，RS_vs_Sector=+2.4%，符合動能策略。"
+  },
+  {
+    "symbol": "FFIV",
+    "name": "F5, Inc.",
+    "sector": "Technology",
+    "buy_zone": "$425～$428",
+    "buy_zone_lower": 425.0,
+    "buy_zone_upper": 428.0,
+    "target": "$473",
+    "stop_loss": "$418",
+    "hold_period": "15",
+    "strategy": "動能策略",
+    "tracked_dates": [
+      "2026-07-09"
+    ],
+    "status": "watch",
+    "invalid_reason": null,
+    "slot_blocked_today": false,
     "watch_days": 0,
     "active_days": 0,
     "signal_date_close": 430.32000732421875,
@@ -554,6 +570,6 @@
     "vix_value": 15.84,
     "l2_score": 85.0,
     "ai_confidence": 8,
-    "ai_strategy_reason": "均線多頭排列，RSI=68.5，Momentum_ATR=2.93強勢，VTF=0.74量能推進。"
+    "ai_strategy_reason": "均線多頭排列，RSI=68.5，VTF=0.74，Momentum_ATR=2.93，RS_vs_Sector=+2.8%，符合動能策略。"
   }
 ]
