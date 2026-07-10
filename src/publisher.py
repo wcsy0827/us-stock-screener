@@ -453,19 +453,25 @@ def _tracking_row(e: dict, status_cls: str) -> str:
     elif status_cls == "watch":
         remaining = max(0, _max_watch_days(e) - days)
         if e.get("slot_blocked_today"):
-            # 滿倉被擋（tracker DD-20 / publisher DD-8）：讓使用者知道今日其實觸價過
+            # 未在掛單名單被擋（tracker DD-20 v2 / publisher DD-8）：讓使用者知道今日其實觸價過
             status_text = (
-                f"第 {days} 天（今日觸價但持倉已滿 {MAX_ACTIVE_POSITIONS} 支，未進場；"
+                f"第 {days} 天（今日觸價但未在掛單名單，未進場；"
                 f"剩 {remaining} 天自動移除）"
             )
         else:
             status_text = f"第 {days} 天（等待回落至買入區間，剩 {remaining} 天自動移除）"
-        prices_html = f'<div class="track-prices">{price_str}買入區間 {bz}｜目標 {tgt}｜止損 {sl}</div>'
+        prices_html = (
+            f'<div class="track-prices">{price_str}買入區間 {bz}｜目標 {tgt}｜止損 {sl}'
+            f"｜{_conf_l2_str(e)}</div>"
+        )
     elif status_cls == "invalid":
         reason = _esc(e.get("invalid_reason", ""))
         remaining = max(0, _max_watch_days(e) - days)
         status_text = f"第 {days} 天 ── {reason}（剩 {remaining} 天自動移除）"
-        prices_html = f'<div class="track-prices">{price_str}買入區間 {bz}｜目標 {tgt}｜止損 {sl}</div>'
+        prices_html = (
+            f'<div class="track-prices">{price_str}買入區間 {bz}｜目標 {tgt}｜止損 {sl}'
+            f"｜{_conf_l2_str(e)}</div>"
+        )
     else:  # expired
         status_text = f"已追蹤 {days} 天，今日移除"
         prices_html = ""
@@ -602,6 +608,60 @@ def _section_html(emoji: str, title: str, items: list[str], note: str = "") -> s
 </div>"""
 
 
+def _conf_l2_str(e: dict) -> str:
+    """「信心 X/10｜L2 Y 分」顯示字串（publisher DD-9），缺值顯示 N/A。"""
+    conf = e.get("ai_confidence")
+    l2 = e.get("l2_score")
+    conf_str = f"{conf}/10" if conf is not None else "N/A"
+    l2_str = f"{l2:.0f} 分" if isinstance(l2, (int, float)) else "N/A"
+    return f"信心 {conf_str}｜L2 {l2_str}"
+
+
+def _order_plan_section(order_plan: dict) -> str:
+    """
+    明日掛單計畫（publisher DD-9）：資料來自 tracker.compute_order_plan()
+    （categories["order_plan"]），報告名單即次日 watch→active 的進場資格
+    （tracker DD-20 名單制）。roster 依優先序渲染，前 free_slots 名標
+    「✅ 建議掛單」（綠框），其餘「⏸ 備援」（黃框）。roster 為空時隱藏區段。
+    """
+    roster = (order_plan or {}).get("roster", [])
+    if not roster:
+        return ""
+    free_slots = order_plan.get("free_slots", 0)
+
+    rows = []
+    for i, e in enumerate(roster, start=1):
+        sym = _esc(e.get("symbol", "-"))
+        name = _esc(e.get("name", sym))
+        strategy = _esc(e.get("strategy", "-"))
+        upper = e.get("buy_zone_upper")
+        upper_str = f"${upper:.2f}" if isinstance(upper, (int, float)) else "-"
+        bz = _esc(e.get("buy_zone", "-"))
+        sl = _esc(e.get("stop_loss", "-"))
+        tgt = _esc(e.get("target", "-"))
+        remaining = max(0, _max_watch_days(e) - _days(e))
+        if i <= free_slots:
+            mark, row_cls = "✅ 建議掛單", "active"
+        else:
+            mark, row_cls = "⏸ 備援（名額外）", "watch"
+        rows.append(f"""
+<div class="track-item {row_cls}">
+  <div class="track-header">
+    <span class="track-symbol">#{i} {sym}</span>
+    <span class="track-name">{name}</span>
+    <span class="strategy-tag">{strategy}</span>
+  </div>
+  <div class="track-status">{mark}｜{_conf_l2_str(e)}</div>
+  <div class="track-prices">掛單價 {upper_str}｜買入區間 {bz}｜止損 {sl}｜目標 {tgt}｜剩 {remaining} 天觀察期</div>
+</div>""")
+
+    if free_slots > 0:
+        note = f"明日可進場名額 {free_slots} 支，依限價單掛買入區間上緣"
+    else:
+        note = "名額 0，持倉已滿，明日不建議掛新單"
+    return _section_html("📋", "明日掛單計畫", rows, note)
+
+
 def _build_daily_report(
     categories: dict,
     stats: dict,
@@ -621,6 +681,7 @@ def _build_daily_report(
     settled  = categories.get("settled", [])
     new      = categories.get("new", [])
     reset    = categories.get("reset", [])
+    order_plan = categories.get("order_plan") or {}
 
     regime = (market_context or {}).get("regime", "")
     dashboard_html = _build_market_dashboard(market_context or {})
@@ -665,6 +726,9 @@ def _build_daily_report(
         if reset:
             cards = [_stock_card(i + 1, rec, "reset-card") for i, rec in enumerate(reset)]
             sections += _section_html("🔄", "重新入選，重置追蹤", cards)
+
+    # 明日掛單計畫（publisher DD-9）：人工下單決策的單一視圖
+    sections += _order_plan_section(order_plan)
 
     if not sections:
         sections = '<p style="color:var(--muted);padding:24px 0;">今日無資料</p>'
@@ -864,8 +928,8 @@ _INFO_HTML = """
   <div class="info-card">
     <h3>🚦 訊號追蹤狀態</h3>
     <table class="info-table">
-      <tr><td>✅ active</td><td>當日最低價已觸及買入區間上緣（模擬限價單成交），且持倉未滿上限（預設 5 支，MAX_ACTIVE_POSITIONS 可調；同日多支觸價時依 AI 信心分數優先進場），顯示持倉天數與彩色浮損益</td></tr>
-      <tr><td>🟡 watch</td><td>今日未觸及買入區間等待回落；或已觸價但持倉已滿，暫不進場（觀察期照常倒數，次日名額釋出時重新競爭）</td></tr>
+      <tr><td>✅ active</td><td>當日最低價已觸及買入區間上緣（模擬限價單成交），且在前一日報告「明日掛單計畫」的建議掛單名單內（優先序 = AI 信心分數，同分比 L2 分數；名額預設 5 支，MAX_ACTIVE_POSITIONS 可調），顯示持倉天數與彩色浮損益</td></tr>
+      <tr><td>🟡 watch</td><td>今日未觸及買入區間等待回落；或已觸價但未在掛單名單（持倉已滿或優先序不足），暫不進場（觀察期照常倒數，次日重新競爭）</td></tr>
       <tr><td>❌ invalid</td><td>趨勢轉弱或跌破止損，訊號失效（僅發生在今日未觸價成交的 watch 階段；已進場的 active 部位出場只由 settled 控制）</td></tr>
       <tr><td>🗑 expired</td><td>觀察達策略對應上限自動移除（突破/動能 5 日、反轉 10 日；高波動整理市的突破 3 日、VIX&gt;35 尖底的反轉 5 日）</td></tr>
       <tr><td>📦 settled</td><td>停利／停損／移動停利／到期結算，歸檔績效資料庫</td></tr>

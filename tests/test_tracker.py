@@ -1138,7 +1138,7 @@ class TestRunTrackerActiveCapDD20:
         assert w1["buy_zone_upper"] == 110.0
 
     def test_watchlist_saved_order_preserved_after_priority_evaluation(self, monkeypatch):
-        """優先序排序只影響評估順序，save_watchlist 寫出順序與讀入一致。"""
+        """名單優先序只影響進場資格，save_watchlist 寫出順序與讀入一致。"""
         tracker.save_watchlist([
             self._watch_entry(symbol="CCC", confidence=5),
             self._watch_entry(symbol="AAA", confidence=9),
@@ -1149,3 +1149,97 @@ class TestRunTrackerActiveCapDD20:
         })
         watchlist, _ = tracker.run_tracker([], market_date="2026-06-30")
         assert [e["symbol"] for e in watchlist] == ["CCC", "AAA", "BBB"]
+
+    def test_out_of_roster_touch_blocked_even_with_free_slot(self, monkeypatch):
+        """v2 名單制關鍵行為：名額 1、名單第 1 名（HIGHC）未觸價、第 2 名（LOWC）
+        觸價 → LOWC 被擋（使用者只掛了 HIGHC 的單）、無人進場。
+        事後擇優（v1）會錯誤放行 LOWC，把使用者沒掛單的交易寫進績效。"""
+        monkeypatch.setattr(tracker, "MAX_ACTIVE_POSITIONS", 1)
+        tracker.save_watchlist([
+            self._watch_entry(symbol="HIGHC", confidence=9),
+            self._watch_entry(symbol="LOWC", confidence=7),
+        ])
+        monkeypatch.setattr(tracker, "_fetch_latest", lambda syms: {
+            "HIGHC": self._no_touch_quote(), "LOWC": self._touch_quote(),
+        })
+        watchlist, categories = tracker.run_tracker([], market_date="2026-06-30")
+
+        assert categories["active"] == []
+        lowc = next(e for e in watchlist if e["symbol"] == "LOWC")
+        assert lowc["status"] == "watch"
+        assert lowc["slot_blocked_today"] is True
+        highc = next(e for e in watchlist if e["symbol"] == "HIGHC")
+        assert highc["status"] == "watch"
+        assert highc["slot_blocked_today"] is False
+        assert not tracker._PERF_PATH.exists()
+
+    def test_categories_contains_order_plan_with_todays_new_entry(self, monkeypatch):
+        """categories["order_plan"]：free_slots／依優先序排序的 roster（含今日
+        新進條目）／eligible 前 N 名切點。"""
+        monkeypatch.setattr(tracker, "MAX_ACTIVE_POSITIONS", 2)
+        tracker.save_watchlist([
+            self._watch_entry(symbol="LOWC", confidence=7),
+            self._watch_entry(symbol="HIGHC", confidence=9),
+        ])
+        monkeypatch.setattr(tracker, "_fetch_latest", lambda syms: {
+            s: self._no_touch_quote() for s in syms
+        })
+        stock = {"symbol": "NEW1", "name": "New Co", "sector": "Technology",
+                 "buy_zone": "$100～$105", "target": "$120", "stop_loss": "$90",
+                 "hold_period": "10", "strategy": "突破策略",
+                 "confidence": 8, "total_score": 80, "price": 102.0,
+                 "strategy_reason": ""}
+        _, categories = tracker.run_tracker([stock], market_date="2026-06-30")
+
+        plan = categories["order_plan"]
+        assert plan["free_slots"] == 2
+        assert [e["symbol"] for e in plan["roster"]] == ["HIGHC", "NEW1", "LOWC"]
+        assert plan["eligible"] == {"HIGHC", "NEW1"}
+
+
+# ── compute_order_plan：tracker DD-20 事前掛單名單純函式 ─────────────
+
+class TestComputeOrderPlan:
+    def _entry(self, symbol, status="watch", confidence=8, l2=85.0):
+        return {"symbol": symbol, "status": status,
+                "ai_confidence": confidence, "l2_score": l2}
+
+    def test_roster_sorted_and_eligible_cut(self, monkeypatch):
+        monkeypatch.setattr(tracker, "MAX_ACTIVE_POSITIONS", 2)
+        wl = [
+            self._entry("ACT1", status="active"),
+            self._entry("LOW", confidence=6),
+            self._entry("HIGH", confidence=9),
+            self._entry("MID", confidence=8),
+        ]
+        plan = tracker.compute_order_plan(wl)
+        assert plan["free_slots"] == 1
+        assert [e["symbol"] for e in plan["roster"]] == ["HIGH", "MID", "LOW"]
+        assert plan["eligible"] == {"HIGH"}
+
+    def test_over_cap_active_gives_zero_slots_empty_eligible(self, monkeypatch):
+        monkeypatch.setattr(tracker, "MAX_ACTIVE_POSITIONS", 1)
+        wl = [self._entry(f"A{i}", status="active") for i in range(3)]
+        wl.append(self._entry("W1"))
+        plan = tracker.compute_order_plan(wl)
+        assert plan["free_slots"] == 0
+        assert plan["eligible"] == set()
+        assert [e["symbol"] for e in plan["roster"]] == ["W1"]
+
+    def test_empty_watchlist(self):
+        plan = tracker.compute_order_plan([])
+        assert plan["roster"] == []
+        assert plan["eligible"] == set()
+
+    def test_deterministic_repeat(self, monkeypatch):
+        monkeypatch.setattr(tracker, "MAX_ACTIVE_POSITIONS", 2)
+        wl = [self._entry("B"), self._entry("A"), self._entry("ACT", status="active")]
+        p1 = tracker.compute_order_plan(wl)
+        p2 = tracker.compute_order_plan(wl)
+        assert p1["eligible"] == p2["eligible"]
+        assert [e["symbol"] for e in p1["roster"]] == [e["symbol"] for e in p2["roster"]]
+
+    def test_invalid_entries_excluded_from_roster(self):
+        wl = [self._entry("W1"), self._entry("BAD", status="invalid")]
+        plan = tracker.compute_order_plan(wl)
+        assert [e["symbol"] for e in plan["roster"]] == ["W1"]
