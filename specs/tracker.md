@@ -11,8 +11,8 @@
 ```
 [新加入] → watch
   watch  → active   （次日 today_low <= buy_zone_upper 即視為觸價成交，1-day lag，DD-19；
-                      且需有空餘持倉名額，同日多支觸價時依優先序競爭，DD-20）
-  watch  → watch    （今日觸價但持倉已滿被擋下：slot_blocked_today=True，watch_days 照常累計，DD-20）
+                      且需在事前掛單名單內＝優先序前 free_slots 名，DD-20）
+  watch  → watch    （今日觸價但未在掛單名單被擋下：slot_blocked_today=True，watch_days 照常累計，DD-20）
   watch  → invalid  （失效條件觸發，僅當今日未觸價成交、或觸價被擋且收盤價判定失效時發生，DD-20）
   watch  → expired  （watch_days >= 策略對應 watch 上限：突破/動能=5日，反轉=10日）
   active → settled  （CLOSED_PROFIT / CLOSED_LOSS / CLOSED_TRAILING_STOP / FORCE_EXPIRED，歸檔至 performance_history.json）
@@ -334,22 +334,23 @@ def _is_expired(entry: dict) -> bool:
 - **捨棄**：`min(today_open, buy_zone_upper)` 進場代理價（見上，換取的精確度不敵新增的異常值風險與額外欄位）；把觸價檢查改寫進 `_eval_status()` 既有分支結構內部（改為插入獨立前置檢查，改動面最小、既有 8 個回歸測試與規格全數不受影響）；刪除因觸價檢查而變成事實不可達的舊分支（保留作防禦網成本趨近於零，刪除需同步改規格與重寫測試，且失去異常參數防禦）。
 - → 本設計經 skeptic/red-team/simplifier 三方抗辯審查（含 OHLC 恆等式前提驗證、`_fetch_latest` 列對齊缺陷、存量資料相容性、`hold_period` 邊界），最終方案為三方收斂後的最小化版本。
 
-### DD-20: 組合層級 active 持倉上限（槽位制：觸價但滿倉時延後進場）
+### DD-20: 組合層級 active 持倉上限（事前掛單名單制：僅優先序前 N 名可進場）
 
 > 注意：`specs/ranker.md` 另有一個編號相同但完全無關的 DD-20（L3 精選上限 5→3）；`tracker.py` 程式碼註解中既有的「不納入追蹤（DD-20）」引用的是 ranker 的 `is_fallback` 決策，非本條。
 
 - **背景**：watchlist 持倉數原本沒有任何組合層級上限：每日 L3 流入 ≤3 支 × DD-19 淺回檔帶造成的 ~100% 觸價成交率 × 常見 15 交易日持有期，穩態推算約 45 支同時持倉，與使用者真實資金操作（同時最多持有數支）完全脫節，`performance_history.json` 的績效統計隱含「資金無限」假設。業界標準做法是在訊號層之上加組合建構層：訊號多於名額時按強度排序取前 N（ranking-based selection），而非回頭調鈍訊號層（單日漏斗 503→3 已極挑剔，收緊入口只會犧牲樣本累積，且穩態 = 流量 × 持有天數的數學不因入口寬窄改變）。
-- **選擇**：新增模組常數 `MAX_ACTIVE_POSITIONS`（`env: MAX_ACTIVE_POSITIONS`，預設 5）。`run_tracker()` E 步驟迴圈**開始前**計算 `active_count`（`status=="active"` 條目數）與 `free_slots = max(0, MAX_ACTIVE_POSITIONS - active_count)`；E 迴圈改為依 `_slot_priority_key()` 優先序排序迭代（`-ai_confidence`、次序 `-l2_score`、再次序 `symbol` 字母序；缺值以 0 處理，兩欄位自 B/C 步驟建立條目時即存在）。條目就地變異，存檔的 watchlist 列表順序不變。
-- **名額閘門**：`_eval_status()` 回傳後、status 寫回前，若 `new_status=="active" and prev_status=="watch"`：`free_slots > 0` 時扣 1 照常進場；否則（blocked）以 `settlement_entry` 重跑 `_eval_status(..., today_low=None)` 取**收盤價判定**——回傳 invalid（收盤跌破止損／已追高等）時照 invalid 處理（沒掛單的死訊號直接清除，防止次日以遠高於現價的 `buy_zone_upper` 幽靈進場後即時 CLOSED_LOSS 污染績效），否則強制維持 `watch` 並設 `entry["slot_blocked_today"] = True`。被擋條目不進 active 副作用區塊、不進 `_check_settlement()`，`watch_days` 照常遞增、次日以當日名額重新競爭。
-- **語意對應真實操作**：使用者依前晚報告隔日盤中掛限價單；滿倉時根本不會掛新單，故被擋條目「無真實成交、無紀錄」是正確語意（對照 DD-19 的取捨：已成交的真實部位必須記錄）。
+- **選擇**：新增模組常數 `MAX_ACTIVE_POSITIONS`（`env: MAX_ACTIVE_POSITIONS`，預設 5）與純函式 `compute_order_plan(watchlist)`：`free_slots = max(0, MAX_ACTIVE_POSITIONS − active 條目數)`；`roster` = 全部 `status=="watch"` 條目依 `_slot_priority_key()` 排序（`-ai_confidence`、次序 `-l2_score`、再次序 `symbol` 字母序；缺值以 0 處理，兩欄位自 B/C 步驟建立條目時即存在）；`eligible` = roster 前 `free_slots` 名的 symbol 集合。`run_tracker()` E 步驟開頭呼叫一次取得 `eligible`（**事前掛單名單**），E 迴圈維持普通迭代（名單大小 ≤ 名額，同日全數轉換也不會超限，不需排序迭代或計數器）；結尾（G 步驟移除後、儲存前）再算一次寫入 `categories["order_plan"]`，供 publisher 渲染「明日掛單計畫」區段。
+- **名額閘門（名單制）**：`_eval_status()` 回傳後、status 寫回前，若 `new_status=="active" and prev_status=="watch" and sym not in eligible`（blocked）：以 `settlement_entry` 重跑 `_eval_status(..., today_low=None)` 取**收盤價判定**——回傳 invalid（收盤跌破止損／已追高等）時照 invalid 處理（沒掛單的死訊號直接清除，防止次日以遠高於現價的 `buy_zone_upper` 幽靈進場後即時 CLOSED_LOSS 污染績效），否則強制維持 `watch` 並設 `entry["slot_blocked_today"] = True`。名單內條目無條件放行。被擋條目不進 active 副作用區塊、不進 `_check_settlement()`，`watch_days` 照常遞增、次日以新名單重新競爭。
+- **語意對應真實操作（v2 修訂：事後擇優 → 事前名單制）**：初版設計為「事後擇優」——當日觸價者中信心高者得名額。但使用者依前晚報告隔日**事前**掛限價單，只能掛前 N 名：名額 2、排序 A>B>C>D 時使用者掛 A、B，若當日僅 C 觸價，事後擇優會判 C 進場，而使用者根本沒掛 C 的單——`performance_history.json` 記錄使用者沒有的交易（與 DD-17/DD-19 修復的「帳實不符」同類缺陷，方向相反）。名單制下報告的「✅ 建議掛單」即系統進場資格的精確定義，照表掛單則績效資料庫 = 真實帳本；「名單內沒觸價、名單外觸價」的日子系統空手（使用者當天也空手，忠實）。
+- **名單確定性（不持久化）**：晚間 `categories["order_plan"]` 與次日 E 開頭的重算作用在同一份存檔（active 數與 watch 集合在兩次計算之間無任何變動、`_slot_priority_key` 為純函式），結果必然相同，故不需把名單寫入 watchlist。已知邊界：兩次執行之間修改 env `MAX_ACTIVE_POSITIONS` 會使名單偏移（正常環境 env 固定，接受）。
 - **當日結算不退還名額**：同一輪 E 步驟中結算出場的 active 部位不即時釋放 `free_slots`（使用者掛單當下無從得知當日稍晚的止損），名額於次一交易日自然釋放，與 DD-11 的 1-day lag 口徑一致。
 - **超額不強平**：既有 active 數已超過上限時（上線當下 12 > 5），`free_slots=0`，超額部位不強制平倉，由四態結算自然收斂降回上限以下。
 - **B/C 步驟不變**：滿倉時當日 L3 新訊號照常以 watch 加入（報告仍完整呈現 AI 判斷，次日名額釋出即可競爭）。
 - **`slot_blocked_today` 旗標生命週期**：於 E 迴圈每條目處理最頂端（早於 `sym not in latest` 的 continue）重置為 False，確保下載失敗日不殘留昨日的 True；B/C `base` 字典含 `"slot_blocked_today": False`，reset 展期路徑（`existing[sym].update(base)`）因共用 base 同步清除。旗標僅供 publisher 當日渲染「觸價但持倉已滿」註記。
 - **與 DD-19 dormant 分支的交互**：blocked 重跑讓 DD-19 宣告實務不可達的收盤價分支（反轉止損、動能 EMA20、追高、DD-7 跳空攔截）對「觸價但被擋」條目重新可達，該等分支自此**不得**以 dormant 為由清理（DD-19 措辭已同步修訂）。
-- **同日重跑的已知邊界（接受，不另做機制）**：同日手動重跑時，run 1 已結算的條目已移出 watchlist，run 2 的 `active_count` 較低，可能放行 run 1 被擋的條目（等於名額經後門當日退還）；且 run 2 才放行的條目因 DD-18 計數器守衛，轉 active 當日 `active_days` 不遞增，`holding_days` 少記 1 日。兩者僅發生在手動重跑驗證路徑（CI 一天一跑），影響有界，不為此建立 run 1 快照持久化機制。
-- **捨棄**：當日結算即退還名額（違反「掛單當下不可知未來」的現實語意）；強平超額 active 部位（人為製造非市場事件的出場紀錄，污染績效資料庫）；滿倉時直接不加新訊號進 watchlist（報告失去 AI 判斷完整性，且次日名額釋出時無候選可用）；迴圈前 pre-pass 預先評估全部條目再排序（`_eval_status` 需連同拆股 adj 邏輯執行兩次，複雜度高於「排序迭代 + 計數器」且無行為差異）。
-- → 詳見 `plans/2026-07-10-max-active-positions-cap.md`
+- **同日重跑的已知邊界（接受，不另做機制）**：同日手動重跑時，run 1 已結算的條目已移出 watchlist，run 2 重算的名單 `free_slots` 較高，可能放行 run 1 被擋的條目（等於名額經後門當日退還）；且 run 2 才放行的條目因 DD-18 計數器守衛，轉 active 當日 `active_days` 不遞增，`holding_days` 少記 1 日。兩者僅發生在手動重跑驗證路徑（CI 一天一跑），影響有界，不為此建立 run 1 快照持久化機制。
+- **捨棄**：事後擇優（初版 v1 設計：觸價者中信心高者得名額，`free_slots` 計數器 + 優先序排序迭代——與事前掛單的真實操作錯位，會把使用者沒掛單的交易寫進績效，見上方 v2 修訂說明）；當日結算即退還名額（違反「掛單當下不可知未來」的現實語意）；強平超額 active 部位（人為製造非市場事件的出場紀錄，污染績效資料庫）；滿倉時直接不加新訊號進 watchlist（報告失去 AI 判斷完整性，且次日名額釋出時無候選可用）；名單持久化寫入 watchlist（確定性重算已保證報告與次日資格一致，持久化徒增欄位與失步風險）。
+- → 詳見 `plans/2026-07-10-max-active-positions-cap.md`（v1 上限機制）、`plans/2026-07-10-order-plan-roster.md`（v2 名單制修訂 + 前端掛單計畫）
 
 ---
 
@@ -439,7 +440,10 @@ def _is_expired(entry: dict) -> bool:
 - [ ] **DD-19 hold_period 下界**：`_parse_hold_period(0)` 與 `_parse_hold_period(-5)` 皆回傳 `1`，不回傳 `0` 或負數
 - [ ] **DD-20 滿倉觸價被擋**：`MAX_ACTIVE_POSITIONS=1`、1 支既有 active + 1 支 watch 當日觸價 → watch 條目維持 `watch`、`slot_blocked_today=True`、`active_entry_price` 仍為 None、`watch_days` 遞增、無結算紀錄
 - [ ] **DD-20 有名額正常進場**：`MAX_ACTIVE_POSITIONS=2`、1 支既有 active + 1 支 watch 觸價 → 轉 active，`active_entry_price = buy_zone_upper`
-- [ ] **DD-20 優先序競爭**：兩支 watch 同日觸價、僅 1 個名額 → `ai_confidence` 較高者進場，另一支被擋；同分時 `l2_score` 高者勝，再同分時 symbol 字母序小者勝
+- [ ] **DD-20 名單擇優**：兩支 watch 同日觸價、僅 1 個名額 → 名單內（`ai_confidence` 較高）者進場，另一支被擋；同分時 `l2_score` 高者勝，再同分時 symbol 字母序小者勝
+- [ ] **DD-20 名單外觸價一律被擋（v2 關鍵行為）**：名額 1、名單第 1 名未觸價、第 2 名觸價 → 第 2 名被擋（`slot_blocked_today=True`）、無人進場（使用者只掛了第 1 名的單）
+- [ ] **DD-20 order_plan 輸出**：`run_tracker()` 回傳的 `categories["order_plan"]` 含 `free_slots`、依優先序排序的 `roster`（含名額外備援）、`eligible` 集合；roster 涵蓋今日新進與 reset 條目
+- [ ] **DD-20 compute_order_plan 純函式**：對同一份 watchlist 重複呼叫回傳相同結果；空 watchlist → `roster=[]`、`eligible=set()`；active 數超過上限 → `free_slots=0`
 - [ ] **DD-20 優先序缺值容錯**：`ai_confidence=None` 的條目參與排序不拋 TypeError，且排在有值條目之後
 - [ ] **DD-20 被擋 + 收盤破止損 → invalid**：滿倉觸價被擋且收盤 < stop_loss → 條目進 `invalid`（附止損原因），不進 settled、不寫 performance_history
 - [ ] **DD-20 被擋 + 已追高 → invalid**：滿倉觸價被擋且收盤 > upper×1.08 → 條目進 `invalid`（已追高）

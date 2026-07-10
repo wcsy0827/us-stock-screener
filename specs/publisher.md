@@ -83,6 +83,18 @@ def publish(
 - **`_INFO_HTML` 只寫靜態文字，不插值 runtime 常數**：`docs/index.html` 由 `tests/test_publisher_info_sync.py` 全等比對守門；若 `_INFO_HTML` 插值 `MAX_ACTIVE_POSITIONS`，任何 `.env` 設了不同值的環境跑 pytest 都會誤紅。系統說明卡片寫「預設 5 支（`MAX_ACTIVE_POSITIONS` 可調）」的字面文字；每日報告（非全等守門範圍）才使用 runtime 常數。
 - **捨棄**：在 `last_run.json` 加 `active_count`/`max_positions` 欄位（`_write_last_run` 不接觸 categories，需擴 plumbing，且今日統計已呈現同一資訊）；為被擋條目新增獨立 CSS badge（既有 track-status 文字已足夠傳達，避免 `_CSS` 變動觸發 index.html 再生成的額外面積）。
 
+### DD-9: 明日掛單計畫區段——人工下單決策所需的完整資訊
+
+- **背景**：系統未串接下單，使用者靠晚間報告人工決定隔日掛單。tracker DD-20（v2 名單制）的進場資格 = 優先序前 `free_slots` 名，但報告原本看不出這份名單：留意清單列不顯示 `ai_confidence`/`l2_score`、無優先序排序、無「明日可進場名額」；明日競爭池是「既有 watch + 今日新進 + 重新入選」的聯集，散在兩種版面。使用者無法回答「明早掛幾張單、掛哪幾檔、掛什麼價」。
+- **選擇**：
+  1. 新增純函式 `_order_plan_section(order_plan)`（資料來源 `categories["order_plan"]`，由 `run_tracker()` 以 `compute_order_plan()` 算出——單一事實來源，報告名單 = 次日進場資格）。區段置於「今日新進/重新入選」之後、「今日統計」之前。
+  2. 標題註記顯示「明日可進場名額 N 支」；`free_slots == 0` 時改顯示「名額 0，持倉已滿，明日不建議掛新單」，名單仍完整列出供參考。
+  3. 每列依 roster 優先序：排名、代號、名稱、策略、「✅ 建議掛單」（前 N 名，綠框樣式）或「⏸ 備援（名額外）」（黃框樣式）、AI 信心、L2 分數、**掛單價（`buy_zone_upper`，使用者實際掛限價單的價位）**、買入區間、止損、目標、剩餘觀察天數（呼叫 `tracker._max_watch_days()`）。
+  4. roster 為空（冷啟動/無 watch 條目）→ 回傳空字串，區段隱藏。
+  5. 留意清單列（`_tracking_row` watch/invalid 分支）補「信心 X｜L2 Y」資訊，供與掛單計畫對照；被擋註記文字統一為「今日觸價但未在掛單名單，未進場」（滿倉與被排擠兩種原因統一為「不在名單」，與 tracker DD-20 v2 口徑一致）。
+- **原因**：使用者隔日早上需要回答的三個問題——掛幾張（free_slots）、掛哪幾檔（roster 前 N 名）、掛什麼價（buy_zone_upper）——必須在單一區段內完整呈現；且名單由 tracker 計算保證「報告所示 = 系統模擬資格」，使用者照表掛單則 `performance_history.json` 等於真實帳本。
+- **捨棄**：publisher 端自行從 `categories["watch"]`+`["new"]`+`["reset"]` 重建名單（欄位名不一致、reset 條目不在 watch 分類中，重複實作排序邏輯違反單一事實來源）；被擋註記顯示上限數字（名單制下「不在名單」才是準確語意，上限數字已在名額註記呈現）。
+
 ## Acceptance Criteria
 
 - [ ] 每日報告頁標題顯示「美股資料截止日：YYYY-MM-DD（週X）」
@@ -98,7 +110,12 @@ def publish(
 - [ ] **DD-7 動態止損 fallback**：active 條目缺 `effective_stop_loss` 時，退化顯示原始 `stop_loss`
 - [ ] **DD-7 移動停利觸發線**：峰值浮盈達 10% 門檻的動能/突破策略 active 條目顯示「移動停利線 $X」；反轉策略一律不顯示；未達門檻不顯示
 - [ ] **DD-7 watch/invalid 剩餘天數**：反轉策略 watch 顯示剩餘天數以 10 日上限計算（非寫死 5 日）；`entry_regime=CONSOLIDATION_VOLATILE` 的突破策略以 3 日上限計算
-- [ ] **DD-8 滿倉未進場註記**：`slot_blocked_today=True` 的 watch 條目顯示「今日觸價但持倉已滿 X 支，未進場」；False 或缺欄位時維持既有「等待回落」文字
+- [ ] **DD-8 未在名單註記**：`slot_blocked_today=True` 的 watch 條目顯示「今日觸價但未在掛單名單，未進場」；False 或缺欄位時維持既有「等待回落」文字
 - [ ] **DD-8 持倉上限顯示**：今日統計的有效持倉格顯示「N / X」；有效追蹤清單標題含「上限 X 支」
 - [ ] **DD-8 常數單一來源**：報告內所有上限數字取自 `tracker.MAX_ACTIVE_POSITIONS` import，publisher 內無第二份定義
 - [ ] **DD-8 index.html 不受 env 影響**：`_INFO_HTML` 為靜態文字，`MAX_ACTIVE_POSITIONS` 設為任意值時 `_build_index()` 輸出不變
+- [ ] **DD-9 掛單計畫排序與切點**：roster 依優先序渲染，前 `free_slots` 名標「✅ 建議掛單」、其餘標「⏸ 備援（名額外）」
+- [ ] **DD-9 名額顯示**：標題註記「明日可進場名額 N 支」；`free_slots=0` 時顯示「持倉已滿，明日不建議掛新單」且名單仍列出
+- [ ] **DD-9 掛單資訊完整**：每列含掛單價（buy_zone_upper）、買入區間、止損、目標、AI 信心、L2 分數、剩餘觀察天數（`_max_watch_days` 差異化上限）
+- [ ] **DD-9 空名單隱藏**：`roster=[]` 時 `_order_plan_section` 回傳空字串
+- [ ] **DD-9 留意清單信心資訊**：watch 條目列顯示「信心 X｜L2 Y」，缺值顯示 N/A

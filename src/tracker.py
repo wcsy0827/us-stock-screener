@@ -488,7 +488,7 @@ def _days(entry: dict) -> int:
 
 def _slot_priority_key(entry: dict) -> tuple:
     """
-    E 步驟評估順序（tracker DD-20）：ai_confidence 高者優先競爭持倉名額，
+    掛單名單優先序（tracker DD-20）：ai_confidence 高者優先取得持倉名額，
     同分比 l2_score，再同分依 symbol 字母序保證確定性。缺值以 0 處理（排最後）。
     """
     return (
@@ -496,6 +496,28 @@ def _slot_priority_key(entry: dict) -> tuple:
         -(entry.get("l2_score") or 0),
         entry.get("symbol", ""),
     )
+
+
+def compute_order_plan(watchlist: list[dict]) -> dict:
+    """
+    計算事前掛單名單（tracker DD-20）：使用者依報告隔日只會掛「優先序前
+    free_slots 名」的限價單，此名單即 watch→active 的進場資格。
+    純函式且確定性：晚間報告渲染的名單與次日 E 步驟開頭的重算作用在
+    同一份存檔（active 數與 watch 集合無變動），結果必然相同，不需持久化。
+
+    回傳：
+      free_slots: 剩餘持倉名額 = max(0, MAX_ACTIVE_POSITIONS − active 數)
+      roster:     全部 watch 條目依優先序排序（含名額外備援，供報告完整顯示）
+      eligible:   roster 前 free_slots 名的 symbol 集合（進場資格）
+    """
+    active_count = sum(1 for e in watchlist if e.get("status") == "active")
+    free_slots = max(0, MAX_ACTIVE_POSITIONS - active_count)
+    roster = sorted(
+        (e for e in watchlist if e.get("status") == "watch"),
+        key=_slot_priority_key,
+    )
+    eligible = {e["symbol"] for e in roster[:free_slots]}
+    return {"free_slots": free_slots, "roster": roster, "eligible": eligible}
 
 
 def _max_watch_days(entry: dict) -> int:
@@ -574,14 +596,12 @@ def run_tracker(
     # ── E. 評估現有持倉狀態、更新計數器、執行結算 ───────────────────
     settled_entries: list[dict] = []
 
-    # 組合層持倉名額（tracker DD-20）：迴圈前一次性鎖定，當日結算不退還
-    # （1-day lag：使用者依前晚報告隔日掛單，掛單當下無從得知當日稍晚的止損）
-    active_count = sum(1 for e in watchlist if e.get("status") == "active")
-    free_slots = max(0, MAX_ACTIVE_POSITIONS - active_count)
+    # 事前掛單名單（tracker DD-20）：E 開頭一次性計算，即前晚報告「明日掛單
+    # 計畫」的名單（確定性重算）。名單於當日內固定——當日結算不退還名額
+    # （1-day lag：使用者依前晚報告隔日掛單，掛單當下無從得知當日稍晚的止損）。
+    eligible = compute_order_plan(watchlist)["eligible"]
 
-    # 依優先序迭代（tracker DD-20）：同日多支觸價時高信心者先取得名額。
-    # 條目就地變異，存檔的 watchlist 列表順序不受排序影響。
-    for entry in sorted(watchlist, key=_slot_priority_key):
+    for entry in watchlist:
         sym = entry["symbol"]
 
         # 滿倉旗標僅反映今日（tracker DD-20）：置於 continue 之前重置，
@@ -642,24 +662,22 @@ def run_tracker(
 
         prev_status = entry.get("status", "watch")
 
-        # 名額閘門（tracker DD-20）：watch→active 需有空餘持倉名額。
-        # 滿倉時以收盤價重新判定（today_low=None，純函式重跑）：失效者直接清除
-        # （沒掛單的死訊號，防止次日以遠高於現價的 buy_zone_upper 幽靈進場），
-        # 其餘強制維持 watch 並標記，次日以當日名額重新競爭。
-        if new_status == "active" and prev_status == "watch":
-            if free_slots > 0:
-                free_slots -= 1
+        # 名單制閘門（tracker DD-20）：watch→active 僅限事前掛單名單內的條目
+        # （使用者只掛了名單內的限價單）。名單外觸價者以收盤價重新判定
+        # （today_low=None，純函式重跑）：失效者直接清除（沒掛單的死訊號，
+        # 防止次日以遠高於現價的 buy_zone_upper 幽靈進場），其餘強制維持
+        # watch 並標記，次日以新名單重新競爭。
+        if new_status == "active" and prev_status == "watch" and sym not in eligible:
+            closing_status, closing_reason = _eval_status(
+                settlement_entry, price, ema20, ema50, today_low=None
+            )
+            if closing_status == "invalid":
+                new_status, reason = "invalid", closing_reason
+                print(f"[tracker] {sym} 觸價但未在掛單名單，收盤價判定失效：{closing_reason}")
             else:
-                closing_status, closing_reason = _eval_status(
-                    settlement_entry, price, ema20, ema50, today_low=None
-                )
-                if closing_status == "invalid":
-                    new_status, reason = "invalid", closing_reason
-                    print(f"[tracker] {sym} 觸價但持倉已滿，收盤價判定失效：{closing_reason}")
-                else:
-                    new_status, reason = "watch", None
-                    entry["slot_blocked_today"] = True
-                    print(f"[tracker] {sym} 觸價但持倉已滿（上限 {MAX_ACTIVE_POSITIONS} 支），今日不進場")
+                new_status, reason = "watch", None
+                entry["slot_blocked_today"] = True
+                print(f"[tracker] {sym} 觸價但未在掛單名單（名額 {MAX_ACTIVE_POSITIONS} 支已滿或優先序不足），今日不進場")
 
         entry["status"]         = new_status
         entry["invalid_reason"] = reason
@@ -841,6 +859,10 @@ def run_tracker(
         e for e in watchlist
         if not _is_expired(e) and not e.get("_settled")
     ]
+
+    # 明日掛單名單（tracker DD-20）：對移除後的最終 watchlist 計算，
+    # 供 publisher 渲染「明日掛單計畫」；次日 E 步驟開頭重算必得相同結果。
+    categories["order_plan"] = compute_order_plan(watchlist)
 
     # ── H. 儲存 ──────────────────────────────────────────────────────
     save_watchlist(watchlist)

@@ -1,6 +1,8 @@
 # 組合層級持倉上限（MAX_ACTIVE_POSITIONS）：觸價排序擇優進場
 
 > 核准日期：2026-07-10。對應 `specs/tracker.md` DD-20、`specs/publisher.md` DD-8。
+> **語意修訂**：本檔的「事後擇優」名額競爭已於同日修訂為「事前掛單名單制」，
+> 見 `plans/2026-07-10-order-plan-roster.md`（DD-20 v2）；本檔保留作 v1 決策軌跡。
 
 ## Context
 
