@@ -34,6 +34,41 @@
         "return_pct": -2.43,
         "is_win": false
       }
+    },
+    {
+      "meta_data": {
+        "ticker": "ANET",
+        "company_name": "Arista Networks, Inc.",
+        "sector": "Technology"
+      },
+      "signal_details": {
+        "signal_date": "2026-07-08",
+        "entry_regime": "BULL_TREND",
+        "market_breadth_pct": 66.9,
+        "vix_value": 16.79,
+        "l2_score": 91.38,
+        "assigned_strategy": "動能策略",
+        "ai_confidence": 9,
+        "ai_strategy_reason": "均線多頭排列，RSI=60.1健康，Momentum_ATR=2.85強勢，VTF=1.32帶量推進。"
+      },
+      "execution_plan": {
+        "buy_zone_lower": 175.0,
+        "buy_zone_upper": 180.0,
+        "planned_target": "$200",
+        "planned_stop_loss": "$170.00"
+      },
+      "actual_outcome": {
+        "triggered_date": "2026-07-09",
+        "actual_entry_price": 180.0,
+        "exit_date": "2026-07-15",
+        "actual_exit_price": 170.0,
+        "exit_reason": "CLOSED_LOSS",
+        "holding_days": 5
+      },
+      "performance_metrics": {
+        "return_pct": -5.56,
+        "is_win": false
+      }
     }
   ]
 }
