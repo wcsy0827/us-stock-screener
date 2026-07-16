@@ -1,22 +1,22 @@
 {
-  "generated_at_utc": "2026-07-15T22:33:26Z",
-  "market_date": "2026-07-15",
-  "total_settled": 1,
+  "generated_at_utc": "2026-07-16T22:32:51Z",
+  "market_date": "2026-07-16",
+  "total_settled": 2,
   "dimensions": {
     "by_regime": [
       {
         "key": "BULL_TREND",
-        "trades": 1,
+        "trades": 2,
         "win_rate": 0.0,
-        "avg_return_pct": -2.43
+        "avg_return_pct": -4.0
       }
     ],
     "by_strategy": [
       {
         "key": "動能策略",
-        "trades": 1,
+        "trades": 2,
         "win_rate": 0.0,
-        "avg_return_pct": -2.43
+        "avg_return_pct": -4.0
       }
     ],
     "by_sector": [
@@ -25,6 +25,12 @@
         "trades": 1,
         "win_rate": 0.0,
         "avg_return_pct": -2.43
+      },
+      {
+        "key": "Technology",
+        "trades": 1,
+        "win_rate": 0.0,
+        "avg_return_pct": -5.56
       }
     ]
   },
