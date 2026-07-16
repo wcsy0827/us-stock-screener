@@ -109,6 +109,9 @@ a:hover { text-decoration: underline; }
 .chip.neutral { background: var(--border); color: var(--muted); }
 .arrow-icon { color: var(--border); font-size: 1rem; }
 .empty-state { text-align: center; padding: 48px; color: var(--muted); }
+.doc-link-row { text-align: center; margin-bottom: 20px; }
+.doc-link { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 0.85rem; }
+.doc-link:hover { border-color: var(--new); color: var(--new); text-decoration: none; }
 
 /* Market Regime Dashboard */
 .market-dashboard { border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; border: 1px solid var(--border); }
@@ -185,6 +188,9 @@ details[open] summary::before { transform: rotate(90deg); }
     <p>每日選股報告 · 訊號追蹤 · S&amp;P 500</p>
     <p class="tz-note" id="index-freshness"></p>
     <p class="tz-note" id="index-lastrun" style="font-size:0.75rem;"></p>
+  </div>
+  <div class="doc-link-row">
+    <a class="doc-link" href="technical-doc.html">📄 篩選與進出場機制技術文件</a>
   </div>
 <script>
 (function() {

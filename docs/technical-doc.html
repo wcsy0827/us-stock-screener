@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>篩選與進出場機制技術文件｜美股 AI 選股系統</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0f172a; --card: #1e293b; --border: #334155;
+  --text: #e2e8f0; --muted: #94a3b8; --subtle: #475569;
+  --active: #22c55e; --watch: #eab308; --invalid: #ef4444;
+  --expired: #6b7280; --new: #3b82f6; --reset: #a855f7;
+  --mono: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 15px; line-height: 1.7; }
+a { color: var(--new); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code { font-family: var(--mono); background: rgba(148,163,184,0.12); color: #cbd5e1; padding: .1em .4em; border-radius: 4px; font-size: .88em; }
+::selection { background: rgba(59,130,246,0.35); }
+
+.container { max-width: 1180px; margin: 0 auto; padding: 28px 16px 64px; }
+.back-link { display: inline-flex; align-items: center; gap: 4px; font-size: 0.85rem; color: var(--muted); }
+.back-link:hover { color: var(--new); text-decoration: none; }
+
+.doc-header { padding: 18px 0 28px; border-bottom: 1px solid var(--border); margin-bottom: 8px; }
+.doc-header .eyebrow { font-family: var(--mono); font-size: .78rem; letter-spacing: .12em; text-transform: uppercase; color: var(--new); display: flex; align-items: center; gap: 10px; margin: 18px 0 10px; }
+.doc-header .eyebrow::before { content: ""; display: inline-block; width: 20px; height: 1px; background: var(--new); }
+.doc-header h1 { font-size: clamp(1.4rem, 2.6vw, 1.9rem); font-weight: 800; line-height: 1.35; text-wrap: balance; margin-bottom: 10px; }
+.doc-header .sub { color: var(--muted); font-size: .96rem; max-width: 68ch; margin-bottom: 16px; }
+.doc-header .meta { display: flex; flex-wrap: wrap; gap: 6px 18px; font-family: var(--mono); font-size: .76rem; color: var(--muted); }
+.doc-header .meta b { color: var(--text); font-weight: 600; }
+
+.shell { display: grid; grid-template-columns: 220px minmax(0,1fr); gap: 40px; margin-top: 8px; }
+@media (max-width: 860px) { .shell { grid-template-columns: 1fr; } .toc-rail { display: none; } }
+
+.toc-rail { position: sticky; top: 20px; align-self: start; max-height: calc(100vh - 40px); overflow-y: auto; padding-top: 4px; }
+.toc-rail .toc-label { font-family: var(--mono); font-size: .68rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+.toc-rail ol { list-style: none; border-left: 1px solid var(--border); }
+.toc-rail a { display: block; padding: 6px 0 6px 14px; margin-left: -1px; color: var(--muted); font-size: .85rem; border-left: 2px solid transparent; }
+.toc-rail a .n { font-family: var(--mono); color: var(--new); margin-right: 8px; font-size: .76rem; }
+.toc-rail a:hover { color: var(--text); text-decoration: none; border-left-color: var(--subtle); }
+.toc-rail a.active { color: var(--text); border-left-color: var(--new); font-weight: 600; }
+
+main { min-width: 0; }
+section { padding: 36px 0 6px; border-top: 1px solid var(--border); scroll-margin-top: 20px; }
+section:first-of-type { border-top: none; padding-top: 8px; }
+.sec-eyebrow { font-family: var(--mono); font-size: .74rem; letter-spacing: .12em; text-transform: uppercase; color: var(--new); }
+h2 { font-size: 1.35rem; font-weight: 800; margin: 6px 0 16px; text-wrap: balance; }
+h3 { font-size: 1.05rem; font-weight: 700; margin: 26px 0 10px; color: var(--text); }
+h4 { font-size: .95rem; font-weight: 700; margin: 18px 0 8px; }
+p { margin: 0 0 14px; max-width: 76ch; color: var(--text); }
+p.wide { max-width: none; }
+ul, ol { margin: 0 0 16px; padding-left: 1.3em; }
+li { margin-bottom: 6px; }
+strong { font-weight: 700; }
+
+.tbl-wrap { overflow-x: auto; margin: 14px 0 22px; border: 1px solid var(--border); border-radius: 10px; }
+table { border-collapse: collapse; width: 100%; min-width: 480px; background: var(--card); }
+th, td { text-align: left; padding: 9px 13px; border-bottom: 1px solid var(--border); font-size: .87rem; vertical-align: top; }
+th { font-family: var(--mono); font-size: .7rem; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); background: rgba(148,163,184,0.06); white-space: nowrap; }
+tr:last-child td { border-bottom: none; }
+td.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+.dd { border-left: 3px solid var(--new); background: var(--card); border-radius: 0 10px 10px 0; padding: 13px 18px; margin: 16px 0; }
+.dd .dd-tag { font-family: var(--mono); font-size: .72rem; color: var(--new); letter-spacing: .04em; margin-bottom: 4px; display: block; }
+.dd p:last-child { margin-bottom: 0; }
+
+.note { border-left: 3px solid var(--subtle); padding: 12px 18px; margin: 16px 0; background: rgba(148,163,184,0.06); border-radius: 0 10px 10px 0; font-size: .92rem; color: var(--muted); }
+.note strong { color: var(--text); }
+
+.finding { border: 1px solid var(--border); border-radius: 12px; padding: 17px 20px; margin: 16px 0; background: var(--card); }
+.finding .f-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+.finding .f-num { font-family: var(--mono); color: var(--reset); font-size: .84rem; font-weight: 700; }
+.finding h4 { margin: 0; font-size: 1rem; }
+.finding .f-src { font-family: var(--mono); font-size: .72rem; color: var(--muted); margin-left: auto; }
+.finding p { margin-bottom: 8px; }
+.finding p:last-child { margin-bottom: 0; }
+
+.flow { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 18px 0; }
+.flow .box { border: 1px solid var(--border); background: var(--card); border-radius: 9px; padding: 9px 15px; font-size: .85rem; font-weight: 700; }
+.flow .box.watch { color: var(--watch); border-color: var(--watch); }
+.flow .box.active { color: var(--active); border-color: var(--active); }
+.flow .box.settle { color: var(--invalid); border-color: var(--invalid); }
+.flow .arrow { color: var(--muted); font-size: 1.05rem; }
+
+.settle-list { list-style: none; margin: 0 0 18px; counter-reset: step; }
+.settle-list li { counter-increment: step; padding: 9px 14px 9px 42px; position: relative; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; background: var(--card); font-size: .9rem; }
+.settle-list li::before { content: counter(step); position: absolute; left: 12px; top: 8px; font-family: var(--mono); color: var(--new); font-weight: 700; }
+
+.diagram-card { border: 1px solid var(--border); border-radius: 12px; padding: 16px; background: var(--card); margin: 16px 0; }
+.diagram-card svg { width: 100%; height: auto; display: block; }
+.diagram-cap { font-size: .8rem; color: var(--muted); margin-top: 8px; }
+
+.doc-footer { border-top: 1px solid var(--border); margin-top: 36px; padding-top: 20px; color: var(--muted); font-size: .82rem; }
+</style>
+</head>
+<body>
+<div class="container">
+  <a class="back-link" href="index.html">← 返回首頁</a>
+
+  <div class="doc-header">
+    <div class="eyebrow">美股 AI 選股系統 · 內部技術參考</div>
+    <h1>篩選與進出場機制：現況技術文件</h1>
+    <p class="sub">整理 S&amp;P 500 → L1 硬篩 → L2 技術評分 → L3 AI 精選 → Tracker 進出場狀態機的完整邏輯，逐節附程式與規格出處，供研究「有沒有地方可以改善報酬」使用。文末〈待研究方向〉為初步觀察，非結論。</p>
+    <div class="meta">
+      <span>基準 commit <b>fdce532</b>（2026-07-15）</span>
+      <span>來源 <b>specs/*.md</b> + <b>src/*.py</b> 交叉核對</span>
+    </div>
+  </div>
+
+  <div class="shell">
+    <nav class="toc-rail" id="tocRail">
+      <div class="toc-label">目錄</div>
+      <ol id="tocList">
+        <li><a href="#sec-overview"><span class="n">00</span>系統總覽</a></li>
+        <li><a href="#sec-l1"><span class="n">01</span>L1 硬篩選</a></li>
+        <li><a href="#sec-regime"><span class="n">02</span>Regime 大盤感知</a></li>
+        <li><a href="#sec-l2"><span class="n">03</span>L2 技術評分</a></li>
+        <li><a href="#sec-l3"><span class="n">04</span>L3 AI 精選</a></li>
+        <li><a href="#sec-tracker"><span class="n">05</span>Tracker 狀態機</a></li>
+        <li><a href="#sec-portfolio"><span class="n">06</span>持倉上限與掛單名單</a></li>
+        <li><a href="#sec-analyzer"><span class="n">07</span>Analyzer 回饋迴路</a></li>
+        <li><a href="#sec-constants"><span class="n">08</span>關鍵常數總表</a></li>
+        <li><a href="#sec-research"><span class="n">09</span>待研究方向</a></li>
+      </ol>
+    </nav>
+
+    <main>
+
+      <section id="sec-overview">
+        <div class="sec-eyebrow">00 · Pipeline</div>
+        <h2>系統總覽</h2>
+        <p class="wide">每個交易日執行一次，從 S&amp;P 500 全市場（~503 支）出發，經過三層漏斗式篩選，最終由 AI 挑出至多 3 支個股並附完整交易計畫，再由狀態機追蹤是否進場、何時出場。全流程按下表順序串接，Regime（大盤環境）判定被刻意插在 L2 之前，因為 L2 的分數門檻要依當日環境動態調整。</p>
+
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Step</th><th>模組</th><th>做什麼</th><th>輸出</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">1</td><td class="mono">universe.py</td><td>取得 S&amp;P 500 成分股清單</td><td>~503 檔代號</td></tr>
+              <tr><td class="mono">2</td><td class="mono">fetcher.py</td><td>批次下載 90 日日 K，含 11 支板塊 ETF + SPY；盤中執行時捨棄殘缺當日K棒</td><td>price_data</td></tr>
+              <tr><td class="mono">2.5</td><td class="mono">market.py</td><td>快速 Regime 判定（廣度 + VIX），只多下載 VIX</td><td>regime_quick</td></tr>
+              <tr><td class="mono">3</td><td class="mono">fetcher.py</td><td>抓基本面 info（含財報日期原始值）</td><td>info_data</td></tr>
+              <tr><td class="mono">3.5</td><td class="mono">earnings.py</td><td>財報日期 Tier1+2 查詢</td><td>earnings_registry</td></tr>
+              <tr><td class="mono">4</td><td class="mono">filter.py</td><td><strong>L1 流動性硬篩</strong>：股價／成交額／市值／交易天數／ATR%</td><td>liq_filtered</td></tr>
+              <tr><td class="mono">4.5</td><td class="mono">earnings + filter</td><td>Tier3 精準補抓 + <strong>財報防禦牆</strong>（未來5天有財報者排除）</td><td>l1_passed</td></tr>
+              <tr><td class="mono">5</td><td class="mono">scorer.py</td><td><strong>L2 技術評分</strong>（六維度 100 分，動態門檻，排名上限 55）</td><td>candidates</td></tr>
+              <tr><td class="mono">5.5</td><td class="mono">market.py</td><td>完整大盤 ETF 背景（複用 Step2 已下載資料）</td><td>market_context</td></tr>
+              <tr><td class="mono">5.7</td><td class="mono">analyzer.py</td><td>本地績效診斷（讀歷史結算記錄，失敗不中斷）</td><td>ai_hints.json</td></tr>
+              <tr><td class="mono">6</td><td class="mono">ranker.py</td><td><strong>L3 AI 精選</strong>（DeepSeek，至多 3 支，完整交易計畫）</td><td>ranked</td></tr>
+              <tr><td class="mono">—</td><td class="mono">tracker.py</td><td>訊號追蹤狀態機 → 結算歸檔</td><td>watchlist / performance_history</td></tr>
+              <tr><td class="mono">—</td><td class="mono">publisher.py</td><td>產出 HTML 報告，含明日掛單計畫</td><td>docs/</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="note"><strong>關鍵前提：</strong>系統不接單、不下單。使用者的實際操作方式是——收盤後跑篩選 → 隔一個交易日盤中依報告的買入區間<strong>上緣</strong>掛限價單 → 手動遵守系統算好的止損／停利。這個假設貫穿整個 Tracker 設計（§05），是研究進出場機制時務必記住的錨點。</div>
+      </section>
+
+      <section id="sec-l1">
+        <div class="sec-eyebrow">01 · filter.py</div>
+        <h2>L1 硬篩選</h2>
+        <p>分兩段執行：先做流動性硬篩，通過後才查財報防禦牆（財報查詢有 API 成本，晚一點做可以省流量）。</p>
+
+        <h3>第一段：流動性 + 波動率上限</h3>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>條件</th><th>門檻</th><th>備註</th></tr></thead>
+            <tbody>
+              <tr><td>股價</td><td class="mono">&gt; $5</td><td></td></tr>
+              <tr><td>30 日平均日成交額</td><td class="mono">&gt; $1,000 萬</td><td><code>MIN_DOLLAR_VOLUME</code>，avg_vol_30 × close</td></tr>
+              <tr><td>市值</td><td class="mono">&gt; $3 億</td><td><code>MIN_MARKET_CAP</code>；None 視同不足，直接排除</td></tr>
+              <tr><td>近期成交</td><td>近 5 日有成交</td><td>排除停牌股</td></tr>
+              <tr><td>ATR%</td><td class="mono">≤ 8%</td><td><code>MAX_ATR_PCT</code>；ATR14÷收盤價；歷史&lt;15筆不排除</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="dd">
+          <span class="dd-tag">filter.py DD-8</span>
+          <p>ATR% 上限是後補的風控層——三策略的止損後來統一收斂成「錨點下方 2%」固定緩衝（見 §04 L3 策略邏輯），但緩衝寬度沒有對照個股自身波動。日均 ATR% 達 6~8% 以上時，2% 止損緩衝形同虛設，正常雜訊就足以掃損。所以在 L1 就把這類個股攔下，而不是讓它們進 L2/L3 後才在止損邏輯裡出問題。</p>
+        </div>
+
+        <h3>第二段：財報防禦牆</h3>
+        <p>未來 <code>EARNINGS_BLACKOUT_DAYS = 5</code> 個自然日內有已知財報者排除，判斷基準日是 <code>market_date</code>（非系統時鐘）。財報日期資訊透過三層快取取得（<code>earnings_registry.json</code>，TTL 30 天）：Tier 1 命中本地快取 → Tier 2 讀 yfinance <code>info.earningsDate</code> → Tier 3 用 <code>ticker.calendar</code> 精準補抓（僅對通過流動性篩選後的股票觸發，控制 I/O 成本）。查無資料一律視為「無已知財報」放行，而非阻擋。</p>
+        <div class="note"><strong>為何是 5 天而非 3 天：</strong>機構通常財報前 3~5 天就開始調倉，隱含波動率提前上升、期權溢價膨脹；3 天窗口仍可能在 IV 高點進場。</div>
+      </section>
+
+      <section id="sec-regime">
+        <div class="sec-eyebrow">02 · market.py</div>
+        <h2>Regime 大盤感知</h2>
+        <p>用「市場廣度」（S&amp;P 500 中收盤價站上 50 日均線的比例，3 日平滑）與「VIX」兩個變數，把每個交易日分類成五種環境象限，決定 L2 門檻鬆緊與 L3 的主推策略。</p>
+
+        <div class="diagram-card">
+          <svg viewBox="0 0 620 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Regime 五象限分類圖，橫軸為市場廣度，縱軸為VIX">
+            <defs>
+              <style>
+                .zone-label{font-family:ui-monospace,"SF Mono",Consolas,monospace; font-size:13px; font-weight:600;}
+                .zone-sub{font-family:ui-monospace,"SF Mono",Consolas,monospace; font-size:10.5px;}
+                .axis-label{font-family:ui-monospace,"SF Mono",Consolas,monospace; font-size:11px; fill:#94a3b8;}
+              </style>
+            </defs>
+            <rect x="364" y="206.7" width="196" height="133.3" fill="#22c55e" opacity="0.16" stroke="#22c55e" stroke-width="1.2"/>
+            <text x="462" y="290" text-anchor="middle" class="zone-label" fill="#22c55e">BULL_TREND</text>
+            <text x="462" y="306" text-anchor="middle" class="zone-sub" fill="#22c55e">動能策略 · 門檻60</text>
+
+            <rect x="241.5" y="206.7" width="122.5" height="133.3" fill="#3b82f6" opacity="0.16" stroke="#3b82f6" stroke-width="1.2"/>
+            <text x="302" y="270" text-anchor="middle" class="zone-label" fill="#60a5fa">CONSOLI-</text>
+            <text x="302" y="285" text-anchor="middle" class="zone-label" fill="#60a5fa">DATION</text>
+            <text x="302" y="301" text-anchor="middle" class="zone-sub" fill="#60a5fa">突破(積極)·門檻60</text>
+
+            <rect x="241.5" y="40" width="318.5" height="166.7" fill="#eab308" opacity="0.14" stroke="#eab308" stroke-width="1.2"/>
+            <text x="400" y="105" text-anchor="middle" class="zone-label" fill="#eab308">CONSOLIDATION_VOLATILE</text>
+            <text x="400" y="121" text-anchor="middle" class="zone-sub" fill="#eab308">突破(保守)·門檻65</text>
+            <text x="400" y="140" text-anchor="middle" class="zone-sub" fill="#eab308" font-style="italic">含 breadth≥60% 但 VIX≥20 的情況 →見09-1</text>
+
+            <rect x="70" y="40" width="171.5" height="133.3" fill="#ef4444" opacity="0.16" stroke="#ef4444" stroke-width="1.2"/>
+            <text x="155.5" y="100" text-anchor="middle" class="zone-label" fill="#ef4444">PANIC_</text>
+            <text x="155.5" y="116" text-anchor="middle" class="zone-label" fill="#ef4444">REVERSAL</text>
+            <text x="155.5" y="132" text-anchor="middle" class="zone-sub" fill="#ef4444">反轉策略·門檻40</text>
+
+            <rect x="70" y="173.3" width="171.5" height="166.7" fill="#94a3b8" opacity="0.14" stroke="#94a3b8" stroke-width="1.2"/>
+            <text x="155.5" y="255" text-anchor="middle" class="zone-label" fill="#94a3b8">BEAR_</text>
+            <text x="155.5" y="271" text-anchor="middle" class="zone-label" fill="#94a3b8">DISTRIBUTION</text>
+            <text x="155.5" y="287" text-anchor="middle" class="zone-sub" fill="#94a3b8">全面防禦·空手</text>
+
+            <line x1="70" y1="340" x2="560" y2="340" stroke="#94a3b8" stroke-width="1"/>
+            <line x1="70" y1="40" x2="70" y2="340" stroke="#94a3b8" stroke-width="1"/>
+            <text x="315" y="368" text-anchor="middle" class="axis-label">市場廣度（%站上 50SMA）→</text>
+            <text x="30" y="190" text-anchor="middle" class="axis-label" transform="rotate(-90 30 190)">VIX →</text>
+
+            <text x="241.5" y="355" text-anchor="middle" class="axis-label">35</text>
+            <text x="364" y="355" text-anchor="middle" class="axis-label">60</text>
+            <text x="55" y="210" text-anchor="end" class="axis-label">20</text>
+            <text x="55" y="177" text-anchor="end" class="axis-label">25</text>
+          </svg>
+          <div class="diagram-cap">依 <code>market.py::determine_market_regime()</code> 實際程式邏輯繪製（非僅規格表格）。虛實分界線：廣度 35% / 60%，VIX 20（中段分界）/ 25（低廣度分界）。</div>
+        </div>
+
+        <h3>邊界抖動防護</h3>
+        <ul>
+          <li><strong>3 日廣度平滑</strong>：每日廣度用近 3 個交易日的算術平均，避免單日雜訊造成 Regime 每天翻轉。</li>
+          <li><strong>遲滯帶（Hysteresis，±2%）</strong>：廣度落在 35% 或 60% 邊界 ±2% 範圍內時，沿用前一日 Regime；但若 VIX 跨越了「高VIX組（PANIC/CONSOLIDATION_VOLATILE）↔ 低VIX組」的結構邊界，則不套用遲滯、強制重新計算。讀取 <code>last_run.json</code> 的前一日 <code>regime</code>/<code>market_date</code> 實作，需嚴格校驗前一日日期早於當日才生效（防同日重跑污染）。</li>
+        </ul>
+
+        <h3>VIX 下載失敗保護</h3>
+        <p>失敗時使用預設值 <code>20.0</code>（正常波動中間值，讓判定退化為由廣度主導），同時回傳 <code>vix_ok=False</code>，pipeline 會在 L3 之前中斷、不呼叫 DeepSeek。</p>
+      </section>
+
+      <section id="sec-l2">
+        <div class="sec-eyebrow">03 · scorer.py</div>
+        <h2>L2 技術評分</h2>
+        <p>對通過 L1 的個股做 100 分制純技術評分，六個維度，各自獨立設計理由：</p>
+
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>維度</th><th>滿分</th><th>邏輯摘要</th></tr></thead>
+            <tbody>
+              <tr><td>MA 多頭排列</td><td class="mono">20</td><td>EMA5&gt;EMA10&gt;EMA20&gt;EMA50，每條件 +6.67</td></tr>
+              <tr><td>RSI 健康區間</td><td class="mono">18</td><td>50~70 滿分；40~50 或 70~80 半分；BULL_TREND 下 50~80 滿分、&gt;80 半分（DD-6）</td></tr>
+              <tr><td>MACD 柱狀體</td><td class="mono">17</td><td>正且遞增滿分；正但遞減半分；負值 0 分</td></tr>
+              <tr><td>量能（含趨勢）</td><td class="mono">15</td><td>VTF 基礎分 × 5日量能趨勢係數；K_pos&lt;0.6（爆量卻收在低檔）時整項歸零（出貨阻斷，DD-4/7）</td></tr>
+              <tr><td>多週期動能</td><td class="mono">15</td><td>20日 ATR 倍數動能 × 5日方向確認，防止「中期強但短線已反轉」誤判（DD-5/8）</td></tr>
+              <tr><td>相對強度 RS</td><td class="mono">15</td><td>個股5日報酬 − 板塊ETF 5日報酬；≥+2%滿分15，&lt;-0.5%得0分（DD-9）</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p><strong>RSI&gt;80 是軟過濾</strong>：該項得0分（或BULL下半分）但不逐出候選池——PANIC_REVERSAL環境下超強勢股可能是唯一抗跌標的，硬排除會在最需要它的環境把它排掉（DD-1）。</p>
+
+        <h3>動態門檻與強制放行</h3>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Regime</th><th>L2 門檻</th><th>特殊規則</th></tr></thead>
+            <tbody>
+              <tr><td>預設</td><td class="mono">min_score（CLI，預設70）</td><td>—</td></tr>
+              <tr><td>PANIC_REVERSAL</td><td class="mono">40</td><td>RSI&lt;35 且 20日跌&gt;15% → 強制放行，不論分數（DD-2）</td></tr>
+              <tr><td>CONSOLIDATION_VOLATILE</td><td class="mono">max(min_score, 65)</td><td>高VIX整理期要求更嚴格確認</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="dd">
+          <span class="dd-tag">scorer.py DD-10 · 排名上限</span>
+          <p>固定分數門檻的通過家數完全跟著大盤強弱擺動（強勢盤可能破200支，弱勢盤不到20支），無法穩定收斂。解法：品質門檻篩完後，若 <code>&gt; L2_TARGET_COUNT(55)</code> 支，取第55名分數當 cutoff，只留 <code>≥cutoff</code> 者（同分邊界都留，不加 tie-breaker）；強制放行股不受此上限排除；本來就 &lt;55 支時不硬湊數量。</p>
+        </div>
+      </section>
+
+      <section id="sec-l3">
+        <div class="sec-eyebrow">04 · ranker.py</div>
+        <h2>L3 AI 精選</h2>
+        <p>把 L2 候選（最多送 <code>MAX_CANDIDATES_TO_AI=40</code> 支給AI，每產業上限 <code>MAX_SECTOR_CANDIDATES=8</code> 支防止單一板塊霸榜）透過結構化 XML Prompt 交給 DeepSeek，AI 輸出至多 <code>3</code> 支個股的完整交易計畫（買入區間、止損、目標、持有期、策略、理由）。<code>BEAR_DISTRIBUTION</code> 環境直接回傳空清單，不呼叫 API。</p>
+
+        <h3>候選池表格關鍵欄位（節選）</h3>
+        <p>完整表格共 30 欄，除 Ticker/L2_Score/RSI 等基礎欄外，關鍵是把過去只存在於 Python 內部判斷、AI 看不到的指標「曝露」出來——這是 DD-12/13/19 反覆修正的核心問題：Prompt 文字要求 AI 判斷某個指標，但表格裡根本沒給那個數字。</p>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>欄位</th><th>用途</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">EMA5/10/20/50, ATR14</td><td>動能/反轉策略買入區間與止損的計算錨點</td></tr>
+              <tr><td class="mono">High_20D, Low_20D</td><td>突破策略壓力位／反轉策略左側支撐</td></tr>
+              <tr><td class="mono">Vol_vs_5DAvg, Vol_vs_20DAvg</td><td>回檔量縮確認 / 突破攻擊量確認</td></tr>
+              <tr><td class="mono">VTF_Score</td><td>量能推進因子：<code>vol_ratio×(2×K_pos−1)</code>，正值帶量推進、負值高檔派發，&gt;5.0視為史詩級建倉</td></tr>
+              <tr><td class="mono">Momentum_ATR</td><td>20日價格位移÷14日ATR，跨行業公平比較動能強度</td></tr>
+              <tr><td class="mono">Stoch_K, RSI_5D_Ago</td><td>反轉策略底背離確認</td></tr>
+              <tr><td class="mono">Beta_60D, Earnings_Days_Left</td><td>板塊輪動風險 / 財報黑天鵝雙重防禦（AI側）</td></tr>
+              <tr><td class="mono">Fwd_PE, Profit_Margin, Rev_Growth_YoY</td><td>估值／獲利品質／成長性，技術面同質時的取捨依據（DD-14）</td></tr>
+              <tr><td class="mono">Short_Float_Pct</td><td>軋空風險旗標，不觸發排除（DD-17）</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p><code>Earnings_Days_Left = N/A</code>、<code>Momentum_ATR/VTF_Score = N/A</code> 會直接觸發 AI 排除；<code>Beta_60D</code>／基本面三欄／<code>Short_Float_Pct</code> 缺值只降權判斷、不排除。</p>
+
+        <h3>三策略買入區間與止損邏輯（核心：進場機制）</h3>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>策略</th><th>觸發特徵</th><th>買入區間（預設路徑）</th><th>止損</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><strong>動能 Momentum</strong></td>
+                <td class="mono">Momentum_ATR≥2.0<br>且 VTF_Score&gt;1.0</td>
+                <td><code>Close−1×ATR14 ~ Close−0.25×ATR14</code>淺回檔帶（下緣不低於EMA10）</td>
+                <td>買入區間下緣 <code>−1×ATR14</code></td>
+              </tr>
+              <tr>
+                <td><strong>突破 Breakout</strong></td>
+                <td class="mono">VTF_Score≥1.5<br>價格距High_20D在±2%</td>
+                <td>優先回測確認（站上後回落至<code>High_20D~×1.02</code>）；次選標準緩衝<code>+0.5%~+1.5%</code></td>
+                <td><code>High_20D</code> 下方 2%</td>
+              </tr>
+              <tr>
+                <td><strong>反轉 Reversal</strong></td>
+                <td class="mono">Momentum_ATR≤−2.0<br>VTF由負轉正/收斂</td>
+                <td><code>EMA50</code> 附近 ±3%，且現價明顯高於 <code>Low_20D</code></td>
+                <td><code>Low_20D</code> 下方 2%（不得高於EMA50）</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <ul>
+          <li><strong>動能過熱熔斷：</strong>RSI&gt;78 或 VTF_Score&lt;0 → 大幅降低信心分數，不宜進場（取代舊版「距EMA5+5%禁止追價」規則——距離均線遠近不等於危險，量價結構才是，DD-19）。</li>
+          <li><strong>突破假突破防護：</strong><code>Vol_vs_20DAvg&lt;1.2</code> 假突破機率高；<code>VTF_Score&lt;0</code> 一律視為派發陷阱，禁止入選。</li>
+          <li><strong>反轉底背離確認：</strong><code>Stoch_K&lt;25</code> 且 <code>RSI&gt;RSI_5D_Ago</code>。</li>
+          <li><strong>止損不得等於買入區間下緣：</strong>三策略明文要求緩衝，因為實測發現 AI 曾把止損字面設成等於區間下緣，等於一進場就已觸發止損（DD-15）。</li>
+        </ul>
+
+        <div class="dd">
+          <span class="dd-tag">ranker.py DD-19 · 為何動能策略改成 ATR 錨定淺回檔</span>
+          <p>舊版（DD-12）要求動能股回檔到 <code>EMA20~EMA10</code>（現價下方4~8%）才進場——但L2的職責就是挑「均線多頭、還沒回檔」的最強勢股，越強的股票越等不到這麼深的回檔，5日 watch 窗口內常常等不到就到期。實測 2026-07-06 報告 13支追蹤股中 4 支死於「已追高，錯過買點」。改成 ATR 錨定的淺回檔帶後，區間深度隨個股自身波動自動調整。</p>
+        </div>
+
+        <h3>其他 Prompt 機制</h3>
+        <ul>
+          <li><strong>產業ETF背景：</strong>同時顯示5日與20日漲跌，讓AI判斷短中線方向是否一致。</li>
+          <li><strong>歷史績效回饋（DD-16）：</strong>非空時在Prompt末尾附加第四區塊，注入 <code>ai_hints.json</code> 的敘述性統計（見§07），並固定附「樣本有限、不得覆蓋Regime策略方向」警語。</li>
+          <li><strong>PANIC_REVERSAL低分豁免：</strong>反轉股L2分數天生偏低是正常現象，AI須忽略低分偏見，專注審查Momentum_ATR是否拋壓衰竭。</li>
+          <li><strong>財報極端風控：</strong>禁止選 <code>Earnings_Days_Left≤3</code> 的個股（filter.py財報牆是第一道，此為AI側雙重保護）。</li>
+        </ul>
+      </section>
+
+      <section id="sec-tracker">
+        <div class="sec-eyebrow">05 · tracker.py</div>
+        <h2>Tracker 進出場狀態機</h2>
+        <p>L3 選出的股票不會立刻視為「已進場」——先進 <code>watch</code>，次一交易日盤中觸價才轉 <code>active</code>（1-day lag），最終四態結算並歸檔至 <code>performance_history.json</code>。</p>
+
+        <div class="flow">
+          <div class="box watch">watch</div>
+          <span class="arrow">→</span>
+          <div class="box active">active</div>
+          <span class="arrow">→</span>
+          <div class="box settle">settled</div>
+          <span class="arrow">（4態）</span>
+        </div>
+        <p style="margin-top:-8px">旁支：<code>watch → invalid</code>（失效）、<code>watch/invalid → expired</code>（到期）。<strong>active 一旦成立，只由結算邏輯決定何時離開</strong>——不會被到期規則、也不會被均線/止損跌破判斷提前踢出（DD-6/17，見下方說明）。</p>
+
+        <h3>進場：盤中限價單模擬（DD-19）</h3>
+        <p>使用者真實下單方式是在買入區間<strong>上緣</strong>掛限價單。所以判斷「是否已觸價」用<strong>當日最低價</strong>而非收盤價：<code>today_low ≤ buy_zone_upper</code> 就視為成交，此檢查優先於下方所有收盤價判定（含反轉止損、動能EMA20失效、追高失效）。若同日觸價又跌破止損（跳空急殺），不再拒絕進場，而是視為當日已成交、交由結算邏輯立即判 <code>CLOSED_LOSS</code>（保留真實虧損紀錄，而非讓它憑空消失）。<strong>進場代理價 = <code>buy_zone_upper</code></strong>（使用者實際掛單價，取代舊版的「收盤價」）。</p>
+
+        <h3>結算優先序（每日依序判定，盤中High/Low優先於收盤）</h3>
+        <ol class="settle-list">
+          <li><strong>黑天鵝防禦：</strong><code>today_low≤effective_stop_loss</code> 且 <code>today_high≥target</code> 同時成立 → 保守判 <code>CLOSED_LOSS</code></li>
+          <li><strong>盤中止損：</strong><code>today_low ≤ effective_stop_loss</code> → <code>CLOSED_LOSS</code>（出場價=止損絕對值）</li>
+          <li><strong>盤中停利：</strong><code>today_high ≥ target</code> → <code>CLOSED_PROFIT</code>（出場價=目標絕對值）</li>
+          <li><strong>移動停利：</strong>峰值浮盈&gt;10% 且收盤回撤≥5%（僅動能/突破策略，反轉策略排除）→ <code>CLOSED_TRAILING_STOP</code>（出場價=收盤）</li>
+          <li><strong>持倉到期：</strong><code>active_days ≥ hold_period</code>（AI給的持有天數解析值，下界1）→ <code>FORCE_EXPIRED</code>（出場價=收盤）</li>
+        </ol>
+
+        <h3>風控雙欄位：計畫止損 vs 動態止損</h3>
+        <p><code>planned_stop_loss</code>（AI原始值，唯讀，只作拆股縮放基底）與 <code>effective_stop_loss</code>（實際生效值）分離。進場後收盤達到「距目標50%」時，<code>effective_stop_loss</code> 自動上移至 <code>buy_zone_upper</code>（保本鎖定，<code>is_breakeven_locked=true</code>，僅觸發一次）。這兩個欄位存在的理由是：若只有單一欄位，拆股縮放與保本上移會互相污染，難以回推正確基準。</p>
+
+        <h3>失效判定：反轉股用絕對止損，動能/突破用EMA20——但僅適用 watch 狀態</h3>
+        <p>watch 狀態下：反轉策略 <code>price&lt;stop_loss</code> → invalid；其餘策略 <code>price&lt;EMA20</code> → invalid。<strong>但這套判斷只適用 watch，不適用 active。</strong>DD-17 移除了「active 部位被 <code>_eval_status()</code> 判定失效」的路徑——原因是舊邏輯會讓虧損部位在被判 invalid 後跳過結算，永遠不會寫入 <code>performance_history.json</code>，勝率統計因此系統性偏高。active 部位的生死完全交給上面的四態結算。</p>
+
+        <h3>拆股免疫</h3>
+        <p>yfinance 的 <code>auto_adjust=True</code> 會在拆股後回溯修改全部歷史收盤價，若不處理，watchlist 記錄的絕對止損價會變成「幽靈訊號」。做法：訊號建立當下即時記錄 <code>signal_date_close</code>，每次評估計算 <code>split_factor</code>，在記憶體中臨時縮放全部風控欄位（不寫回 watchlist，避免累積誤差）。</p>
+      </section>
+
+      <section id="sec-portfolio">
+        <div class="sec-eyebrow">06 · tracker.py DD-20</div>
+        <h2>組合層級持倉上限：事前掛單名單制</h2>
+        <p>watchlist 原本沒有組合層上限——每日L3流入≤3支 × ATR淺回檔帶帶來的高觸價率 × 常見15交易日持有期，穩態推算約可累積 45 支同時持倉，與真實資金操作完全脫節。<code>MAX_ACTIVE_POSITIONS</code>（預設 <code>5</code>）解決這個問題。</p>
+
+        <h3>運作方式</h3>
+        <ul>
+          <li><code>free_slots = max(0, MAX_ACTIVE_POSITIONS − 現有active數)</code></li>
+          <li>全部 <code>watch</code> 條目依 <strong>優先序</strong>排序：<code>-ai_confidence → -l2_score → symbol</code>（缺值視為0）</li>
+          <li>前 <code>free_slots</code> 名 = <code>eligible</code>（今晚報告顯示「✅建議掛單」）</li>
+          <li><strong>名單外觸價一律被擋</strong>：即使股票今天觸價，只要不在名單內就不會轉 active——因為使用者根本沒掛那張單（v2 修訂，取代「事後擇優」的v1設計）</li>
+          <li>被擋條目改用<strong>收盤價</strong>重新判定：收盤已失效（跌破止損/已追高）→ 直接 invalid 清除；否則維持 watch 並標 <code>slot_blocked_today</code></li>
+          <li>當日結算<strong>不即時退還名額</strong>（使用者掛單當下不可能預知當天稍晚的止損）；超額持倉<strong>不強制平倉</strong></li>
+        </ul>
+        <div class="note"><strong>語意對應真實操作：</strong>報告上的「✅建議掛單」= 系統認定的次日進場資格，使用者照表掛單，<code>performance_history.json</code> 就等於真實帳本。這是刻意的取捨——v1版「觸價者中信心高者得名額」曾被推翻，因為使用者事前只能掛前N名的單，事後才知道誰觸價會把「使用者根本沒做的交易」寫進績效資料庫。</div>
+      </section>
+
+      <section id="sec-analyzer">
+        <div class="sec-eyebrow">07 · analyzer.py</div>
+        <h2>Analyzer 本地績效回饋迴路</h2>
+        <p>純本地統計（不連網、不呼叫API），讀 <code>performance_history.json</code> 已結算記錄，依 <strong>Regime × 策略 × 產業</strong> 三維度算勝率與平均報酬，寫入 <code>ai_hints.json</code>，L3 Prompt 末尾附加為第四區塊「歷史績效回顧」。</p>
+        <ul>
+          <li>單一分組樣本 <code>&lt;3</code> 筆不產生該組提示；有效總樣本 <code>&lt;5</code> 筆時完全不輸出提示（防止小樣本誤導AI）</li>
+          <li>提示是<strong>描述性統計</strong>（「BULL_TREND：5筆結算，勝率60%，平均報酬+1.25%」），刻意<strong>不寫成指令式結論</strong>（不會說「禁止選能源股」）——決策主權留給Regime與候選池，回饋只供AI「權衡參考」</li>
+          <li>1-cycle lag：analyzer在tracker結算<strong>之前</strong>執行，讀到的是前一輪的結算結果，當日新結算要下一輪才會反映進提示</li>
+          <li>基本面關聯目前用「產業」代理——因為歷史歸檔記錄沒有存 Fwd_PE/Profit_Margin 等欄位（那些只進L3 Prompt，沒進watchlist/歸檔）</li>
+        </ul>
+      </section>
+
+      <section id="sec-constants">
+        <div class="sec-eyebrow">08 · 全域常數</div>
+        <h2>關鍵常數總表</h2>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>常數</th><th>預設值</th><th>環境變數</th><th>所在檔案</th><th>影響</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">MIN_SCORE</td><td class="mono">70</td><td class="mono">MIN_SCORE</td><td class="mono">main.py</td><td>L2 預設分數門檻</td></tr>
+              <tr><td class="mono">MIN_DOLLAR_VOLUME</td><td class="mono">$10,000,000</td><td class="mono">MIN_DOLLAR_VOLUME</td><td class="mono">filter.py</td><td>L1 流動性下限</td></tr>
+              <tr><td class="mono">MIN_MARKET_CAP</td><td class="mono">$300,000,000</td><td class="mono">MIN_MARKET_CAP</td><td class="mono">filter.py</td><td>L1 市值下限</td></tr>
+              <tr><td class="mono">MAX_ATR_PCT</td><td class="mono">8</td><td class="mono">MAX_ATR_PCT</td><td class="mono">filter.py</td><td>L1 波動率上限</td></tr>
+              <tr><td class="mono">EARNINGS_BLACKOUT_DAYS</td><td class="mono">5</td><td>—</td><td class="mono">filter.py</td><td>財報防禦窗口（天）</td></tr>
+              <tr><td class="mono">L2_TARGET_COUNT</td><td class="mono">55</td><td>—</td><td class="mono">scorer.py</td><td>L2 排名上限</td></tr>
+              <tr><td class="mono">BREADTH_SMOOTHING_DAYS</td><td class="mono">3</td><td>—</td><td class="mono">market.py</td><td>廣度平滑窗口</td></tr>
+              <tr><td class="mono">MAX_CANDIDATES_TO_AI</td><td class="mono">40</td><td>—</td><td class="mono">ranker.py</td><td>送AI候選池上限</td></tr>
+              <tr><td class="mono">MAX_SECTOR_CANDIDATES</td><td class="mono">8</td><td>—</td><td class="mono">ranker.py</td><td>每產業候選上限</td></tr>
+              <tr><td class="mono">MAX_OUTPUT</td><td class="mono">3</td><td class="mono">MAX_OUTPUT</td><td class="mono">main.py</td><td>L3 最終精選上限</td></tr>
+              <tr><td class="mono">MIN_AI_CONFIDENCE</td><td class="mono">6</td><td class="mono">MIN_AI_CONFIDENCE</td><td class="mono">tracker.py</td><td>低於此不進watchlist</td></tr>
+              <tr><td class="mono">MAX_ACTIVE_POSITIONS</td><td class="mono">5</td><td class="mono">MAX_ACTIVE_POSITIONS</td><td class="mono">tracker.py</td><td>組合層持倉上限</td></tr>
+              <tr><td class="mono">TRAILING_ACTIVATION_PCT</td><td class="mono">0.10</td><td>—</td><td class="mono">tracker.py</td><td>移動停利啟動門檻（峰值浮盈）</td></tr>
+              <tr><td class="mono">TRAILING_RETRACE_PCT</td><td class="mono">0.05</td><td>—</td><td class="mono">tracker.py</td><td>移動停利回撤觸發幅度</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p style="font-size:.85rem;color:var(--muted)">watch 天數上限（策略/Regime/VIX 差異化，5~10日）與反轉/突破/動能各自的 ATR 係數屬於程式內部查表邏輯，非單一常數，詳見 <code>specs/tracker.md</code> DD-15/16 與 <code>specs/ranker.md</code> DD-19。</p>
+      </section>
+
+      <section id="sec-research">
+        <div class="sec-eyebrow">09 · 供研究使用</div>
+        <h2>待研究方向（初步觀察，非結論）</h2>
+        <p class="wide">以下是讀完現有邏輯後觀察到、且有具體程式碼或規格依據支撐的疑點，供你進一步用 <code>data/performance_history.json</code> 回測或設計實驗驗證。這些<strong>不是</strong>已抗辯確認的結論，只是研究起點的候選清單。</p>
+
+        <div class="finding">
+          <div class="f-head"><span class="f-num">09-1</span><h4>強勢廣度＋VIX偏高＝整批降級成保守突破，動能策略被完全捨棄</h4><span class="f-src">market.py:180</span></div>
+          <p>規格表格呈現的印象是 <code>CONSOLIDATION_VOLATILE</code> 只發生在廣度 35~60% 區間，但實際程式碼是 <code>elif breadth_pct >= 35</code>（不再檢查上限），所以廣度 <strong>≥60%</strong>、VIX <strong>≥20</strong> 時也會落入 <code>CONSOLIDATION_VOLATILE</code>，而不是 <code>BULL_TREND</code>——即使大盤廣度極佳，只要VIX同時偏高（例如財報季集體公布、總經數據公布日），系統當天就整批放棄動能策略，改用65分保守突破門檻。</p>
+          <p>可研究：這個隱性規則是否犧牲了「廣度好、只是短期波動上升」情境下動能策略原本能捕捉的行情，值得用歷史數據回測比較兩種分類方式的實際報酬差異。</p>
+        </div>
+
+        <div class="finding">
+          <div class="f-head"><span class="f-num">09-2</span><h4>移動停利/保本鎖定用固定百分比，未隨個股ATR%縮放</h4><span class="f-src">tracker.py DD-13</span></div>
+          <p>DD-19 已經把「進場」與「初始止損」都改成ATR錨定（因為固定EMA帶讓強勢股等不到回檔），但保本鎖定（達目標距離50%）與移動停利（峰值浮盈10%回撤5%）仍是寫死常數，對ATR%極低的防禦股與ATR%接近8%上限的成長股一視同仁。</p>
+          <p>可研究：移動停利回撤幅度是否也該用個股自身ATR%動態調整，讓高波動股不被單日雜訊提前掃出、低波動股不會停利設太鬆。</p>
+        </div>
+
+        <div class="finding">
+          <div class="f-head"><span class="f-num">09-3</span><h4>持倉上限只管「檔數」，沒有風險金額或曝險比例的概念</h4><span class="f-src">tracker.py DD-20</span></div>
+          <p><code>MAX_ACTIVE_POSITIONS=5</code> 是單純的持倉檔數上限，系統沒有「每筆風險佔總資金%」或「5支同時觸發止損時的總虧損上限」設計。L1 的 <code>MAX_ATR_PCT=8%</code> 只限制個股波動，不代表組合層級的總風險有被控制。</p>
+          <p>可研究：是否該把持倉數量上限，換成或疊加「固定風險比例配置」（例如每筆風險固定佔總資金1%，槓桿與部位大小反推），這是機構常見的部位規模設計。</p>
+        </div>
+
+        <div class="finding">
+          <div class="f-head"><span class="f-num">09-4</span><h4>掛單優先序（AI信心→L2分數）尚未反向驗證與實際勝率的相關性</h4><span class="f-src">tracker.py <code>_slot_priority_key</code></span></div>
+          <p>名額分配假設「AI信心分數愈高，未來表現愈好」，但 <code>analyzer.py</code> 目前只做敘述性統計回饋給AI（DD-3 明文禁止指令式結論），沒有反向檢驗「confidence 分箱後的實際勝率/報酬是否單調遞增」。這是一個可以直接用現有 <code>performance_history.json</code>（累積足夠樣本後）驗證的假設，不需要改任何程式碼。</p>
+          <p>可研究：把 <code>ai_confidence</code> 分成幾個區間（如1-5/6-7/8-10），對照各區間的實際勝率與平均報酬，確認排序鍵的有效性；若相關性弱，L2分數或許該作為主要排序鍵。</p>
+        </div>
+
+        <div class="finding">
+          <div class="f-head"><span class="f-num">09-5</span><h4>Active 持倉「訊號免疫」，即使AI隔天判斷轉弱也不會收緊止損</h4><span class="f-src">tracker.py DD-9</span></div>
+          <p>持倉中的股票若隔天又被AI選中，系統完全忽略新的 buy_zone/stop_loss/target，只延續進場當天的舊計畫——這是刻意設計（避免同一部位的績效統計被中途竄改污染）。但代價是持倉無法受益於「基本面/技術面轉差時應提前收緊止損」的動態調整。</p>
+          <p>可研究：是否該開放「單向收緊」（只允許新判斷把止損上移，不允許下移或放寬目標），在不破壞績效資料乾淨度的前提下增加風控彈性。</p>
+        </div>
+
+        <div class="finding">
+          <div class="f-head"><span class="f-num">09-6</span><h4>財報防禦牆只做排除，沒有捕捉財報後動能（PEAD）的對應策略</h4><span class="f-src">filter.py DD-8, earnings.md DD-E4</span></div>
+          <p>系統用 5 天黑名單窗口保護下行風險，但財報公布後的價格持續趨勢（post-earnings announcement drift）是有學術實證支持的異常報酬來源，目前三種策略（動能/突破/反轉）都不是針對這個現象設計的。</p>
+          <p>可研究：財報公布後首個交易日若跳空且帶量，是否值得作為第四種獨立訊號類型，與現有防禦牆並存而非衝突。</p>
+        </div>
+
+        <div class="finding">
+          <div class="f-head"><span class="f-num">09-7</span><h4>DeepSeek 單次呼叫決定當日精選，未做多次抽樣或一致性檢驗</h4><span class="f-src">ranker.py</span></div>
+          <p>每日只呼叫一次 API，若當天輸出的3支選股剛好處於AI判斷邊界（例如confidence卡在5/6分界），選股結果對Prompt措辭或當次隨機性可能較敏感，沒有機制偵測「這次判斷是否穩定」。</p>
+          <p>可研究（需權衡API成本）：對同一份候選池做2-3次獨立呼叫，比較結果是否一致；若常態性不穩定，可能代表候選池同質性太高、或Prompt指引仍有模糊地帶。</p>
+        </div>
+
+        <div class="finding">
+          <div class="f-head"><span class="f-num">09-8</span><h4>PANIC/BEAR環境下完全空手，沒有避險或降低曝險的中間選項</h4><span class="f-src">market.py</span></div>
+          <p><code>BEAR_DISTRIBUTION</code> 直接回傳空選股清單，資金在確認的下跌趨勢中完全閒置；系統也沒有放空或反向ETF機制。這可能是刻意的保守選擇（只做多、避免額外複雜度與風險），但也代表下跌市場中沒有任何獲利或部分避險手段。</p>
+          <p>可研究：這是否符合你的風險偏好；若想保留獲利彈性，可評估最小化的避險工具（如反向ETF小倉位）是否值得導入的成本效益。</p>
+        </div>
+
+        <div class="note"><strong>文件維護提醒（非策略問題）：</strong><code>specs/ranker.md</code> 與 <code>specs/tracker.md</code> 各自有一個編號相同但完全無關的「DD-20」，兩份規格文件內都已互相加註警告避免混淆，未來若要重新編號可以統一處理。</div>
+      </section>
+
+      <div class="doc-footer">
+        本文件為程式碼與規格文件的整理彙總，逐節可回查 <code>specs/*.md</code> 對應 Design Decision 編號與 <code>src/*.py</code> 原始碼。基準 commit <b>fdce532</b>（2026-07-15）。§09 的觀察為初步假設，正式採信前建議依專案既有的多方抗辯流程覆核。此頁為靜態技術文件，非 <code>publisher.py</code> 每日生成內容，需要更新時直接編輯本檔。
+        <div style="margin-top:10px"><a class="back-link" href="index.html">← 返回首頁</a></div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script>
+(function(){
+  var links = Array.prototype.slice.call(document.querySelectorAll('#tocList a'));
+  var sections = links.map(function(a){ return document.querySelector(a.getAttribute('href')); }).filter(Boolean);
+  function onScroll(){
+    var pos = window.scrollY + 100;
+    var current = sections[0];
+    sections.forEach(function(sec){ if(sec.offsetTop <= pos) current = sec; });
+    links.forEach(function(a){ a.classList.remove('active'); });
+    if(current){
+      var idx = sections.indexOf(current);
+      if(links[idx]) links[idx].classList.add('active');
+    }
+  }
+  document.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+})();
+</script>
+</body>
+</html>

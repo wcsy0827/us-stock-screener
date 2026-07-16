@@ -95,6 +95,13 @@ def publish(
 - **原因**：使用者隔日早上需要回答的三個問題——掛幾張（free_slots）、掛哪幾檔（roster 前 N 名）、掛什麼價（buy_zone_upper）——必須在單一區段內完整呈現；且名單由 tracker 計算保證「報告所示 = 系統模擬資格」，使用者照表掛單則 `performance_history.json` 等於真實帳本。
 - **捨棄**：publisher 端自行從 `categories["watch"]`+`["new"]`+`["reset"]` 重建名單（欄位名不一致、reset 條目不在 watch 分類中，重複實作排序邏輯違反單一事實來源）；被擋註記顯示上限數字（名單制下「不在名單」才是準確語意，上限數字已在名額註記呈現）。
 
+### DD-10: 首頁新增技術文件連結；`docs/technical-doc.html` 為刻意不受 `_build_index()` 生成管轄的靜態頁
+
+- **選擇**：`_build_index()` 在 `index-hero` 區塊下方新增一個連結列（`.doc-link-row` / `.doc-link`），指向同層目錄的 `docs/technical-doc.html`——一份彙整 L1/L2/L3 篩選邏輯與 Tracker 進出場狀態機的技術參考文件，供使用者研究策略改善方向。`docs/technical-doc.html` 本身**不是**由 `publisher.py` 生成，是獨立維護的靜態 HTML（沿用 `_CSS` 的深色配色 token 手動撰寫樣式，視覺風格與每日報告一致），需要更新內容時直接編輯該檔案，不執行 `sync_index()`。
+- **原因**：這份文件是一次性彙整的參考資料（架構總覽、規格出處、研究方向），內容不隨每日執行變動，用 Python 字串樣板生成一份純靜態、無動態資料的長文件不會帶來任何一致性收益，反而讓 `publisher.py` 承載大量與「發布每日報告」職責無關的靜態文案。`_build_index()` 全等比對守門測試（DD-6）的保護範圍僅止於 `index.html`，不延伸至此檔案。
+- **不變**：`_INFO_HTML`／`_CSS`／`_build_index()` 既有的「改動後必須 `sync_index()` 重新生成 `docs/index.html`」規則不變，本次連結列的新增同樣完整走過這個流程；`docs/index.html` 與 `_build_index()` 輸出仍需全等（已驗證通過）。
+- **捨棄**：把技術文件內容也寫成 `publisher.py` 的模組層級字串常數並由 `sync_index()`／新函式生成（純靜態長文不需要模板化，徒增 `publisher.py` 體積且無實質收益）；放進 `docs/reports/` 目錄（該目錄語意是「每日報告」，會被 `reports-index.json` 動態渲染邏輯誤認為一筆報告）。
+
 ## Acceptance Criteria
 
 - [ ] 每日報告頁標題顯示「美股資料截止日：YYYY-MM-DD（週X）」
@@ -119,3 +126,4 @@ def publish(
 - [ ] **DD-9 掛單資訊完整**：每列含掛單價（buy_zone_upper）、買入區間、止損、目標、AI 信心、L2 分數、剩餘觀察天數（`_max_watch_days` 差異化上限）
 - [ ] **DD-9 空名單隱藏**：`roster=[]` 時 `_order_plan_section` 回傳空字串
 - [ ] **DD-9 留意清單信心資訊**：watch 條目列顯示「信心 X｜L2 Y」，缺值顯示 N/A
+- [ ] **DD-10 首頁連結**：`_build_index()` 輸出含指向 `technical-doc.html` 的連結；`docs/index.html` 與 `_build_index()` 輸出全等（`tests/test_publisher_info_sync.py` 通過）

@@ -200,7 +200,7 @@ S&P 500 (~503 支)
 
 ## 禁止事項
 
-- **不要直接修改 `docs/` 下的 HTML**（由 `publisher.py` 生成，手動改會被下次執行覆蓋）
+- **不要直接修改 `docs/` 下的 HTML**（由 `publisher.py` 生成，手動改會被下次執行覆蓋）。例外：`docs/technical-doc.html` 是刻意不受 `publisher.py` 管轄的靜態技術文件（篩選與進出場機制彙整說明），可直接編輯，不會被下次執行覆寫（publisher.py DD-10）
 - **修改篩選流程、評分邏輯或策略定義後，必須判斷是否需要更新 `publisher.py` 的 `_INFO_HTML`**：前端系統說明卡片（篩選流程、L2 評分表、Regime 表、訊號追蹤狀態）是靜態字串，不會自動反映程式碼改動。凡是影響「L1/L2/L3 定義、評分條件、Regime 邊界、狀態機轉換規則」的修改，都須同步更新 `_INFO_HTML`，並執行 `python src/publisher.py` 重新生成 `docs/index.html`（同一 commit）。
 - **修改 `publisher.py` 的靜態文字（如 `_INFO_HTML`、`_CSS`）後，必須執行 `python src/publisher.py` 重新生成 `docs/index.html` 並一起 commit**：pipeline 只在執行時才重新生成 HTML，修改 `publisher.py` 不會自動更新已存在的 `docs/` 檔案。`sync_index()` 是離線確定性再生成（publisher.py DD-6），不觸發任何下載或 API；`pytest` 的全等比對守門測試會攔下漏做的同步。
 - **每次修改程式碼或規格後，必須同步更新 `CLAUDE.md` 與 `README.md`**：架構速覽、模組對照表、快取說明、L2 評分表、專案結構等章節若有變動，須在同一個 commit 內一併更新，不得遺留過時描述。

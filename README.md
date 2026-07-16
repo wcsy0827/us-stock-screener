@@ -386,6 +386,7 @@ us-stock-screener/
 │   └── ai_hints.json       # AI 歷史回饋（每輪 Step 5.7 重寫，可再生）
 ├── docs/                   # GitHub Pages 靜態檔案
 │   ├── index.html
+│   ├── technical-doc.html  # 篩選/進出場機制技術文件（靜態，非 publisher.py 生成）
 │   └── reports/
 ├── tests/
 │   ├── conftest.py         # 將 src/ 加入 sys.path
