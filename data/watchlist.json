@@ -20,12 +20,13 @@
       "2026-07-13",
       "2026-07-14",
       "2026-07-15",
-      "2026-07-16"
+      "2026-07-16",
+      "2026-07-17"
     ],
     "status": "active",
     "invalid_reason": null,
     "watch_days": 2,
-    "active_days": 7,
+    "active_days": 8,
     "signal_date_close": 128.66,
     "active_entry_price": 124.67721814262762,
     "active_start_date": "2026-07-08",
@@ -36,7 +37,7 @@
     "l2_score": 91.0,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭排列，RSI=83.6，VTF=1.91，Momentum_ATR=8.2，RS_vs_Sector=+11.9%，符合動能策略。",
-    "current_price": 125.66,
+    "current_price": 124.82,
     "planned_stop_loss": 108.0,
     "effective_stop_loss": 108.0,
     "is_breakeven_locked": false,
@@ -64,12 +65,13 @@
       "2026-07-13",
       "2026-07-14",
       "2026-07-15",
-      "2026-07-16"
+      "2026-07-16",
+      "2026-07-17"
     ],
     "status": "active",
     "invalid_reason": null,
     "watch_days": 2,
-    "active_days": 7,
+    "active_days": 8,
     "signal_date_close": 308.86,
     "active_entry_price": 295.0045350903574,
     "active_start_date": "2026-07-08",
@@ -80,7 +82,7 @@
     "l2_score": 91.38,
     "ai_confidence": 7,
     "ai_strategy_reason": "均線多頭排列，RSI=71.8，VTF=1.19，Momentum_ATR=3.55，RS_vs_Sector=+13.0%，符合動能策略。",
-    "current_price": 297.29,
+    "current_price": 295.62,
     "planned_stop_loss": 280.0,
     "effective_stop_loss": 280.0,
     "is_breakeven_locked": false,
@@ -106,12 +108,13 @@
       "2026-07-13",
       "2026-07-14",
       "2026-07-15",
-      "2026-07-16"
+      "2026-07-16",
+      "2026-07-17"
     ],
     "status": "active",
     "invalid_reason": null,
     "watch_days": 0,
-    "active_days": 7,
+    "active_days": 8,
     "signal_date_close": 237.58999633789062,
     "active_entry_price": 236.0,
     "active_start_date": "2026-07-08",
@@ -122,11 +125,11 @@
     "l2_score": 91.38,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭，RSI=70.0，VTF=0.52，Momentum_ATR=6.56，RS=+2.7%，動能強勁。",
-    "current_price": 241.49,
+    "current_price": 243.25,
     "planned_stop_loss": 226.0,
     "effective_stop_loss": 226.0,
     "is_breakeven_locked": false,
-    "highest_close_since_active": 241.49,
+    "highest_close_since_active": 243.25,
     "slot_blocked_today": false
   },
   {
@@ -149,12 +152,13 @@
       "2026-07-13",
       "2026-07-14",
       "2026-07-15",
-      "2026-07-16"
+      "2026-07-16",
+      "2026-07-17"
     ],
     "status": "active",
     "invalid_reason": null,
     "watch_days": 0,
-    "active_days": 8,
+    "active_days": 9,
     "signal_date_close": 125.91000366210938,
     "active_entry_price": 124.0,
     "active_start_date": "2026-07-07",
@@ -165,7 +169,7 @@
     "l2_score": 91.38,
     "ai_confidence": 9,
     "ai_strategy_reason": "均線多頭排列，RSI=63.4健康，VTF=1.11>1.0，Momentum_ATR=2.69強勢。",
-    "current_price": 126.67,
+    "current_price": 126.2,
     "planned_stop_loss": 119.0,
     "effective_stop_loss": 119.0,
     "is_breakeven_locked": false,
@@ -192,12 +196,13 @@
       "2026-07-13",
       "2026-07-14",
       "2026-07-15",
-      "2026-07-16"
+      "2026-07-16",
+      "2026-07-17"
     ],
     "status": "active",
     "invalid_reason": null,
     "watch_days": 0,
-    "active_days": 8,
+    "active_days": 9,
     "signal_date_close": 201.3699951171875,
     "active_entry_price": 199.0,
     "active_start_date": "2026-07-07",
@@ -208,7 +213,7 @@
     "l2_score": 91.38,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭排列，RSI=70.0健康，VTF=0.59>0，Momentum_ATR=4.36強勢。",
-    "current_price": 194.36,
+    "current_price": 193.51,
     "planned_stop_loss": 192.0,
     "effective_stop_loss": 192.0,
     "is_breakeven_locked": false,
@@ -235,12 +240,13 @@
       "2026-07-13",
       "2026-07-14",
       "2026-07-15",
-      "2026-07-16"
+      "2026-07-16",
+      "2026-07-17"
     ],
     "status": "active",
     "invalid_reason": null,
     "watch_days": 1,
-    "active_days": 7,
+    "active_days": 8,
     "signal_date_close": 498.7799987792969,
     "active_entry_price": 485.0,
     "active_start_date": "2026-07-08",
@@ -251,7 +257,7 @@
     "l2_score": 85.0,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭排列，RSI=70.6，VTF=0.70>0，Momentum_ATR=3.39強勢。",
-    "current_price": 519.02,
+    "current_price": 510.86,
     "planned_stop_loss": 470.0,
     "effective_stop_loss": 485.0,
     "is_breakeven_locked": true,
@@ -277,12 +283,13 @@
       "2026-07-13",
       "2026-07-14",
       "2026-07-15",
-      "2026-07-16"
+      "2026-07-16",
+      "2026-07-17"
     ],
     "status": "active",
     "invalid_reason": null,
     "watch_days": 0,
-    "active_days": 7,
+    "active_days": 8,
     "signal_date_close": 179.94000244140625,
     "active_entry_price": 179.0,
     "active_start_date": "2026-07-08",
@@ -293,7 +300,7 @@
     "l2_score": 91.38,
     "ai_confidence": 9,
     "ai_strategy_reason": "均線多頭排列，RSI=74.1，VTF=0.64，Momentum_ATR=4.4，RS_vs_Sector=+2.1%，符合動能策略條件。",
-    "current_price": 185.66,
+    "current_price": 182.5,
     "planned_stop_loss": 172.0,
     "effective_stop_loss": 172.0,
     "is_breakeven_locked": false,
@@ -319,12 +326,13 @@
       "2026-07-13",
       "2026-07-14",
       "2026-07-15",
-      "2026-07-16"
+      "2026-07-16",
+      "2026-07-17"
     ],
     "status": "active",
     "invalid_reason": null,
     "watch_days": 0,
-    "active_days": 7,
+    "active_days": 8,
     "signal_date_close": 120.6500015258789,
     "active_entry_price": 119.0,
     "active_start_date": "2026-07-08",
@@ -335,7 +343,7 @@
     "l2_score": 91.38,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭，RSI=68.5，VTF=0.98，Momentum_ATR=4.08，RS=+3.6%，動能策略條件完備。",
-    "current_price": 125.3,
+    "current_price": 122.78,
     "planned_stop_loss": 114.0,
     "effective_stop_loss": 114.0,
     "is_breakeven_locked": false,
@@ -361,12 +369,13 @@
       "2026-07-13",
       "2026-07-14",
       "2026-07-15",
-      "2026-07-16"
+      "2026-07-16",
+      "2026-07-17"
     ],
     "status": "active",
     "invalid_reason": null,
     "watch_days": 1,
-    "active_days": 6,
+    "active_days": 7,
     "signal_date_close": 237.2100067138672,
     "active_entry_price": 231.0,
     "active_start_date": "2026-07-09",
@@ -377,7 +386,7 @@
     "l2_score": 85.0,
     "ai_confidence": 7,
     "ai_strategy_reason": "均線多頭，RSI=69.7，VTF=0.66，Momentum_ATR=4.29，RS=+8.0%，動能策略條件符合。",
-    "current_price": 242.25,
+    "current_price": 239.31,
     "planned_stop_loss": 221.0,
     "effective_stop_loss": 221.0,
     "is_breakeven_locked": false,
@@ -403,12 +412,13 @@
       "2026-07-13",
       "2026-07-14",
       "2026-07-15",
-      "2026-07-16"
+      "2026-07-16",
+      "2026-07-17"
     ],
     "status": "active",
     "invalid_reason": null,
     "watch_days": 1,
-    "active_days": 6,
+    "active_days": 7,
     "signal_date_close": 222.4600067138672,
     "active_entry_price": 218.0,
     "active_start_date": "2026-07-09",
@@ -419,7 +429,7 @@
     "l2_score": 85.0,
     "ai_confidence": 7,
     "ai_strategy_reason": "均線多頭，RSI=65.7，VTF=0.64，Momentum_ATR=4.02，RS=+6.2%，動能策略條件符合。",
-    "current_price": 224.51,
+    "current_price": 222.31,
     "planned_stop_loss": 209.0,
     "effective_stop_loss": 209.0,
     "is_breakeven_locked": false,
@@ -444,12 +454,13 @@
       "2026-07-13",
       "2026-07-14",
       "2026-07-15",
-      "2026-07-16"
+      "2026-07-16",
+      "2026-07-17"
     ],
     "status": "active",
     "invalid_reason": null,
     "watch_days": 0,
-    "active_days": 6,
+    "active_days": 7,
     "signal_date_close": 313.3900146484375,
     "active_entry_price": 310.0,
     "active_start_date": "2026-07-09",
@@ -460,11 +471,11 @@
     "l2_score": 85.0,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭排列，RSI=62.3健康，Momentum_ATR=2.74強勢，VTF=0.42正向。",
-    "current_price": 333.26,
+    "current_price": 333.74,
     "planned_stop_loss": 300.0,
     "effective_stop_loss": 310.0,
     "is_breakeven_locked": true,
-    "highest_close_since_active": 333.26,
+    "highest_close_since_active": 333.74,
     "slot_blocked_today": false
   },
   {
@@ -481,12 +492,13 @@
     "tracked_dates": [
       "2026-07-14",
       "2026-07-15",
-      "2026-07-16"
+      "2026-07-16",
+      "2026-07-17"
     ],
     "status": "watch",
     "invalid_reason": null,
     "slot_blocked_today": false,
-    "watch_days": 2,
+    "watch_days": 3,
     "active_days": 0,
     "signal_date_close": 303.3999938964844,
     "active_entry_price": null,
@@ -498,7 +510,7 @@
     "l2_score": 85.0,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭排列，RSI=77.7，VTF=0.86，Momentum_ATR=5.94極強動能，RS_vs_Sector=+5.7%領先板塊。",
-    "current_price": 305.85
+    "current_price": 312.6
   },
   {
     "symbol": "EXPD",
@@ -514,12 +526,13 @@
     "tracked_dates": [
       "2026-07-14",
       "2026-07-15",
-      "2026-07-16"
+      "2026-07-16",
+      "2026-07-17"
     ],
     "status": "watch",
     "invalid_reason": null,
     "slot_blocked_today": false,
-    "watch_days": 2,
+    "watch_days": 3,
     "active_days": 0,
     "signal_date_close": 178.22000122070312,
     "active_entry_price": null,
@@ -531,75 +544,7 @@
     "l2_score": 91.38,
     "ai_confidence": 9,
     "ai_strategy_reason": "均線多頭排列，RSI=74.5健康，VTF=1.02帶量推進，Momentum_ATR=4.17強勢動能。",
-    "current_price": 181.96
-  },
-  {
-    "symbol": "PSX",
-    "name": "Phillips 66",
-    "sector": "Energy",
-    "buy_zone": "$193～$196",
-    "buy_zone_lower": 193.0,
-    "buy_zone_upper": 196.0,
-    "target": "$218",
-    "stop_loss": "$187",
-    "hold_period": "15",
-    "strategy": "動能策略",
-    "tracked_dates": [
-      "2026-07-13",
-      "2026-07-14",
-      "2026-07-15",
-      "2026-07-16"
-    ],
-    "status": "watch",
-    "invalid_reason": null,
-    "slot_blocked_today": false,
-    "watch_days": 3,
-    "active_days": 0,
-    "signal_date_close": 198.2899932861328,
-    "active_entry_price": null,
-    "active_start_date": null,
-    "date_added": "2026-07-13",
-    "entry_regime": "BULL_TREND",
-    "market_breadth_pct": 66.6,
-    "vix_value": 17.16,
-    "l2_score": 91.38,
-    "ai_confidence": 8,
-    "ai_strategy_reason": "均線多頭排列，RSI=72.5，VTF=1.06，Momentum_ATR=3.18，RS_vs_Sector=+7.0%，符合動能策略。",
-    "current_price": 201.32
-  },
-  {
-    "symbol": "ZBH",
-    "name": "Zimmer Biomet Holdings, Inc.",
-    "sector": "Healthcare",
-    "buy_zone": "$91～$93",
-    "buy_zone_lower": 91.0,
-    "buy_zone_upper": 93.0,
-    "target": "$103",
-    "stop_loss": "$88",
-    "hold_period": "15",
-    "strategy": "動能策略",
-    "tracked_dates": [
-      "2026-07-13",
-      "2026-07-14",
-      "2026-07-15",
-      "2026-07-16"
-    ],
-    "status": "watch",
-    "invalid_reason": null,
-    "slot_blocked_today": true,
-    "watch_days": 3,
-    "active_days": 0,
-    "signal_date_close": 94.08000183105469,
-    "active_entry_price": null,
-    "active_start_date": null,
-    "date_added": "2026-07-13",
-    "entry_regime": "BULL_TREND",
-    "market_breadth_pct": 66.6,
-    "vix_value": 17.16,
-    "l2_score": 91.38,
-    "ai_confidence": 7,
-    "ai_strategy_reason": "均線多頭排列，RSI=62.1，VTF=0.39，Momentum_ATR=2.00，RS_vs_Sector=+7.1%，符合動能策略。",
-    "current_price": 93.75
+    "current_price": 182.8
   },
   {
     "symbol": "CRWD",
@@ -615,12 +560,13 @@
     "tracked_dates": [
       "2026-07-14",
       "2026-07-15",
-      "2026-07-16"
+      "2026-07-16",
+      "2026-07-17"
     ],
     "status": "watch",
     "invalid_reason": null,
     "slot_blocked_today": true,
-    "watch_days": 2,
+    "watch_days": 3,
     "active_days": 0,
     "signal_date_close": 210.72999572753906,
     "active_entry_price": null,
@@ -632,7 +578,7 @@
     "l2_score": 85.0,
     "ai_confidence": 7,
     "ai_strategy_reason": "均線多頭排列，RSI=69.5，VTF=0.90帶量，Momentum_ATR=3.57強勢，RS_vs_Sector=+9.0%領先板塊。",
-    "current_price": 203.76
+    "current_price": 203.08
   },
   {
     "symbol": "PYPL",
@@ -647,12 +593,13 @@
     "strategy": "動能策略",
     "tracked_dates": [
       "2026-07-15",
-      "2026-07-16"
+      "2026-07-16",
+      "2026-07-17"
     ],
     "status": "watch",
     "invalid_reason": null,
     "slot_blocked_today": false,
-    "watch_days": 1,
+    "watch_days": 2,
     "active_days": 0,
     "signal_date_close": 55.52000045776367,
     "active_entry_price": null,
@@ -664,7 +611,7 @@
     "l2_score": 91.0,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭排列完整，RSI=80.1略高但動能強勁，VTF=3.40帶量推進，Momentum_ATR=6.09極強勢。",
-    "current_price": 56.73
+    "current_price": 56.56
   },
   {
     "symbol": "GS",
@@ -679,11 +626,12 @@
     "strategy": "動能策略",
     "tracked_dates": [
       "2026-07-15",
-      "2026-07-16"
+      "2026-07-16",
+      "2026-07-17"
     ],
-    "status": "watch",
-    "invalid_reason": null,
-    "slot_blocked_today": true,
+    "status": "invalid",
+    "invalid_reason": "趨勢轉弱，訊號失效",
+    "slot_blocked_today": false,
     "watch_days": 1,
     "active_days": 0,
     "signal_date_close": 1152.0699462890625,
@@ -696,7 +644,7 @@
     "l2_score": 85.0,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭排列完整，RSI=69.0健康，VTF=1.05帶量推進，Momentum_ATR=1.76動能中等。",
-    "current_price": 1095.46
+    "current_price": 1065.22
   },
   {
     "symbol": "META",
@@ -711,12 +659,13 @@
     "strategy": "動能策略",
     "tracked_dates": [
       "2026-07-15",
-      "2026-07-16"
+      "2026-07-16",
+      "2026-07-17"
     ],
     "status": "watch",
     "invalid_reason": null,
     "slot_blocked_today": true,
-    "watch_days": 1,
+    "watch_days": 2,
     "active_days": 0,
     "signal_date_close": 681.3099975585938,
     "active_entry_price": null,
@@ -728,7 +677,7 @@
     "l2_score": 85.0,
     "ai_confidence": 7,
     "ai_strategy_reason": "均線多頭排列完整，RSI=66.8健康，VTF=0.59帶量推進，Momentum_ATR=3.16強勢。",
-    "current_price": 664.54
+    "current_price": 646.01
   },
   {
     "symbol": "CTAS",
@@ -742,12 +691,13 @@
     "hold_period": "15",
     "strategy": "動能策略",
     "tracked_dates": [
-      "2026-07-16"
+      "2026-07-16",
+      "2026-07-17"
     ],
     "status": "watch",
     "invalid_reason": null,
-    "slot_blocked_today": false,
-    "watch_days": 0,
+    "slot_blocked_today": true,
+    "watch_days": 1,
     "active_days": 0,
     "signal_date_close": 206.25,
     "active_entry_price": null,
@@ -758,7 +708,8 @@
     "vix_value": 16.73,
     "l2_score": 100.0,
     "ai_confidence": 8,
-    "ai_strategy_reason": "均線多頭排列完整，RSI=76.8健康，VTF=1.49帶量推進，Momentum_ATR=6.52極強勢。"
+    "ai_strategy_reason": "均線多頭排列完整，RSI=76.8健康，VTF=1.49帶量推進，Momentum_ATR=6.52極強勢。",
+    "current_price": 204.45
   },
   {
     "symbol": "IR",
@@ -772,12 +723,13 @@
     "hold_period": "15",
     "strategy": "動能策略",
     "tracked_dates": [
-      "2026-07-16"
+      "2026-07-16",
+      "2026-07-17"
     ],
     "status": "watch",
     "invalid_reason": null,
-    "slot_blocked_today": false,
-    "watch_days": 0,
+    "slot_blocked_today": true,
+    "watch_days": 1,
     "active_days": 0,
     "signal_date_close": 84.77999877929688,
     "active_entry_price": null,
@@ -788,7 +740,8 @@
     "vix_value": 16.73,
     "l2_score": 97.75,
     "ai_confidence": 8,
-    "ai_strategy_reason": "均線多頭排列，RSI=68.0健康，VTF=1.42帶量推進，Momentum_ATR=2.90強勢。"
+    "ai_strategy_reason": "均線多頭排列，RSI=68.0健康，VTF=1.42帶量推進，Momentum_ATR=2.90強勢。",
+    "current_price": 82.24
   },
   {
     "symbol": "DG",
@@ -802,12 +755,13 @@
     "hold_period": "15",
     "strategy": "動能策略",
     "tracked_dates": [
-      "2026-07-16"
+      "2026-07-16",
+      "2026-07-17"
     ],
     "status": "watch",
     "invalid_reason": null,
-    "slot_blocked_today": false,
-    "watch_days": 0,
+    "slot_blocked_today": true,
+    "watch_days": 1,
     "active_days": 0,
     "signal_date_close": 127.16000366210938,
     "active_entry_price": null,
@@ -818,6 +772,67 @@
     "vix_value": 16.73,
     "l2_score": 97.75,
     "ai_confidence": 7,
-    "ai_strategy_reason": "均線多頭排列，RSI=67.2健康，VTF=1.15帶量推進，Momentum_ATR=4.49強勢。"
+    "ai_strategy_reason": "均線多頭排列，RSI=67.2健康，VTF=1.15帶量推進，Momentum_ATR=4.49強勢。",
+    "current_price": 125.75
+  },
+  {
+    "symbol": "CHRW",
+    "name": "C.H. Robinson Worldwide, Inc.",
+    "sector": "Industrials",
+    "buy_zone": "$203～$207",
+    "buy_zone_lower": 203.0,
+    "buy_zone_upper": 207.0,
+    "target": "$229",
+    "stop_loss": "$197",
+    "hold_period": "15",
+    "strategy": "動能策略",
+    "tracked_dates": [
+      "2026-07-17"
+    ],
+    "status": "watch",
+    "invalid_reason": null,
+    "slot_blocked_today": false,
+    "watch_days": 0,
+    "active_days": 0,
+    "signal_date_close": 208.5,
+    "active_entry_price": null,
+    "active_start_date": null,
+    "date_added": "2026-07-17",
+    "entry_regime": "BULL_TREND",
+    "market_breadth_pct": 64.8,
+    "vix_value": 18.77,
+    "l2_score": 100.0,
+    "ai_confidence": 9,
+    "ai_strategy_reason": "均線多頭排列完整，RSI=72.4健康，VTF=1.84帶量推進，Momentum_ATR=4.21強勢動能，RS_vs_Sector=+6.6%板塊領先。"
+  },
+  {
+    "symbol": "ADM",
+    "name": "ADM",
+    "sector": "Consumer Defensive",
+    "buy_zone": "$83～$85",
+    "buy_zone_lower": 83.0,
+    "buy_zone_upper": 85.0,
+    "target": "$94",
+    "stop_loss": "$81",
+    "hold_period": "15",
+    "strategy": "動能策略",
+    "tracked_dates": [
+      "2026-07-17"
+    ],
+    "status": "watch",
+    "invalid_reason": null,
+    "slot_blocked_today": false,
+    "watch_days": 0,
+    "active_days": 0,
+    "signal_date_close": 85.9000015258789,
+    "active_entry_price": null,
+    "active_start_date": null,
+    "date_added": "2026-07-17",
+    "entry_regime": "BULL_TREND",
+    "market_breadth_pct": 64.8,
+    "vix_value": 18.77,
+    "l2_score": 85.0,
+    "ai_confidence": 7,
+    "ai_strategy_reason": "均線多頭排列，RSI=73.2健康，VTF=0.81正向，Momentum_ATR=5.42強勢動能，RS_vs_Sector=+4.0%板塊領先。"
   }
 ]
