@@ -69,6 +69,111 @@
         "return_pct": -5.56,
         "is_win": false
       }
+    },
+    {
+      "meta_data": {
+        "ticker": "GPC",
+        "company_name": "Genuine Parts Company",
+        "sector": "Consumer Cyclical"
+      },
+      "signal_details": {
+        "signal_date": "2026-07-02",
+        "entry_regime": "BULL_TREND",
+        "market_breadth_pct": 64.8,
+        "vix_value": 15.81,
+        "l2_score": 91.0,
+        "assigned_strategy": "動能策略",
+        "ai_confidence": 8,
+        "ai_strategy_reason": "均線多頭排列，RSI=83.6，VTF=1.91，Momentum_ATR=8.2，RS_vs_Sector=+11.9%，符合動能策略。"
+      },
+      "execution_plan": {
+        "buy_zone_lower": 116.0,
+        "buy_zone_upper": 121.0,
+        "planned_target": "$145",
+        "planned_stop_loss": "$108.00"
+      },
+      "actual_outcome": {
+        "triggered_date": "2026-07-08",
+        "actual_entry_price": 124.67721814262762,
+        "exit_date": "2026-07-21",
+        "actual_exit_price": 111.28,
+        "exit_reason": "CLOSED_LOSS",
+        "holding_days": 10
+      },
+      "performance_metrics": {
+        "return_pct": -10.74,
+        "is_win": false
+      }
+    },
+    {
+      "meta_data": {
+        "ticker": "RTX",
+        "company_name": "RTX Corporation",
+        "sector": "Industrials"
+      },
+      "signal_details": {
+        "signal_date": "2026-07-06",
+        "entry_regime": "BULL_TREND",
+        "market_breadth_pct": 66.6,
+        "vix_value": 16.4,
+        "l2_score": 91.38,
+        "assigned_strategy": "動能策略",
+        "ai_confidence": 8,
+        "ai_strategy_reason": "均線多頭排列，RSI=70.0健康，VTF=0.59>0，Momentum_ATR=4.36強勢。"
+      },
+      "execution_plan": {
+        "buy_zone_lower": 196.0,
+        "buy_zone_upper": 199.0,
+        "planned_target": "$220",
+        "planned_stop_loss": "$192.00"
+      },
+      "actual_outcome": {
+        "triggered_date": "2026-07-07",
+        "actual_entry_price": 199.0,
+        "exit_date": "2026-07-21",
+        "actual_exit_price": 192.0,
+        "exit_reason": "CLOSED_LOSS",
+        "holding_days": 11
+      },
+      "performance_metrics": {
+        "return_pct": -3.52,
+        "is_win": false
+      }
+    },
+    {
+      "meta_data": {
+        "ticker": "MCO",
+        "company_name": "Moody's Corporation",
+        "sector": "Financial Services"
+      },
+      "signal_details": {
+        "signal_date": "2026-07-06",
+        "entry_regime": "BULL_TREND",
+        "market_breadth_pct": 66.6,
+        "vix_value": 16.4,
+        "l2_score": 85.0,
+        "assigned_strategy": "動能策略",
+        "ai_confidence": 8,
+        "ai_strategy_reason": "均線多頭排列，RSI=70.6，VTF=0.70>0，Momentum_ATR=3.39強勢。"
+      },
+      "execution_plan": {
+        "buy_zone_lower": 480.0,
+        "buy_zone_upper": 485.0,
+        "planned_target": "$540",
+        "planned_stop_loss": "$470.00"
+      },
+      "actual_outcome": {
+        "triggered_date": "2026-07-08",
+        "actual_entry_price": 485.0,
+        "exit_date": "2026-07-21",
+        "actual_exit_price": 485.0,
+        "exit_reason": "CLOSED_LOSS",
+        "holding_days": 10
+      },
+      "performance_metrics": {
+        "return_pct": 0.0,
+        "is_win": false
+      }
     }
   ]
 }
