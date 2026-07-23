@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>美股 AI 選股 2026-07-23</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0f172a; --card: #1e293b; --border: #334155;
+  --text: #e2e8f0; --muted: #94a3b8; --subtle: #475569;
+  --active: #22c55e; --watch: #eab308; --invalid: #ef4444;
+  --expired: #6b7280; --new: #3b82f6; --reset: #a855f7;
+}
+body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 15px; line-height: 1.6; }
+a { color: var(--new); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.container { max-width: 860px; margin: 0 auto; padding: 28px 16px 48px; }
+
+/* Header */
+.page-header { margin-bottom: 28px; }
+.page-header h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 4px; }
+.page-header .date-line { font-size: 1rem; color: var(--muted); margin-bottom: 12px; }
+.scan-bar { background: var(--card); border-radius: 8px; padding: 10px 14px; font-size: 0.85rem; color: var(--muted); border-left: 3px solid var(--new); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.scan-bar .arrow { color: var(--border); }
+.scan-bar strong { color: var(--text); }
+.back-link { display: inline-flex; align-items: center; gap: 4px; margin-top: 12px; font-size: 0.85rem; color: var(--muted); }
+.back-link:hover { color: var(--new); text-decoration: none; }
+
+/* Section */
+.section { margin-bottom: 24px; }
+.section-title { font-size: 0.9rem; font-weight: 600; letter-spacing: 0.03em; padding-bottom: 8px; border-bottom: 1px solid var(--border); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+.section-count { font-weight: 400; color: var(--muted); font-size: 0.82rem; margin-left: 2px; }
+
+/* Tracking rows */
+.track-item { background: var(--card); border-radius: 8px; padding: 11px 14px; margin-bottom: 7px; border-left: 3px solid var(--expired); display: grid; gap: 2px; }
+.track-item.active  { border-left-color: var(--active); }
+.track-item.watch   { border-left-color: var(--watch); }
+.track-item.invalid { border-left-color: var(--invalid); }
+.track-item.expired { border-left-color: var(--expired); opacity: 0.6; }
+.track-header { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.track-symbol { font-weight: 700; font-size: 0.95rem; }
+.track-name { color: var(--muted); font-size: 0.85rem; }
+.strategy-tag { font-size: 0.72rem; padding: 1px 7px; border-radius: 4px; background: var(--border); color: var(--text); margin-left: auto; white-space: nowrap; }
+.track-status { font-size: 0.82rem; color: var(--muted); }
+.track-prices { font-size: 0.82rem; color: var(--text); margin-top: 2px; }
+.track-prices .cur-price { color: var(--text); font-weight: 600; }
+
+/* Stock cards */
+.stock-card { background: var(--card); border-radius: 10px; border: 1px solid var(--border); padding: 16px; margin-bottom: 12px; transition: border-color 0.15s; }
+.stock-card:hover { border-color: var(--new); }
+.stock-card.reset-card:hover { border-color: var(--reset); }
+.card-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+.card-rank { background: var(--border); color: var(--muted); border-radius: 50%; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+.card-title { flex: 1; }
+.card-symbol { font-size: 1.1rem; font-weight: 800; color: var(--new); }
+.reset-card .card-symbol { color: var(--reset); }
+.card-company { font-size: 0.88rem; color: var(--muted); }
+.card-price { text-align: right; }
+.card-price .price-val { font-size: 1rem; font-weight: 700; display: block; }
+.card-price .price-chg { font-size: 0.8rem; }
+.price-chg.up   { color: var(--active); }
+.price-chg.down { color: var(--invalid); }
+.price-chg.flat { color: var(--muted); }
+.card-badges { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 10px; }
+.badge { font-size: 0.73rem; padding: 2px 8px; border-radius: 4px; background: var(--border); color: var(--muted); }
+.reason-box { font-size: 0.875rem; line-height: 1.55; color: var(--text); padding: 10px 12px; background: #0f172a; border-radius: 7px; margin-bottom: 10px; }
+.trade-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px; margin-bottom: 10px; }
+.trade-cell { background: #0f172a; border-radius: 7px; padding: 8px 10px; }
+.trade-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-bottom: 2px; }
+.trade-val { font-size: 0.9rem; font-weight: 700; }
+.trade-val.buy  { color: var(--new); }
+.trade-val.tgt  { color: var(--active); }
+.trade-val.stop { color: var(--invalid); }
+.risk-box { font-size: 0.8rem; line-height: 1.5; color: #fcd34d; background: rgba(234,179,8,0.08); border-radius: 7px; padding: 8px 12px; border-left: 2px solid var(--watch); }
+.detail-box { font-size: 0.8rem; line-height: 1.5; color: #94a3b8; background: rgba(148,163,184,0.06); border-radius: 7px; padding: 8px 12px; border-left: 2px solid #475569; margin-top: 6px; }
+
+/* Summary footer */
+.summary-box { background: var(--card); border-radius: 10px; padding: 16px 20px; margin-top: 12px; border-top: 3px solid var(--new); }
+.summary-box h2 { font-size: 0.9rem; margin-bottom: 12px; color: var(--muted); letter-spacing: 0.03em; }
+.stat-row { display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 8px; }
+.stat-row:last-child { margin-bottom: 0; }
+.stat-group { display: flex; align-items: baseline; gap: 6px; }
+.stat-num { font-size: 1.1rem; font-weight: 800; }
+.stat-num.c-active  { color: var(--active); }
+.stat-num.c-watch   { color: var(--watch); }
+.stat-num.c-invalid { color: var(--invalid); }
+.stat-num.c-new     { color: var(--new); }
+.stat-num.c-reset   { color: var(--reset); }
+.stat-num.c-removed { color: var(--expired); }
+.stat-lbl { font-size: 0.8rem; color: var(--muted); }
+
+/* Index page */
+.index-hero { text-align: center; padding: 32px 0 20px; }
+.index-hero h1 { font-size: 1.8rem; font-weight: 800; margin-bottom: 6px; }
+.index-hero p { color: var(--muted); font-size: 0.9rem; }
+.report-list { display: flex; flex-direction: column; gap: 8px; margin-top: 24px; }
+.report-entry { background: var(--card); border-radius: 9px; padding: 14px 18px; border: 1px solid var(--border); display: flex; align-items: center; gap: 16px; text-decoration: none; color: var(--text); transition: border-color 0.15s; }
+.report-entry:hover { border-color: var(--new); text-decoration: none; color: var(--text); }
+.report-date { font-weight: 700; font-size: 0.95rem; min-width: 130px; }
+.report-weekday { font-size: 0.8rem; color: var(--muted); margin-top: 1px; }
+.report-chips { display: flex; gap: 7px; flex-wrap: wrap; margin-left: auto; }
+.chip { font-size: 0.75rem; padding: 2px 9px; border-radius: 12px; font-weight: 600; }
+.chip.active  { background: rgba(34,197,94,0.15);  color: var(--active); }
+.chip.watch   { background: rgba(234,179,8,0.15);  color: var(--watch); }
+.chip.invalid { background: rgba(239,68,68,0.12);  color: var(--invalid); }
+.chip.new     { background: rgba(59,130,246,0.15); color: var(--new); }
+.chip.reset   { background: rgba(168,85,247,0.12); color: var(--reset); }
+.chip.neutral { background: var(--border); color: var(--muted); }
+.arrow-icon { color: var(--border); font-size: 1rem; }
+.empty-state { text-align: center; padding: 48px; color: var(--muted); }
+.doc-link-row { text-align: center; margin-bottom: 20px; }
+.doc-link { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 0.85rem; }
+.doc-link:hover { border-color: var(--new); color: var(--new); text-decoration: none; }
+
+/* Market Regime Dashboard */
+.market-dashboard { border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; border: 1px solid var(--border); }
+.market-dashboard.bull          { border-left: 4px solid var(--active);  background: rgba(34,197,94,0.07); }
+.market-dashboard.consolidation { border-left: 4px solid var(--watch);   background: rgba(234,179,8,0.07); }
+.market-dashboard.panic         { border-left: 4px solid #f97316;        background: rgba(249,115,22,0.07); }
+.market-dashboard.bear          { border-left: 4px solid var(--invalid); background: rgba(239,68,68,0.1); }
+.regime-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+.regime-name { font-size: 1rem; font-weight: 700; }
+.regime-strategy { font-size: 0.82rem; color: var(--muted); margin-left: auto; }
+.regime-metrics { display: flex; gap: 20px; flex-wrap: wrap; }
+.regime-metric { min-width: 80px; }
+.regime-metric-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 2px; }
+.regime-metric-val { font-size: 1rem; font-weight: 700; }
+.regime-metric-sub { font-size: 0.72rem; color: var(--muted); margin-top: 1px; }
+.spy-above { color: var(--active); }
+.spy-below { color: var(--invalid); }
+.defense-banner { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.3); border-radius: 10px; padding: 20px 24px; text-align: center; margin-bottom: 16px; }
+.defense-banner .defense-title { font-size: 1rem; font-weight: 700; color: var(--invalid); margin-bottom: 6px; }
+.defense-banner .defense-desc { font-size: 0.85rem; color: var(--muted); line-height: 1.7; }
+
+/* System info (index page) */
+details { margin-bottom: 20px; }
+summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 8px; padding: 12px 16px; background: var(--card); border-radius: 9px; border: 1px solid var(--border); font-weight: 600; font-size: 0.9rem; user-select: none; }
+summary::-webkit-details-marker { display: none; }
+details summary::before { content: "▶"; font-size: 0.65rem; color: var(--muted); transition: transform 0.2s; flex-shrink: 0; }
+details[open] summary::before { transform: rotate(90deg); }
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding-top: 12px; }
+.info-card { background: var(--card); border-radius: 9px; border: 1px solid var(--border); padding: 14px 16px; }
+.info-card h3 { font-size: 0.78rem; font-weight: 700; margin-bottom: 10px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
+.info-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+.info-table th { text-align: left; padding: 4px 8px; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--border); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.info-table td { padding: 5px 8px; border-bottom: 1px solid rgba(51,65,85,0.4); line-height: 1.5; vertical-align: top; }
+.info-table td:first-child { white-space: nowrap; }
+.info-table tr:last-child td { border-bottom: none; }
+.pipe-flow { display: flex; flex-direction: column; gap: 3px; }
+.pipe-step { display: flex; align-items: flex-start; gap: 8px; font-size: 0.8rem; line-height: 1.5; }
+.pipe-badge { background: var(--border); color: var(--muted); border-radius: 4px; padding: 1px 7px; font-size: 0.7rem; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+.pipe-arrow { color: var(--subtle); font-size: 0.75rem; padding-left: 16px; }
+.report-section-title { font-size: 0.82rem; font-weight: 600; color: var(--muted); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 10px; }
+
+.tip-wrap { position: relative; display: inline-flex; align-items: center; gap: 5px; }
+.tip-icon { display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; border-radius: 50%; background: var(--border); color: var(--muted); font-size: 0.68rem; font-weight: 700; cursor: help; flex-shrink: 0; }
+.tip-box { display: none; position: absolute; right: 0; top: calc(100% + 6px); background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 0.78rem; line-height: 1.65; color: var(--text); font-weight: 400; width: 230px; z-index: 20; box-shadow: 0 4px 16px rgba(0,0,0,0.5); white-space: normal; text-align: left; }
+.tip-wrap:hover .tip-box { display: block; }
+
+/* Data freshness indicator */
+.date-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 4px; }
+.date-label { font-size: 0.8rem; color: var(--muted); }
+.date-val { font-size: 1rem; color: var(--text); font-weight: 600; }
+.freshness-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 0.75rem; padding: 2px 9px; border-radius: 10px; font-weight: 600; cursor: pointer; }
+.freshness-ok    { background: rgba(34,197,94,0.15);  color: var(--active); }
+.freshness-stale { background: rgba(234,179,8,0.12);  color: var(--watch); }
+.tz-note { font-size: 0.8rem; color: var(--muted); margin-top: 6px; min-height: 1.3em; }
+.run-info { font-size: 0.75rem; color: var(--muted); margin-bottom: 12px; padding: 6px 10px; background: rgba(255,255,255,0.04); border-radius: 6px; display: none; line-height: 1.8; }
+.run-info.visible { display: block; }
+
+@media (max-width: 600px) {
+  .scan-bar { flex-direction: column; align-items: flex-start; gap: 2px; }
+  .card-header { flex-wrap: wrap; }
+  .card-price { text-align: left; }
+  .report-entry { flex-wrap: wrap; }
+  .report-chips { margin-left: 0; }
+  .regime-strategy { margin-left: 0; }
+  .tip-box { right: auto; left: 0; }
+  .info-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="page-header">
+    <h1>📊 美股 AI 選股報告</h1>
+    <div class="date-meta">
+      <span class="date-label">美股資料截止日</span>
+      <span class="date-val">📅 2026-07-23（四）</span>
+      <span class="freshness-badge" id="freshness-badge" onclick="toggleRunInfo()" title="點擊查看資料來源詳情"></span>
+    </div>
+    <div class="run-info" id="run-info">載入中…</div>
+    <div class="scan-bar">
+      掃描 <strong>S&amp;P500 503支</strong>
+      <span class="arrow">→</span> L1 <strong>406支</strong>
+      <span class="arrow">→</span> L2 <strong>55支</strong>
+      <span class="arrow">→</span> AI精選 <strong>3支</strong>
+    </div>
+    <a class="back-link" href="../index.html">← 返回首頁</a>
+  </div>
+<script>
+(function() {
+  var d = '2026-07-23';
+  var parts = d.split('-');
+  var reportDay = Date.UTC(+parts[0], +parts[1]-1, +parts[2]);
+  var now = new Date();
+  var todayUTC = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  var diffDays = Math.round((todayUTC - reportDay) / 86400000);
+  var badge = document.getElementById('freshness-badge');
+  if (!badge) return;
+  if (diffDays <= 0) {
+    badge.textContent = '✓ 今日最新數據 ▸';
+    badge.className = 'freshness-badge freshness-ok';
+  } else {
+    var next = new Date(reportDay + 86400000);
+    var mo = next.getUTCMonth() + 1;
+    var dy = next.getUTCDate();
+    badge.textContent = '↻ ' + mo + '/' + dy + ' 05:30（台灣時間）更新 ▸';
+    badge.className = 'freshness-badge freshness-stale';
+  }
+})();
+
+function toggleRunInfo() {
+  var info = document.getElementById('run-info');
+  if (!info) return;
+  if (info.classList.contains('visible')) {
+    info.classList.remove('visible');
+    return;
+  }
+  info.classList.add('visible');
+  if (info._loaded) return;
+  info._loaded = true;
+  fetch('../data/last_run.json?_=' + Date.now())
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      var utc = d.run_at_utc || '—';
+      // 轉換為台灣時間顯示
+      var dt = new Date(utc);
+      var twStr = dt.toLocaleString('zh-TW', {timeZone:'Asia/Taipei', hour12:false,
+        year:'numeric', month:'2-digit', day:'2-digit',
+        hour:'2-digit', minute:'2-digit'});
+      info.innerHTML =
+        '<strong>資料來源核實</strong><br>' +
+        '執行時間（UTC）：' + utc + '<br>' +
+        '執行時間（台灣）：' + twStr + '<br>' +
+        '資料截止日：' + (d.market_date || '—') + '（若於美股盤中執行，系統會自動捨棄當日未收盤數據，此欄可能為前一交易日）<br>' +
+        '掃描：S&amp;P500 ' + (d.total_scanned || '—') + ' 支 → L1 ' +
+        (d.l1_count || '—') + ' → L2 ' + (d.l2_count || '—') +
+        ' → AI精選 ' + (d.ai_count || '—') + ' 支';
+    })
+    .catch(function() {
+      info.textContent = '⚠ 無法載入 last_run.json（本地預覽時正常，GitHub Pages 上才有此檔案）';
+    });
+}
+</script>
+
+  
+<div class="market-dashboard bull">
+  <div class="regime-header">
+    <span class="regime-name">📈 強勢牛市</span>
+    <span class="regime-strategy"><span class="tip-wrap">主推：動能策略<span class="tip-icon">?</span><span class="tip-box">條件：市場廣度 ≥ 60% 且 VIX &lt; 20<br>選強勢領頭羊、均線多頭排列標的<br>買入區間錨定收盤下方 0.25～1×ATR 淺回檔帶</span></span></span>
+  </div>
+  <div class="regime-metrics">
+    <div class="regime-metric">
+      <div class="regime-metric-label">市場廣度</div>
+      <div class="regime-metric-val">61.0%</div>
+    </div>
+    <div class="regime-metric">
+      <div class="regime-metric-label">VIX</div>
+      <div class="regime-metric-val">18.7</div>
+      <div class="regime-metric-sub">正常</div>
+    </div>
+    <div class="regime-metric">
+      <div class="regime-metric-label">SPY 位置</div>
+      <div class="regime-metric-val spy-below">⚠️ EMA20 之下</div>
+    </div>
+  </div>
+</div>
+
+  
+<div class="summary-box" style="margin-bottom:20px;border-top-color:#a855f7">
+  <h2>📊 歷史選股績效（累計 5 筆結算）</h2>
+  <div class="stat-row">
+    <div class="stat-group">
+      <span class="stat-num c-new">0.0%</span>
+      <span class="stat-lbl">整體勝率</span>
+    </div>
+    <div class="stat-group">
+      <span class="stat-num c-invalid">-4.45%</span>
+      <span class="stat-lbl">平均回報</span>
+    </div>
+    <div class="stat-group">
+      <span class="stat-num" style="color:var(--muted)">5</span>
+      <span class="stat-lbl">筆結算</span>
+    </div>
+  </div>
+  <div class="stat-row"><div class="stat-group"><span class="stat-num" style="font-size:0.95rem">0.0%</span><span class="stat-lbl">動能策略勝率</span></div></div>
+</div>
+
+  
+<div class="section">
+  <div class="section-title">
+    ✅ 有效追蹤清單<span class="section-count">（8支，上限 5 支）</span>
+  </div>
+  
+<div class="track-item active">
+  <div class="track-header">
+    <span class="track-symbol">APD</span>
+    <span class="track-name">Air Products and Chemicals, Inc</span>
+    <span class="strategy-tag">動能策略</span>
+  </div>
+  <div class="track-status">持倉 12 / 20 天 ✅ ｜ <span class="c-invalid" style="font-weight:700">-0.24%</span></div>
+  <div class="track-prices"><span class="cur-price">$294.29</span>｜進場 $295.00｜目標 $340｜止損 $280.00</div>
+</div>
+
+<div class="track-item active">
+  <div class="track-header">
+    <span class="track-symbol">WELL</span>
+    <span class="track-name">Welltower Inc.</span>
+    <span class="strategy-tag">動能策略</span>
+  </div>
+  <div class="track-status">持倉 12 / 15 天 ✅ ｜ <span class="c-active" style="font-weight:700">+4.68%</span></div>
+  <div class="track-prices"><span class="cur-price">$247.05</span>｜進場 $236.00｜目標 $261｜止損 $226.00</div>
+</div>
+
+<div class="track-item active">
+  <div class="track-header">
+    <span class="track-symbol">PCAR</span>
+    <span class="track-name">PACCAR Inc.</span>
+    <span class="strategy-tag">動能策略</span>
+  </div>
+  <div class="track-status">持倉 13 / 15 天 ✅ ｜ <span class="c-active" style="font-weight:700">+5.44%</span></div>
+  <div class="track-prices"><span class="cur-price">$130.75</span>｜進場 $124.00｜目標 $138｜止損 $124.00 🔒保本</div>
+</div>
+
+<div class="track-item active">
+  <div class="track-header">
+    <span class="track-symbol">STT</span>
+    <span class="track-name">State Street Corporation</span>
+    <span class="strategy-tag">動能策略</span>
+  </div>
+  <div class="track-status">持倉 12 / 15 天 ✅ ｜ <span class="c-active" style="font-weight:700">+2.91%</span></div>
+  <div class="track-prices"><span class="cur-price">$184.21</span>｜進場 $179.00｜目標 $198｜止損 $172.00</div>
+</div>
+
+<div class="track-item active">
+  <div class="track-header">
+    <span class="track-symbol">XYL</span>
+    <span class="track-name">Xylem Inc.</span>
+    <span class="strategy-tag">動能策略</span>
+  </div>
+  <div class="track-status">持倉 12 / 15 天 ✅ ｜ <span class="c-invalid" style="font-weight:700">-1.79%</span></div>
+  <div class="track-prices"><span class="cur-price">$116.87</span>｜進場 $119.00｜目標 $133｜止損 $114.00</div>
+</div>
+
+<div class="track-item active">
+  <div class="track-header">
+    <span class="track-symbol">WM</span>
+    <span class="track-name">Waste Management, Inc.</span>
+    <span class="strategy-tag">動能策略</span>
+  </div>
+  <div class="track-status">持倉 11 / 15 天 ✅ ｜ <span class="c-active" style="font-weight:700">+2.71%</span></div>
+  <div class="track-prices"><span class="cur-price">$237.27</span>｜進場 $231.00｜目標 $261｜止損 $221.00</div>
+</div>
+
+<div class="track-item active">
+  <div class="track-header">
+    <span class="track-symbol">RSG</span>
+    <span class="track-name">Republic Services, Inc.</span>
+    <span class="strategy-tag">動能策略</span>
+  </div>
+  <div class="track-status">持倉 11 / 15 天 ✅ ｜ <span class="c-invalid" style="font-weight:700">-0.27%</span></div>
+  <div class="track-prices"><span class="cur-price">$217.42</span>｜進場 $218.00｜目標 $245｜止損 $209.00</div>
+</div>
+
+<div class="track-item active">
+  <div class="track-header">
+    <span class="track-symbol">AAPL</span>
+    <span class="track-name">Apple Inc.</span>
+    <span class="strategy-tag">動能策略</span>
+  </div>
+  <div class="track-status">持倉 11 / 15 天 ✅ ｜ <span class="c-active" style="font-weight:700">+3.76%</span></div>
+  <div class="track-prices"><span class="cur-price">$321.66</span>｜進場 $310.00｜目標 $340｜止損 $310.00 🔒保本</div>
+</div>
+</div>
+<div class="section">
+  <div class="section-title">
+    🟡 留意清單<span class="section-count">（9支）</span>
+  </div>
+  
+<div class="track-item watch">
+  <div class="track-header">
+    <span class="track-symbol">GPN</span>
+    <span class="track-name">Global Payments Inc.</span>
+    <span class="strategy-tag">動能策略</span>
+  </div>
+  <div class="track-status">第 4 天（今日觸價但未在掛單名單，未進場；剩 1 天自動移除）</div>
+  <div class="track-prices"><span class="cur-price">$77.86</span>｜買入區間 $79.4～$82.4｜目標 $95｜止損 $76.2｜信心 8/10｜L2 91 分</div>
+</div>
+
+<div class="track-item watch">
+  <div class="track-header">
+    <span class="track-symbol">TRV</span>
+    <span class="track-name">The Travelers Companies, Inc.</span>
+    <span class="strategy-tag">動能策略</span>
+  </div>
+  <div class="track-status">第 4 天（等待回落至買入區間，剩 1 天自動移除）</div>
+  <div class="track-prices"><span class="cur-price">$376.37</span>｜買入區間 $354.3～$368.5｜目標 $405｜止損 $345.0｜信心 7/10｜L2 91 分</div>
+</div>
+
+<div class="track-item watch">
+  <div class="track-header">
+    <span class="track-symbol">VLO</span>
+    <span class="track-name">Valero Energy Corporation</span>
+    <span class="strategy-tag">動能策略</span>
+  </div>
+  <div class="track-status">第 4 天（今日觸價但未在掛單名單，未進場；剩 1 天自動移除）</div>
+  <div class="track-prices"><span class="cur-price">$305.26</span>｜買入區間 $303.8～$313.3｜目標 $345｜止損 $293.3｜信心 7/10｜L2 85 分</div>
+</div>
+
+<div class="track-item watch">
+  <div class="track-header">
+    <span class="track-symbol">ODFL</span>
+    <span class="track-name">Old Dominion Freight Line, Inc.</span>
+    <span class="strategy-tag">動能策略</span>
+  </div>
+  <div class="track-status">第 3 天（今日觸價但未在掛單名單，未進場；剩 2 天自動移除）</div>
+  <div class="track-prices"><span class="cur-price">$230.71</span>｜買入區間 $230～$233｜目標 $258｜止損 $223｜信心 7/10｜L2 91 分</div>
+</div>
+
+<div class="track-item watch">
+  <div class="track-header">
+    <span class="track-symbol">EIX</span>
+    <span class="track-name">Edison International</span>
+    <span class="strategy-tag">動能策略</span>
+  </div>
+  <div class="track-status">第 3 天（等待回落至買入區間，剩 2 天自動移除）</div>
+  <div class="track-prices"><span class="cur-price">$79.64</span>｜買入區間 $76.5～$77.5｜目標 $86｜止損 $75｜信心 7/10｜L2 91 分</div>
+</div>
+
+<div class="track-item watch">
+  <div class="track-header">
+    <span class="track-symbol">SJM</span>
+    <span class="track-name">The J.M. Smucker Company</span>
+    <span class="strategy-tag">動能策略</span>
+  </div>
+  <div class="track-status">第 2 天（今日觸價但未在掛單名單，未進場；剩 3 天自動移除）</div>
+  <div class="track-prices"><span class="cur-price">$115.71</span>｜買入區間 $115～$117｜目標 $130｜止損 $112｜信心 7/10｜L2 91 分</div>
+</div>
+
+<div class="track-item watch">
+  <div class="track-header">
+    <span class="track-symbol">CF</span>
+    <span class="track-name">CF Industries Holdings, Inc.</span>
+    <span class="strategy-tag">動能策略</span>
+  </div>
+  <div class="track-status">第 2 天（今日觸價但未在掛單名單，未進場；剩 3 天自動移除）</div>
+  <div class="track-prices"><span class="cur-price">$126.71</span>｜買入區間 $124～$126｜目標 $140｜止損 $120｜信心 7/10｜L2 85 分</div>
+</div>
+
+<div class="track-item watch">
+  <div class="track-header">
+    <span class="track-symbol">JPM</span>
+    <span class="track-name">JP Morgan Chase &amp; Co.</span>
+    <span class="strategy-tag">動能策略</span>
+  </div>
+  <div class="track-status">第 1 天（等待回落至買入區間，剩 4 天自動移除）</div>
+  <div class="track-prices">買入區間 $343～$347｜目標 $385｜止損 $335｜信心 8/10｜L2 91 分</div>
+</div>
+
+<div class="track-item watch">
+  <div class="track-header">
+    <span class="track-symbol">CSX</span>
+    <span class="track-name">CSX Corporation</span>
+    <span class="strategy-tag">突破策略</span>
+  </div>
+  <div class="track-status">第 1 天（等待回落至買入區間，剩 4 天自動移除）</div>
+  <div class="track-prices">買入區間 $52.5～$53.0｜目標 $58｜止損 $51.0｜信心 7/10｜L2 100 分</div>
+</div>
+</div>
+<div class="section">
+  <div class="section-title">
+    🗑 今日移除<span class="section-count">（2支）</span>
+  </div>
+  
+<div class="track-item expired">
+  <div class="track-header">
+    <span class="track-symbol">CHRW</span>
+    <span class="track-name">C.H. Robinson Worldwide, Inc.</span>
+    <span class="strategy-tag">動能策略</span>
+  </div>
+  <div class="track-status">已追蹤 5 天，今日移除</div>
+  
+</div>
+
+<div class="track-item expired">
+  <div class="track-header">
+    <span class="track-symbol">ADM</span>
+    <span class="track-name">ADM</span>
+    <span class="strategy-tag">動能策略</span>
+  </div>
+  <div class="track-status">已追蹤 5 天，今日移除</div>
+  
+</div>
+</div>
+<div class="section">
+  <div class="section-title">
+    🆕 今日新進觀察名單<span class="section-count">（2支）</span>
+  </div>
+  
+<div class="stock-card ">
+  <div class="card-header">
+    <div class="card-rank">1</div>
+    <div class="card-title">
+      <div class="card-symbol">JPM</div>
+      <div class="card-company">JP Morgan Chase &amp; Co.</div>
+    </div>
+    <div class="card-price">
+      <span class="price-val">$349.90</span>
+      <span class="price-chg up">▲0.49%</span>
+    </div>
+  </div>
+  <div class="card-badges">
+    <span class="badge">📊 評分 91</span>
+    <span class="badge">信心 8/10</span>
+    <span class="badge">🏭 Financial Services</span>
+    <span class="badge">📋 動能策略</span>
+  </div>
+  <div class="reason-box">🤖 JPM為金融板塊龍頭，均線多頭排列，量能溫和放大。所屬產業ETF(XLF)20日上漲4.5%，趨勢強勁。基本面優異：Fwd_PE=14.1相對同批候選股便宜，Profit_Margin=34.9%極高，Rev_Growth_YoY=30.4%成長強勁。Short_Float_Pct=1.0%極低，籌碼穩定。</div>
+  <div class="detail-box">📋 策略依據：均線多頭排列，RSI=66.4健康，VTF=1.05&gt;1.0，Momentum_ATR=2.17強勢，RS_vs_Sector=+3.3%領先板塊。</div>
+  <div class="trade-grid">
+    <div class="trade-cell">
+      <div class="trade-label">買入區間</div>
+      <div class="trade-val buy">$343～$347</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">目標價</div>
+      <div class="trade-val tgt">$385</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">止損</div>
+      <div class="trade-val stop">$335</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">持有週期</div>
+      <div class="trade-val">15</div>
+    </div>
+  </div>
+  <div class="risk-box">⚠️ 股價接近52週高點，且大盤SPY仍在EMA20之下，系統性風險需留意。</div>
+  <div class="detail-box">💡 信心評分依據：技術面與基本面俱佳，估值合理，產業趨勢向上，信心高。</div>
+</div>
+
+<div class="stock-card ">
+  <div class="card-header">
+    <div class="card-rank">2</div>
+    <div class="card-title">
+      <div class="card-symbol">CSX</div>
+      <div class="card-company">CSX Corporation</div>
+    </div>
+    <div class="card-price">
+      <span class="price-val">$52.81</span>
+      <span class="price-chg up">▲5.77%</span>
+    </div>
+  </div>
+  <div class="card-badges">
+    <span class="badge">📊 評分 100</span>
+    <span class="badge">信心 7/10</span>
+    <span class="badge">🏭 Industrials</span>
+    <span class="badge">📋 突破策略</span>
+  </div>
+  <div class="reason-box">🤖 CSX為工業板塊突破型個股，均線多頭排列，量能顯著放大。所屬產業ETF(XLI)5日上漲1.4%，提供產業支撐。基本面穩健：Fwd_PE=23.3合理，Profit_Margin=22.2%高，Rev_Growth_YoY=10.1%成長穩定。Short_Float_Pct=2.1%偏低。</div>
+  <div class="detail-box">📋 策略依據：VTF=0.94接近1.0，Close距High_20D($53.30)僅-0.9%，Vol_vs_20DAvg=2.23&gt;1.5攻擊量確認，RSI=74.8。</div>
+  <div class="trade-grid">
+    <div class="trade-cell">
+      <div class="trade-label">買入區間</div>
+      <div class="trade-val buy">$52.5～$53.0</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">目標價</div>
+      <div class="trade-val tgt">$58</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">止損</div>
+      <div class="trade-val stop">$51.0</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">持有週期</div>
+      <div class="trade-val">10</div>
+    </div>
+  </div>
+  <div class="risk-box">⚠️ 股價接近20日高點，突破後若量能不繼可能假突破；大盤仍在EMA20之下。</div>
+  <div class="detail-box">💡 信心評分依據：突破量能充足，但VTF未達1.5且大盤環境偏弱，信心中等。</div>
+</div>
+</div>
+<div class="section">
+  <div class="section-title">
+    🔄 重新入選，重置追蹤<span class="section-count">（1支）</span>
+  </div>
+  
+<div class="stock-card reset-card">
+  <div class="card-header">
+    <div class="card-rank">1</div>
+    <div class="card-title">
+      <div class="card-symbol">WAB</div>
+      <div class="card-company">Westinghouse Air Brake Technolo</div>
+    </div>
+    <div class="card-price">
+      <span class="price-val">$297.99</span>
+      <span class="price-chg up">▲2.76%</span>
+    </div>
+  </div>
+  <div class="card-badges">
+    <span class="badge">📊 評分 92</span>
+    <span class="badge">信心 8/10</span>
+    <span class="badge">🏭 Industrials</span>
+    <span class="badge">📋 動能策略</span>
+  </div>
+  <div class="reason-box">🤖 WAB為工業板塊強勢股，均線多頭排列完整，量價結構健康。所屬產業ETF(XLI)5日上漲1.4%，提供產業支撐。基本面方面，Fwd_PE=24.1雖略高於同業，但Profit_Margin為正且營收成長穩健，獲利品質良好。Short_Float_Pct=2.3%偏低，軋空風險有限。</div>
+  <div class="detail-box">📋 策略依據：均線多頭排列(EMA5&gt;EMA10&gt;EMA20&gt;EMA50)，RSI=73.4，VTF=1.76&gt;1.0，Momentum_ATR=1.81，RS_vs_Sector=+12.3%領先板塊。</div>
+  <div class="trade-grid">
+    <div class="trade-cell">
+      <div class="trade-label">買入區間</div>
+      <div class="trade-val buy">$289～$294</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">目標價</div>
+      <div class="trade-val tgt">$328</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">止損</div>
+      <div class="trade-val stop">$280</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">持有週期</div>
+      <div class="trade-val">15</div>
+    </div>
+  </div>
+  <div class="risk-box">⚠️ 股價接近52週高點，短線漲幅已大，需留意獲利回吐壓力。</div>
+  <div class="detail-box">💡 信心評分依據：技術面強勢且板塊領先，基本面穩健，信心高。但股價已高，追高風險略增，扣1分。</div>
+</div>
+</div>
+<div class="section">
+  <div class="section-title">
+    📋 明日掛單計畫<span class="section-count">（10支，名額 0，持倉已滿，明日不建議掛新單）</span>
+  </div>
+  
+<div class="track-item watch">
+  <div class="track-header">
+    <span class="track-symbol">#1 WAB</span>
+    <span class="track-name">Westinghouse Air Brake Technolo</span>
+    <span class="strategy-tag">動能策略</span>
+  </div>
+  <div class="track-status">⏸ 備援（名額外）｜信心 8/10｜L2 92 分</div>
+  <div class="track-prices">掛單價 $294.00｜買入區間 $289～$294｜止損 $280｜目標 $328｜剩 4 天觀察期</div>
+</div>
+
+<div class="track-item watch">
+  <div class="track-header">
+    <span class="track-symbol">#2 GPN</span>
+    <span class="track-name">Global Payments Inc.</span>
+    <span class="strategy-tag">動能策略</span>
+  </div>
+  <div class="track-status">⏸ 備援（名額外）｜信心 8/10｜L2 91 分</div>
+  <div class="track-prices">掛單價 $82.40｜買入區間 $79.4～$82.4｜止損 $76.2｜目標 $95｜剩 1 天觀察期</div>
+</div>
+
+<div class="track-item watch">
+  <div class="track-header">
+    <span class="track-symbol">#3 JPM</span>
+    <span class="track-name">JP Morgan Chase &amp; Co.</span>
+    <span class="strategy-tag">動能策略</span>
+  </div>
+  <div class="track-status">⏸ 備援（名額外）｜信心 8/10｜L2 91 分</div>
+  <div class="track-prices">掛單價 $347.00｜買入區間 $343～$347｜止損 $335｜目標 $385｜剩 4 天觀察期</div>
+</div>
+
+<div class="track-item watch">
+  <div class="track-header">
+    <span class="track-symbol">#4 CSX</span>
+    <span class="track-name">CSX Corporation</span>
+    <span class="strategy-tag">突破策略</span>
+  </div>
+  <div class="track-status">⏸ 備援（名額外）｜信心 7/10｜L2 100 分</div>
+  <div class="track-prices">掛單價 $53.00｜買入區間 $52.5～$53.0｜止損 $51.0｜目標 $58｜剩 4 天觀察期</div>
+</div>
+
+<div class="track-item watch">
+  <div class="track-header">
+    <span class="track-symbol">#5 EIX</span>
+    <span class="track-name">Edison International</span>
+    <span class="strategy-tag">動能策略</span>
+  </div>
+  <div class="track-status">⏸ 備援（名額外）｜信心 7/10｜L2 91 分</div>
+  <div class="track-prices">掛單價 $77.50｜買入區間 $76.5～$77.5｜止損 $75｜目標 $86｜剩 2 天觀察期</div>
+</div>
+
+<div class="track-item watch">
+  <div class="track-header">
+    <span class="track-symbol">#6 ODFL</span>
+    <span class="track-name">Old Dominion Freight Line, Inc.</span>
+    <span class="strategy-tag">動能策略</span>
+  </div>
+  <div class="track-status">⏸ 備援（名額外）｜信心 7/10｜L2 91 分</div>
+  <div class="track-prices">掛單價 $233.00｜買入區間 $230～$233｜止損 $223｜目標 $258｜剩 2 天觀察期</div>
+</div>
+
+<div class="track-item watch">
+  <div class="track-header">
+    <span class="track-symbol">#7 SJM</span>
+    <span class="track-name">The J.M. Smucker Company</span>
+    <span class="strategy-tag">動能策略</span>
+  </div>
+  <div class="track-status">⏸ 備援（名額外）｜信心 7/10｜L2 91 分</div>
+  <div class="track-prices">掛單價 $117.00｜買入區間 $115～$117｜止損 $112｜目標 $130｜剩 3 天觀察期</div>
+</div>
+
+<div class="track-item watch">
+  <div class="track-header">
+    <span class="track-symbol">#8 TRV</span>
+    <span class="track-name">The Travelers Companies, Inc.</span>
+    <span class="strategy-tag">動能策略</span>
+  </div>
+  <div class="track-status">⏸ 備援（名額外）｜信心 7/10｜L2 91 分</div>
+  <div class="track-prices">掛單價 $368.50｜買入區間 $354.3～$368.5｜止損 $345.0｜目標 $405｜剩 1 天觀察期</div>
+</div>
+
+<div class="track-item watch">
+  <div class="track-header">
+    <span class="track-symbol">#9 CF</span>
+    <span class="track-name">CF Industries Holdings, Inc.</span>
+    <span class="strategy-tag">動能策略</span>
+  </div>
+  <div class="track-status">⏸ 備援（名額外）｜信心 7/10｜L2 85 分</div>
+  <div class="track-prices">掛單價 $126.00｜買入區間 $124～$126｜止損 $120｜目標 $140｜剩 3 天觀察期</div>
+</div>
+
+<div class="track-item watch">
+  <div class="track-header">
+    <span class="track-symbol">#10 VLO</span>
+    <span class="track-name">Valero Energy Corporation</span>
+    <span class="strategy-tag">動能策略</span>
+  </div>
+  <div class="track-status">⏸ 備援（名額外）｜信心 7/10｜L2 85 分</div>
+  <div class="track-prices">掛單價 $313.30｜買入區間 $303.8～$313.3｜止損 $293.3｜目標 $345｜剩 1 天觀察期</div>
+</div>
+</div>
+
+  <div class="summary-box">
+    <h2>📈 今日統計</h2>
+    <div class="stat-row">
+      <div class="stat-group"><span class="stat-num c-active">8 / 5</span><span class="stat-lbl">持倉／上限</span></div>
+      <div class="stat-group"><span class="stat-num c-watch">9</span><span class="stat-lbl">支留意</span></div>
+      <div class="stat-group"><span class="stat-num c-invalid">0</span><span class="stat-lbl">支失效</span></div>
+    </div>
+    <div class="stat-row">
+      <div class="stat-group"><span class="stat-num c-new">2</span><span class="stat-lbl">支新增</span></div>
+      <div class="stat-group"><span class="stat-num c-reset">1</span><span class="stat-lbl">支重新入選</span></div>
+      <div class="stat-group"><span class="stat-num c-removed">2</span><span class="stat-lbl">支移除</span></div>
+      
+    </div>
+  </div>
+</div>
+</body>
+</html>

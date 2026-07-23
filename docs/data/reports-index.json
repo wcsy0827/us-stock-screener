@@ -158,5 +158,15 @@
     "new": 3,
     "reset": 0,
     "removed": 3
+  },
+  {
+    "date": "2026-07-23",
+    "weekday": "四",
+    "active": 8,
+    "watch": 9,
+    "invalid": 0,
+    "new": 2,
+    "reset": 1,
+    "removed": 2
   }
 ]
