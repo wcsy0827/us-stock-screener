@@ -209,6 +209,146 @@
         "return_pct": 7.61,
         "is_win": true
       }
+    },
+    {
+      "meta_data": {
+        "ticker": "WELL",
+        "company_name": "Welltower Inc.",
+        "sector": "Real Estate"
+      },
+      "signal_details": {
+        "signal_date": "2026-07-07",
+        "entry_regime": "BULL_TREND",
+        "market_breadth_pct": 68.0,
+        "vix_value": 16.13,
+        "l2_score": 91.38,
+        "assigned_strategy": "動能策略",
+        "ai_confidence": 8,
+        "ai_strategy_reason": "均線多頭，RSI=70.0，VTF=0.52，Momentum_ATR=6.56，RS=+2.7%，動能強勁。"
+      },
+      "execution_plan": {
+        "buy_zone_lower": 232.0,
+        "buy_zone_upper": 236.0,
+        "planned_target": "$261",
+        "planned_stop_loss": "$226.00"
+      },
+      "actual_outcome": {
+        "triggered_date": "2026-07-08",
+        "actual_entry_price": 236.0,
+        "exit_date": "2026-07-28",
+        "actual_exit_price": 243.57,
+        "exit_reason": "FORCE_EXPIRED",
+        "holding_days": 15
+      },
+      "performance_metrics": {
+        "return_pct": 3.21,
+        "is_win": true
+      }
+    },
+    {
+      "meta_data": {
+        "ticker": "STT",
+        "company_name": "State Street Corporation",
+        "sector": "Financial Services"
+      },
+      "signal_details": {
+        "signal_date": "2026-07-07",
+        "entry_regime": "BULL_TREND",
+        "market_breadth_pct": 68.0,
+        "vix_value": 16.13,
+        "l2_score": 91.38,
+        "assigned_strategy": "動能策略",
+        "ai_confidence": 9,
+        "ai_strategy_reason": "均線多頭排列，RSI=74.1，VTF=0.64，Momentum_ATR=4.4，RS_vs_Sector=+2.1%，符合動能策略條件。"
+      },
+      "execution_plan": {
+        "buy_zone_lower": 176.0,
+        "buy_zone_upper": 179.0,
+        "planned_target": "$198",
+        "planned_stop_loss": "$172.00"
+      },
+      "actual_outcome": {
+        "triggered_date": "2026-07-08",
+        "actual_entry_price": 179.0,
+        "exit_date": "2026-07-28",
+        "actual_exit_price": 182.57,
+        "exit_reason": "FORCE_EXPIRED",
+        "holding_days": 15
+      },
+      "performance_metrics": {
+        "return_pct": 1.99,
+        "is_win": true
+      }
+    },
+    {
+      "meta_data": {
+        "ticker": "XYL",
+        "company_name": "Xylem Inc.",
+        "sector": "Industrials"
+      },
+      "signal_details": {
+        "signal_date": "2026-07-07",
+        "entry_regime": "BULL_TREND",
+        "market_breadth_pct": 68.0,
+        "vix_value": 16.13,
+        "l2_score": 91.38,
+        "assigned_strategy": "動能策略",
+        "ai_confidence": 8,
+        "ai_strategy_reason": "均線多頭，RSI=68.5，VTF=0.98，Momentum_ATR=4.08，RS=+3.6%，動能策略條件完備。"
+      },
+      "execution_plan": {
+        "buy_zone_lower": 117.0,
+        "buy_zone_upper": 119.0,
+        "planned_target": "$133",
+        "planned_stop_loss": "$114.00"
+      },
+      "actual_outcome": {
+        "triggered_date": "2026-07-08",
+        "actual_entry_price": 119.0,
+        "exit_date": "2026-07-28",
+        "actual_exit_price": 124.97,
+        "exit_reason": "FORCE_EXPIRED",
+        "holding_days": 15
+      },
+      "performance_metrics": {
+        "return_pct": 5.02,
+        "is_win": true
+      }
+    },
+    {
+      "meta_data": {
+        "ticker": "AAPL",
+        "company_name": "Apple Inc.",
+        "sector": "Technology"
+      },
+      "signal_details": {
+        "signal_date": "2026-07-08",
+        "entry_regime": "BULL_TREND",
+        "market_breadth_pct": 66.9,
+        "vix_value": 16.79,
+        "l2_score": 85.0,
+        "assigned_strategy": "動能策略",
+        "ai_confidence": 8,
+        "ai_strategy_reason": "均線多頭排列，RSI=62.3健康，Momentum_ATR=2.74強勢，VTF=0.42正向。"
+      },
+      "execution_plan": {
+        "buy_zone_lower": 306.0,
+        "buy_zone_upper": 310.0,
+        "planned_target": "$340",
+        "planned_stop_loss": "$300.00"
+      },
+      "actual_outcome": {
+        "triggered_date": "2026-07-09",
+        "actual_entry_price": 310.0,
+        "exit_date": "2026-07-28",
+        "actual_exit_price": 340.0,
+        "exit_reason": "CLOSED_PROFIT",
+        "holding_days": 14
+      },
+      "performance_metrics": {
+        "return_pct": 9.68,
+        "is_win": true
+      }
     }
   ]
 }

@@ -1,30 +1,30 @@
 {
-  "generated_at_utc": "2026-07-27T22:36:54Z",
-  "market_date": "2026-07-27",
-  "total_settled": 5,
+  "generated_at_utc": "2026-07-28T22:37:22Z",
+  "market_date": "2026-07-28",
+  "total_settled": 6,
   "dimensions": {
     "by_regime": [
       {
         "key": "BULL_TREND",
-        "trades": 5,
-        "win_rate": 0.0,
-        "avg_return_pct": -4.45
+        "trades": 6,
+        "win_rate": 16.7,
+        "avg_return_pct": -2.44
       }
     ],
     "by_strategy": [
       {
         "key": "動能策略",
-        "trades": 5,
-        "win_rate": 0.0,
-        "avg_return_pct": -4.45
+        "trades": 6,
+        "win_rate": 16.7,
+        "avg_return_pct": -2.44
       }
     ],
     "by_sector": [
       {
         "key": "Industrials",
-        "trades": 2,
-        "win_rate": 0.0,
-        "avg_return_pct": -2.98
+        "trades": 3,
+        "win_rate": 33.3,
+        "avg_return_pct": 0.55
       },
       {
         "key": "Consumer Cyclical",
@@ -47,7 +47,8 @@
     ]
   },
   "prompt_lines": [
-    "【Regime】BULL_TREND：5 筆結算，勝率 0.0%，平均報酬 -4.45%",
-    "【策略】動能策略：5 筆結算，勝率 0.0%，平均報酬 -4.45%"
+    "【Regime】BULL_TREND：6 筆結算，勝率 16.7%，平均報酬 -2.44%",
+    "【策略】動能策略：6 筆結算，勝率 16.7%，平均報酬 -2.44%",
+    "【產業】Industrials：3 筆結算，勝率 33.3%，平均報酬 +0.55%"
   ]
 }
