@@ -349,6 +349,76 @@
         "return_pct": 9.68,
         "is_win": true
       }
+    },
+    {
+      "meta_data": {
+        "ticker": "WM",
+        "company_name": "Waste Management, Inc.",
+        "sector": "Industrials"
+      },
+      "signal_details": {
+        "signal_date": "2026-07-07",
+        "entry_regime": "BULL_TREND",
+        "market_breadth_pct": 68.0,
+        "vix_value": 16.13,
+        "l2_score": 85.0,
+        "assigned_strategy": "動能策略",
+        "ai_confidence": 7,
+        "ai_strategy_reason": "均線多頭，RSI=69.7，VTF=0.66，Momentum_ATR=4.29，RS=+8.0%，動能策略條件符合。"
+      },
+      "execution_plan": {
+        "buy_zone_lower": 226.0,
+        "buy_zone_upper": 231.0,
+        "planned_target": "$261",
+        "planned_stop_loss": "$221.00"
+      },
+      "actual_outcome": {
+        "triggered_date": "2026-07-09",
+        "actual_entry_price": 231.0,
+        "exit_date": "2026-07-29",
+        "actual_exit_price": 236.6,
+        "exit_reason": "FORCE_EXPIRED",
+        "holding_days": 15
+      },
+      "performance_metrics": {
+        "return_pct": 2.42,
+        "is_win": true
+      }
+    },
+    {
+      "meta_data": {
+        "ticker": "RSG",
+        "company_name": "Republic Services, Inc.",
+        "sector": "Industrials"
+      },
+      "signal_details": {
+        "signal_date": "2026-07-07",
+        "entry_regime": "BULL_TREND",
+        "market_breadth_pct": 68.0,
+        "vix_value": 16.13,
+        "l2_score": 85.0,
+        "assigned_strategy": "動能策略",
+        "ai_confidence": 7,
+        "ai_strategy_reason": "均線多頭，RSI=65.7，VTF=0.64，Momentum_ATR=4.02，RS=+6.2%，動能策略條件符合。"
+      },
+      "execution_plan": {
+        "buy_zone_lower": 214.0,
+        "buy_zone_upper": 218.0,
+        "planned_target": "$245",
+        "planned_stop_loss": "$209.00"
+      },
+      "actual_outcome": {
+        "triggered_date": "2026-07-09",
+        "actual_entry_price": 218.0,
+        "exit_date": "2026-07-29",
+        "actual_exit_price": 218.91,
+        "exit_reason": "FORCE_EXPIRED",
+        "holding_days": 15
+      },
+      "performance_metrics": {
+        "return_pct": 0.42,
+        "is_win": true
+      }
     }
   ]
 }
