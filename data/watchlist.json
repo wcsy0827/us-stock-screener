@@ -29,12 +29,13 @@
       "2026-07-24",
       "2026-07-27",
       "2026-07-28",
-      "2026-07-29"
+      "2026-07-29",
+      "2026-07-30"
     ],
     "status": "active",
     "invalid_reason": null,
     "watch_days": 2,
-    "active_days": 16,
+    "active_days": 17,
     "signal_date_close": 308.86,
     "active_entry_price": 295.0045350903574,
     "active_start_date": "2026-07-08",
@@ -45,7 +46,7 @@
     "l2_score": 91.38,
     "ai_confidence": 7,
     "ai_strategy_reason": "均線多頭排列，RSI=71.8，VTF=1.19，Momentum_ATR=3.55，RS_vs_Sector=+13.0%，符合動能策略。",
-    "current_price": 294.27,
+    "current_price": 300.2,
     "planned_stop_loss": 280.0,
     "effective_stop_loss": 280.0,
     "is_breakeven_locked": false,
@@ -66,12 +67,13 @@
     "tracked_dates": [
       "2026-07-27",
       "2026-07-28",
-      "2026-07-29"
+      "2026-07-29",
+      "2026-07-30"
     ],
     "status": "watch",
     "invalid_reason": null,
     "slot_blocked_today": false,
-    "watch_days": 2,
+    "watch_days": 3,
     "active_days": 0,
     "signal_date_close": 300.8999938964844,
     "active_entry_price": null,
@@ -83,7 +85,7 @@
     "l2_score": 85.0,
     "ai_confidence": 7,
     "ai_strategy_reason": "均線多頭排列，RSI=74.5、VTF=0.43、Momentum_ATR=3.64，動能強勁。",
-    "current_price": 291.76
+    "current_price": 292.46
   },
   {
     "symbol": "JPM",
@@ -101,13 +103,14 @@
       "2026-07-24",
       "2026-07-27",
       "2026-07-28",
-      "2026-07-29"
+      "2026-07-29",
+      "2026-07-30"
     ],
     "status": "active",
     "invalid_reason": null,
     "slot_blocked_today": false,
     "watch_days": 3,
-    "active_days": 1,
+    "active_days": 2,
     "signal_date_close": 349.8999938964844,
     "active_entry_price": 347.0,
     "active_start_date": "2026-07-29",
@@ -118,11 +121,11 @@
     "l2_score": 91.38,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭排列，RSI=66.4健康，VTF=1.05>1.0，Momentum_ATR=2.17強勢，RS_vs_Sector=+3.3%領先板塊。",
-    "current_price": 344.71,
+    "current_price": 350.85,
     "planned_stop_loss": 335.0,
     "effective_stop_loss": 335.0,
     "is_breakeven_locked": false,
-    "highest_close_since_active": 344.71
+    "highest_close_since_active": 350.85
   },
   {
     "symbol": "RTX",
@@ -138,16 +141,17 @@
     "tracked_dates": [
       "2026-07-27",
       "2026-07-28",
-      "2026-07-29"
+      "2026-07-29",
+      "2026-07-30"
     ],
-    "status": "watch",
+    "status": "active",
     "invalid_reason": null,
-    "slot_blocked_today": true,
+    "slot_blocked_today": false,
     "watch_days": 2,
-    "active_days": 0,
+    "active_days": 1,
     "signal_date_close": 218.4199981689453,
-    "active_entry_price": null,
-    "active_start_date": null,
+    "active_entry_price": 216.0,
+    "active_start_date": "2026-07-30",
     "date_added": "2026-07-27",
     "entry_regime": "BULL_TREND",
     "market_breadth_pct": 64.2,
@@ -155,7 +159,11 @@
     "l2_score": 91.38,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭排列，RSI=77、VTF=0.5、Momentum_ATR=5.13，動能極強。",
-    "current_price": 215.25
+    "current_price": 214.38,
+    "planned_stop_loss": 206.0,
+    "effective_stop_loss": 206.0,
+    "is_breakeven_locked": false,
+    "highest_close_since_active": 214.38
   },
   {
     "symbol": "GM",
@@ -171,7 +179,8 @@
     "tracked_dates": [
       "2026-07-27",
       "2026-07-28",
-      "2026-07-29"
+      "2026-07-29",
+      "2026-07-30"
     ],
     "status": "invalid",
     "invalid_reason": "已追高，錯過買點",
@@ -188,7 +197,7 @@
     "l2_score": 85.0,
     "ai_confidence": 7,
     "ai_strategy_reason": "均線多頭排列，RSI=69、VTF=0.97、Momentum_ATR=3.19，動能強勁。",
-    "current_price": 89.4
+    "current_price": 88.4
   },
   {
     "symbol": "NUE",
@@ -203,13 +212,14 @@
     "strategy": "動能策略",
     "tracked_dates": [
       "2026-07-28",
-      "2026-07-29"
+      "2026-07-29",
+      "2026-07-30"
     ],
     "status": "active",
     "invalid_reason": null,
     "slot_blocked_today": false,
     "watch_days": 0,
-    "active_days": 1,
+    "active_days": 2,
     "signal_date_close": 265.6199951171875,
     "active_entry_price": 262.0,
     "active_start_date": "2026-07-29",
@@ -220,11 +230,11 @@
     "l2_score": 100.0,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭排列，RSI=71.8，VTF=0.92，Momentum_ATR=5.39，RS_vs_Sector=+9.6%，動能強勁。",
-    "current_price": 256.02,
+    "current_price": 257.04,
     "planned_stop_loss": 250.0,
     "effective_stop_loss": 250.0,
     "is_breakeven_locked": false,
-    "highest_close_since_active": 256.02
+    "highest_close_since_active": 257.04
   },
   {
     "symbol": "HPQ",
@@ -239,12 +249,13 @@
     "strategy": "動能策略",
     "tracked_dates": [
       "2026-07-28",
-      "2026-07-29"
+      "2026-07-29",
+      "2026-07-30"
     ],
     "status": "watch",
     "invalid_reason": null,
     "slot_blocked_today": true,
-    "watch_days": 1,
+    "watch_days": 2,
     "active_days": 0,
     "signal_date_close": 28.290000915527344,
     "active_entry_price": null,
@@ -256,7 +267,7 @@
     "l2_score": 100.0,
     "ai_confidence": 7,
     "ai_strategy_reason": "均線多頭排列，RSI=72.4，VTF=1.45，Momentum_ATR=5.98，RS_vs_Sector=+17.8%。",
-    "current_price": 28.41
+    "current_price": 26.86
   },
   {
     "symbol": "SOLV",
@@ -271,12 +282,13 @@
     "strategy": "動能策略",
     "tracked_dates": [
       "2026-07-28",
-      "2026-07-29"
+      "2026-07-29",
+      "2026-07-30"
     ],
     "status": "watch",
     "invalid_reason": null,
     "slot_blocked_today": false,
-    "watch_days": 1,
+    "watch_days": 2,
     "active_days": 0,
     "signal_date_close": 86.16999816894531,
     "active_entry_price": null,
@@ -288,37 +300,7 @@
     "l2_score": 100.0,
     "ai_confidence": 6,
     "ai_strategy_reason": "均線多頭排列，RSI=68.7，VTF=0.99，Momentum_ATR=3.50，RS_vs_Sector=+6.1%。",
-    "current_price": 88.55
-  },
-  {
-    "symbol": "MRSH",
-    "name": "Marsh",
-    "sector": "Financial Services",
-    "buy_zone": "$195～$197",
-    "buy_zone_lower": 195.0,
-    "buy_zone_upper": 197.0,
-    "target": "$218",
-    "stop_loss": "$190",
-    "hold_period": "10",
-    "strategy": "突破策略",
-    "tracked_dates": [
-      "2026-07-29"
-    ],
-    "status": "watch",
-    "invalid_reason": null,
-    "slot_blocked_today": false,
-    "watch_days": 0,
-    "active_days": 0,
-    "signal_date_close": 197.58999633789062,
-    "active_entry_price": null,
-    "active_start_date": null,
-    "date_added": "2026-07-29",
-    "entry_regime": "CONSOLIDATION_VOLATILE",
-    "market_breadth_pct": 69.4,
-    "vix_value": 20.66,
-    "l2_score": 88.75,
-    "ai_confidence": 8,
-    "ai_strategy_reason": "VTF=1.22>1.0，MACD POS_INC，RSI=74 在 50~65 之外但仍在健康區，Vol_vs_20DAvg=1.6>1.5 量能確認。"
+    "current_price": 86.82
   },
   {
     "symbol": "STE",
@@ -332,12 +314,13 @@
     "hold_period": "10",
     "strategy": "突破策略",
     "tracked_dates": [
-      "2026-07-29"
+      "2026-07-29",
+      "2026-07-30"
     ],
     "status": "watch",
     "invalid_reason": null,
-    "slot_blocked_today": false,
-    "watch_days": 0,
+    "slot_blocked_today": true,
+    "watch_days": 1,
     "active_days": 0,
     "signal_date_close": 234.8300018310547,
     "active_entry_price": null,
@@ -348,6 +331,97 @@
     "vix_value": 20.66,
     "l2_score": 85.0,
     "ai_confidence": 6,
-    "ai_strategy_reason": "VTF=0.69<2.0 但 MACD POS_INC，RSI=68.4 接近區間，Vol_vs_20DAvg=1.09 未達 1.5，訊號偏弱。"
+    "ai_strategy_reason": "VTF=0.69<2.0 但 MACD POS_INC，RSI=68.4 接近區間，Vol_vs_20DAvg=1.09 未達 1.5，訊號偏弱。",
+    "current_price": 231.21
+  },
+  {
+    "symbol": "MSFT",
+    "name": "Microsoft Corporation",
+    "sector": "Technology",
+    "buy_zone": "$435～$448",
+    "buy_zone_lower": 435.0,
+    "buy_zone_upper": 448.0,
+    "target": "$496",
+    "stop_loss": "$420",
+    "hold_period": "15",
+    "strategy": "動能策略",
+    "tracked_dates": [
+      "2026-07-30"
+    ],
+    "status": "watch",
+    "invalid_reason": null,
+    "slot_blocked_today": false,
+    "watch_days": 0,
+    "active_days": 0,
+    "signal_date_close": 451.1000061035156,
+    "active_entry_price": null,
+    "active_start_date": null,
+    "date_added": "2026-07-30",
+    "entry_regime": "BULL_TREND",
+    "market_breadth_pct": 67.8,
+    "vix_value": 17.09,
+    "l2_score": 100.0,
+    "ai_confidence": 9,
+    "ai_strategy_reason": "均線多頭排列完整，RSI=71.8健康，VTF=1.04帶量推進，Momentum_ATR=3.81強勢動能。"
+  },
+  {
+    "symbol": "CMG",
+    "name": "Chipotle Mexican Grill, Inc.",
+    "sector": "Consumer Cyclical",
+    "buy_zone": "$37.0～$38.0",
+    "buy_zone_lower": 37.0,
+    "buy_zone_upper": 38.0,
+    "target": "$42.3",
+    "stop_loss": "$35.5",
+    "hold_period": "15",
+    "strategy": "動能策略",
+    "tracked_dates": [
+      "2026-07-30"
+    ],
+    "status": "watch",
+    "invalid_reason": null,
+    "slot_blocked_today": false,
+    "watch_days": 0,
+    "active_days": 0,
+    "signal_date_close": 38.52000045776367,
+    "active_entry_price": null,
+    "active_start_date": null,
+    "date_added": "2026-07-30",
+    "entry_regime": "BULL_TREND",
+    "market_breadth_pct": 67.8,
+    "vix_value": 17.09,
+    "l2_score": 100.0,
+    "ai_confidence": 8,
+    "ai_strategy_reason": "均線多頭排列，RSI=68.7健康，VTF=1.09帶量推進，Momentum_ATR=2.08強勢。"
+  },
+  {
+    "symbol": "CPAY",
+    "name": "Corpay, Inc.",
+    "sector": "Technology",
+    "buy_zone": "$380～$388",
+    "buy_zone_lower": 380.0,
+    "buy_zone_upper": 388.0,
+    "target": "$429",
+    "stop_loss": "$369",
+    "hold_period": "15",
+    "strategy": "動能策略",
+    "tracked_dates": [
+      "2026-07-30"
+    ],
+    "status": "watch",
+    "invalid_reason": null,
+    "slot_blocked_today": false,
+    "watch_days": 0,
+    "active_days": 0,
+    "signal_date_close": 390.1199951171875,
+    "active_entry_price": null,
+    "active_start_date": null,
+    "date_added": "2026-07-30",
+    "entry_regime": "BULL_TREND",
+    "market_breadth_pct": 67.8,
+    "vix_value": 17.09,
+    "l2_score": 85.0,
+    "ai_confidence": 8,
+    "ai_strategy_reason": "均線多頭排列，RSI=66.8健康，VTF=0.32量能溫和，Momentum_ATR=3.39強勢。"
   }
 ]

@@ -419,6 +419,41 @@
         "return_pct": 0.42,
         "is_win": true
       }
+    },
+    {
+      "meta_data": {
+        "ticker": "MRSH",
+        "company_name": "Marsh",
+        "sector": "Financial Services"
+      },
+      "signal_details": {
+        "signal_date": "2026-07-29",
+        "entry_regime": "CONSOLIDATION_VOLATILE",
+        "market_breadth_pct": 69.4,
+        "vix_value": 20.66,
+        "l2_score": 88.75,
+        "assigned_strategy": "突破策略",
+        "ai_confidence": 8,
+        "ai_strategy_reason": "VTF=1.22>1.0，MACD POS_INC，RSI=74 在 50~65 之外但仍在健康區，Vol_vs_20DAvg=1.6>1.5 量能確認。"
+      },
+      "execution_plan": {
+        "buy_zone_lower": 195.0,
+        "buy_zone_upper": 197.0,
+        "planned_target": "$218",
+        "planned_stop_loss": "$190.00"
+      },
+      "actual_outcome": {
+        "triggered_date": "2026-07-30",
+        "actual_entry_price": 197.0,
+        "exit_date": "2026-07-30",
+        "actual_exit_price": 190.0,
+        "exit_reason": "CLOSED_LOSS",
+        "holding_days": 1
+      },
+      "performance_metrics": {
+        "return_pct": -3.55,
+        "is_win": false
+      }
     }
   ]
 }
