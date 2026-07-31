@@ -1,7 +1,7 @@
 {
-  "generated_at_utc": "2026-07-30T22:39:04Z",
-  "market_date": "2026-07-30",
-  "total_settled": 12,
+  "generated_at_utc": "2026-07-31T22:37:20Z",
+  "market_date": "2026-07-31",
+  "total_settled": 13,
   "dimensions": {
     "by_regime": [
       {
@@ -9,6 +9,12 @@
         "trades": 12,
         "win_rate": 58.3,
         "avg_return_pct": 0.67
+      },
+      {
+        "key": "CONSOLIDATION_VOLATILE",
+        "trades": 1,
+        "win_rate": 0.0,
+        "avg_return_pct": -3.55
       }
     ],
     "by_strategy": [
@@ -17,6 +23,12 @@
         "trades": 12,
         "win_rate": 58.3,
         "avg_return_pct": 0.67
+      },
+      {
+        "key": "突破策略",
+        "trades": 1,
+        "win_rate": 0.0,
+        "avg_return_pct": -3.55
       }
     ],
     "by_sector": [
@@ -28,9 +40,9 @@
       },
       {
         "key": "Financial Services",
-        "trades": 2,
-        "win_rate": 50.0,
-        "avg_return_pct": 0.99
+        "trades": 3,
+        "win_rate": 33.3,
+        "avg_return_pct": -0.52
       },
       {
         "key": "Technology",
@@ -55,6 +67,7 @@
   "prompt_lines": [
     "【Regime】BULL_TREND：12 筆結算，勝率 58.3%，平均報酬 +0.67%",
     "【策略】動能策略：12 筆結算，勝率 58.3%，平均報酬 +0.67%",
-    "【產業】Industrials：6 筆結算，勝率 66.7%，平均報酬 +1.59%"
+    "【產業】Industrials：6 筆結算，勝率 66.7%，平均報酬 +1.59%",
+    "【產業】Financial Services：3 筆結算，勝率 33.3%，平均報酬 -0.52%"
   ]
 }

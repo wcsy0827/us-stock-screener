@@ -30,12 +30,13 @@
       "2026-07-27",
       "2026-07-28",
       "2026-07-29",
-      "2026-07-30"
+      "2026-07-30",
+      "2026-07-31"
     ],
     "status": "active",
     "invalid_reason": null,
     "watch_days": 2,
-    "active_days": 17,
+    "active_days": 18,
     "signal_date_close": 308.86,
     "active_entry_price": 295.0045350903574,
     "active_start_date": "2026-07-08",
@@ -46,46 +47,12 @@
     "l2_score": 91.38,
     "ai_confidence": 7,
     "ai_strategy_reason": "均線多頭排列，RSI=71.8，VTF=1.19，Momentum_ATR=3.55，RS_vs_Sector=+13.0%，符合動能策略。",
-    "current_price": 300.2,
+    "current_price": 294.89,
     "planned_stop_loss": 280.0,
     "effective_stop_loss": 280.0,
     "is_breakeven_locked": false,
     "highest_close_since_active": 296.8374705601679,
     "slot_blocked_today": false
-  },
-  {
-    "symbol": "WAB",
-    "name": "Westinghouse Air Brake Technolo",
-    "sector": "Industrials",
-    "buy_zone": "$278～$287",
-    "buy_zone_lower": 278.0,
-    "buy_zone_upper": 287.0,
-    "target": "$330",
-    "stop_loss": "$270",
-    "hold_period": "20",
-    "strategy": "動能策略",
-    "tracked_dates": [
-      "2026-07-27",
-      "2026-07-28",
-      "2026-07-29",
-      "2026-07-30"
-    ],
-    "status": "watch",
-    "invalid_reason": null,
-    "slot_blocked_today": false,
-    "watch_days": 3,
-    "active_days": 0,
-    "signal_date_close": 300.8999938964844,
-    "active_entry_price": null,
-    "active_start_date": null,
-    "date_added": "2026-07-27",
-    "entry_regime": "BULL_TREND",
-    "market_breadth_pct": 64.2,
-    "vix_value": 18.67,
-    "l2_score": 85.0,
-    "ai_confidence": 7,
-    "ai_strategy_reason": "均線多頭排列，RSI=74.5、VTF=0.43、Momentum_ATR=3.64，動能強勁。",
-    "current_price": 292.46
   },
   {
     "symbol": "JPM",
@@ -104,13 +71,14 @@
       "2026-07-27",
       "2026-07-28",
       "2026-07-29",
-      "2026-07-30"
+      "2026-07-30",
+      "2026-07-31"
     ],
     "status": "active",
     "invalid_reason": null,
     "slot_blocked_today": false,
     "watch_days": 3,
-    "active_days": 2,
+    "active_days": 3,
     "signal_date_close": 349.8999938964844,
     "active_entry_price": 347.0,
     "active_start_date": "2026-07-29",
@@ -121,11 +89,11 @@
     "l2_score": 91.38,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭排列，RSI=66.4健康，VTF=1.05>1.0，Momentum_ATR=2.17強勢，RS_vs_Sector=+3.3%領先板塊。",
-    "current_price": 350.85,
+    "current_price": 351.79,
     "planned_stop_loss": 335.0,
     "effective_stop_loss": 335.0,
     "is_breakeven_locked": false,
-    "highest_close_since_active": 350.85
+    "highest_close_since_active": 351.79
   },
   {
     "symbol": "RTX",
@@ -142,13 +110,14 @@
       "2026-07-27",
       "2026-07-28",
       "2026-07-29",
-      "2026-07-30"
+      "2026-07-30",
+      "2026-07-31"
     ],
     "status": "active",
     "invalid_reason": null,
     "slot_blocked_today": false,
     "watch_days": 2,
-    "active_days": 1,
+    "active_days": 2,
     "signal_date_close": 218.4199981689453,
     "active_entry_price": 216.0,
     "active_start_date": "2026-07-30",
@@ -159,45 +128,11 @@
     "l2_score": 91.38,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭排列，RSI=77、VTF=0.5、Momentum_ATR=5.13，動能極強。",
-    "current_price": 214.38,
+    "current_price": 215.22,
     "planned_stop_loss": 206.0,
     "effective_stop_loss": 206.0,
     "is_breakeven_locked": false,
-    "highest_close_since_active": 214.38
-  },
-  {
-    "symbol": "GM",
-    "name": "General Motors Company",
-    "sector": "Consumer Cyclical",
-    "buy_zone": "$80～$82",
-    "buy_zone_lower": 80.0,
-    "buy_zone_upper": 82.0,
-    "target": "$96",
-    "stop_loss": "$78",
-    "hold_period": "20",
-    "strategy": "動能策略",
-    "tracked_dates": [
-      "2026-07-27",
-      "2026-07-28",
-      "2026-07-29",
-      "2026-07-30"
-    ],
-    "status": "invalid",
-    "invalid_reason": "已追高，錯過買點",
-    "slot_blocked_today": false,
-    "watch_days": 0,
-    "active_days": 0,
-    "signal_date_close": 87.04000091552734,
-    "active_entry_price": null,
-    "active_start_date": null,
-    "date_added": "2026-07-27",
-    "entry_regime": "BULL_TREND",
-    "market_breadth_pct": 64.2,
-    "vix_value": 18.67,
-    "l2_score": 85.0,
-    "ai_confidence": 7,
-    "ai_strategy_reason": "均線多頭排列，RSI=69、VTF=0.97、Momentum_ATR=3.19，動能強勁。",
-    "current_price": 88.4
+    "highest_close_since_active": 215.22
   },
   {
     "symbol": "NUE",
@@ -213,13 +148,14 @@
     "tracked_dates": [
       "2026-07-28",
       "2026-07-29",
-      "2026-07-30"
+      "2026-07-30",
+      "2026-07-31"
     ],
     "status": "active",
     "invalid_reason": null,
     "slot_blocked_today": false,
     "watch_days": 0,
-    "active_days": 2,
+    "active_days": 3,
     "signal_date_close": 265.6199951171875,
     "active_entry_price": 262.0,
     "active_start_date": "2026-07-29",
@@ -230,11 +166,11 @@
     "l2_score": 100.0,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭排列，RSI=71.8，VTF=0.92，Momentum_ATR=5.39，RS_vs_Sector=+9.6%，動能強勁。",
-    "current_price": 257.04,
+    "current_price": 257.29,
     "planned_stop_loss": 250.0,
     "effective_stop_loss": 250.0,
     "is_breakeven_locked": false,
-    "highest_close_since_active": 257.04
+    "highest_close_since_active": 257.29
   },
   {
     "symbol": "HPQ",
@@ -250,12 +186,13 @@
     "tracked_dates": [
       "2026-07-28",
       "2026-07-29",
-      "2026-07-30"
+      "2026-07-30",
+      "2026-07-31"
     ],
     "status": "watch",
     "invalid_reason": null,
     "slot_blocked_today": true,
-    "watch_days": 2,
+    "watch_days": 3,
     "active_days": 0,
     "signal_date_close": 28.290000915527344,
     "active_entry_price": null,
@@ -267,7 +204,7 @@
     "l2_score": 100.0,
     "ai_confidence": 7,
     "ai_strategy_reason": "均線多頭排列，RSI=72.4，VTF=1.45，Momentum_ATR=5.98，RS_vs_Sector=+17.8%。",
-    "current_price": 26.86
+    "current_price": 27.27
   },
   {
     "symbol": "SOLV",
@@ -283,12 +220,13 @@
     "tracked_dates": [
       "2026-07-28",
       "2026-07-29",
-      "2026-07-30"
+      "2026-07-30",
+      "2026-07-31"
     ],
     "status": "watch",
     "invalid_reason": null,
-    "slot_blocked_today": false,
-    "watch_days": 2,
+    "slot_blocked_today": true,
+    "watch_days": 3,
     "active_days": 0,
     "signal_date_close": 86.16999816894531,
     "active_entry_price": null,
@@ -300,39 +238,7 @@
     "l2_score": 100.0,
     "ai_confidence": 6,
     "ai_strategy_reason": "均線多頭排列，RSI=68.7，VTF=0.99，Momentum_ATR=3.50，RS_vs_Sector=+6.1%。",
-    "current_price": 86.82
-  },
-  {
-    "symbol": "STE",
-    "name": "STERIS plc (Ireland)",
-    "sector": "Healthcare",
-    "buy_zone": "$232～$234",
-    "buy_zone_lower": 232.0,
-    "buy_zone_upper": 234.0,
-    "target": "$258",
-    "stop_loss": "$226",
-    "hold_period": "10",
-    "strategy": "突破策略",
-    "tracked_dates": [
-      "2026-07-29",
-      "2026-07-30"
-    ],
-    "status": "watch",
-    "invalid_reason": null,
-    "slot_blocked_today": true,
-    "watch_days": 1,
-    "active_days": 0,
-    "signal_date_close": 234.8300018310547,
-    "active_entry_price": null,
-    "active_start_date": null,
-    "date_added": "2026-07-29",
-    "entry_regime": "CONSOLIDATION_VOLATILE",
-    "market_breadth_pct": 69.4,
-    "vix_value": 20.66,
-    "l2_score": 85.0,
-    "ai_confidence": 6,
-    "ai_strategy_reason": "VTF=0.69<2.0 但 MACD POS_INC，RSI=68.4 接近區間，Vol_vs_20DAvg=1.09 未達 1.5，訊號偏弱。",
-    "current_price": 231.21
+    "current_price": 85.44
   },
   {
     "symbol": "MSFT",
@@ -346,12 +252,13 @@
     "hold_period": "15",
     "strategy": "動能策略",
     "tracked_dates": [
-      "2026-07-30"
+      "2026-07-30",
+      "2026-07-31"
     ],
     "status": "watch",
     "invalid_reason": null,
     "slot_blocked_today": false,
-    "watch_days": 0,
+    "watch_days": 1,
     "active_days": 0,
     "signal_date_close": 451.1000061035156,
     "active_entry_price": null,
@@ -362,7 +269,8 @@
     "vix_value": 17.09,
     "l2_score": 100.0,
     "ai_confidence": 9,
-    "ai_strategy_reason": "均線多頭排列完整，RSI=71.8健康，VTF=1.04帶量推進，Momentum_ATR=3.81強勢動能。"
+    "ai_strategy_reason": "均線多頭排列完整，RSI=71.8健康，VTF=1.04帶量推進，Momentum_ATR=3.81強勢動能。",
+    "current_price": 464.72
   },
   {
     "symbol": "CMG",
@@ -376,12 +284,13 @@
     "hold_period": "15",
     "strategy": "動能策略",
     "tracked_dates": [
-      "2026-07-30"
+      "2026-07-30",
+      "2026-07-31"
     ],
     "status": "watch",
     "invalid_reason": null,
-    "slot_blocked_today": false,
-    "watch_days": 0,
+    "slot_blocked_today": true,
+    "watch_days": 1,
     "active_days": 0,
     "signal_date_close": 38.52000045776367,
     "active_entry_price": null,
@@ -392,7 +301,8 @@
     "vix_value": 17.09,
     "l2_score": 100.0,
     "ai_confidence": 8,
-    "ai_strategy_reason": "均線多頭排列，RSI=68.7健康，VTF=1.09帶量推進，Momentum_ATR=2.08強勢。"
+    "ai_strategy_reason": "均線多頭排列，RSI=68.7健康，VTF=1.09帶量推進，Momentum_ATR=2.08強勢。",
+    "current_price": 37.22
   },
   {
     "symbol": "CPAY",
@@ -406,12 +316,13 @@
     "hold_period": "15",
     "strategy": "動能策略",
     "tracked_dates": [
-      "2026-07-30"
+      "2026-07-30",
+      "2026-07-31"
     ],
     "status": "watch",
     "invalid_reason": null,
-    "slot_blocked_today": false,
-    "watch_days": 0,
+    "slot_blocked_today": true,
+    "watch_days": 1,
     "active_days": 0,
     "signal_date_close": 390.1199951171875,
     "active_entry_price": null,
@@ -422,6 +333,97 @@
     "vix_value": 17.09,
     "l2_score": 85.0,
     "ai_confidence": 8,
-    "ai_strategy_reason": "均線多頭排列，RSI=66.8健康，VTF=0.32量能溫和，Momentum_ATR=3.39強勢。"
+    "ai_strategy_reason": "均線多頭排列，RSI=66.8健康，VTF=0.32量能溫和，Momentum_ATR=3.39強勢。",
+    "current_price": 382.11
+  },
+  {
+    "symbol": "WY",
+    "name": "Weyerhaeuser Company",
+    "sector": "Real Estate",
+    "buy_zone": "$24.4～$24.8",
+    "buy_zone_lower": 24.4,
+    "buy_zone_upper": 24.8,
+    "target": "$27.5",
+    "stop_loss": "$23.7",
+    "hold_period": "15",
+    "strategy": "動能策略",
+    "tracked_dates": [
+      "2026-07-31"
+    ],
+    "status": "watch",
+    "invalid_reason": null,
+    "slot_blocked_today": false,
+    "watch_days": 0,
+    "active_days": 0,
+    "signal_date_close": 25.030000686645508,
+    "active_entry_price": null,
+    "active_start_date": null,
+    "date_added": "2026-07-31",
+    "entry_regime": "BULL_TREND",
+    "market_breadth_pct": 64.6,
+    "vix_value": 15.99,
+    "l2_score": 100.0,
+    "ai_confidence": 8,
+    "ai_strategy_reason": "均線多頭排列，RSI=58.5，VTF=1.47，Momentum_ATR=2.25，RS_vs_Sector=+6.2%，符合動能策略條件。"
+  },
+  {
+    "symbol": "DXCM",
+    "name": "DexCom, Inc.",
+    "sector": "Healthcare",
+    "buy_zone": "$81.5～$83.0",
+    "buy_zone_lower": 81.5,
+    "buy_zone_upper": 83.0,
+    "target": "$93.0",
+    "stop_loss": "$78.3",
+    "hold_period": "10",
+    "strategy": "突破策略",
+    "tracked_dates": [
+      "2026-07-31"
+    ],
+    "status": "watch",
+    "invalid_reason": null,
+    "slot_blocked_today": false,
+    "watch_days": 0,
+    "active_days": 0,
+    "signal_date_close": 83.44999694824219,
+    "active_entry_price": null,
+    "active_start_date": null,
+    "date_added": "2026-07-31",
+    "entry_regime": "BULL_TREND",
+    "market_breadth_pct": 64.6,
+    "vix_value": 15.99,
+    "l2_score": 100.0,
+    "ai_confidence": 8,
+    "ai_strategy_reason": "VTF=1.20，Close_Price距High_20D=-1.5%，Vol_vs_20DAvg=2.43，符合突破策略條件。"
+  },
+  {
+    "symbol": "AMZN",
+    "name": "Amazon.com, Inc.",
+    "sector": "Consumer Cyclical",
+    "buy_zone": "$268.0～$271.0",
+    "buy_zone_lower": 268.0,
+    "buy_zone_upper": 271.0,
+    "target": "$300.0",
+    "stop_loss": "$260.0",
+    "hold_period": "10",
+    "strategy": "突破策略",
+    "tracked_dates": [
+      "2026-07-31"
+    ],
+    "status": "watch",
+    "invalid_reason": null,
+    "slot_blocked_today": false,
+    "watch_days": 0,
+    "active_days": 0,
+    "signal_date_close": 271.5799865722656,
+    "active_entry_price": null,
+    "active_start_date": null,
+    "date_added": "2026-07-31",
+    "entry_regime": "BULL_TREND",
+    "market_breadth_pct": 64.6,
+    "vix_value": 15.99,
+    "l2_score": 93.33,
+    "ai_confidence": 7,
+    "ai_strategy_reason": "VTF=1.52，Close_Price距High_20D=-0.6%，Vol_vs_20DAvg=2.77，符合突破策略條件。"
   }
 ]
