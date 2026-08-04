@@ -32,12 +32,13 @@
       "2026-07-29",
       "2026-07-30",
       "2026-07-31",
-      "2026-08-03"
+      "2026-08-03",
+      "2026-08-04"
     ],
     "status": "active",
     "invalid_reason": null,
     "watch_days": 2,
-    "active_days": 19,
+    "active_days": 20,
     "signal_date_close": 308.86,
     "active_entry_price": 295.0045350903574,
     "active_start_date": "2026-07-08",
@@ -48,7 +49,7 @@
     "l2_score": 91.38,
     "ai_confidence": 7,
     "ai_strategy_reason": "均線多頭排列，RSI=71.8，VTF=1.19，Momentum_ATR=3.55，RS_vs_Sector=+13.0%，符合動能策略。",
-    "current_price": 292.94,
+    "current_price": 294.71,
     "planned_stop_loss": 280.0,
     "effective_stop_loss": 280.0,
     "is_breakeven_locked": false,
@@ -74,13 +75,14 @@
       "2026-07-29",
       "2026-07-30",
       "2026-07-31",
-      "2026-08-03"
+      "2026-08-03",
+      "2026-08-04"
     ],
     "status": "active",
     "invalid_reason": null,
     "slot_blocked_today": false,
     "watch_days": 3,
-    "active_days": 4,
+    "active_days": 5,
     "signal_date_close": 349.8999938964844,
     "active_entry_price": 347.0,
     "active_start_date": "2026-07-29",
@@ -91,11 +93,11 @@
     "l2_score": 91.38,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭排列，RSI=66.4健康，VTF=1.05>1.0，Momentum_ATR=2.17強勢，RS_vs_Sector=+3.3%領先板塊。",
-    "current_price": 352.64,
+    "current_price": 357.52,
     "planned_stop_loss": 335.0,
     "effective_stop_loss": 335.0,
     "is_breakeven_locked": false,
-    "highest_close_since_active": 352.64
+    "highest_close_since_active": 357.52
   },
   {
     "symbol": "RTX",
@@ -114,13 +116,14 @@
       "2026-07-29",
       "2026-07-30",
       "2026-07-31",
-      "2026-08-03"
+      "2026-08-03",
+      "2026-08-04"
     ],
     "status": "active",
     "invalid_reason": null,
     "slot_blocked_today": false,
     "watch_days": 2,
-    "active_days": 3,
+    "active_days": 4,
     "signal_date_close": 218.4199981689453,
     "active_entry_price": 216.0,
     "active_start_date": "2026-07-30",
@@ -131,11 +134,11 @@
     "l2_score": 91.38,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭排列，RSI=77、VTF=0.5、Momentum_ATR=5.13，動能極強。",
-    "current_price": 216.65,
+    "current_price": 217.93,
     "planned_stop_loss": 206.0,
     "effective_stop_loss": 206.0,
     "is_breakeven_locked": false,
-    "highest_close_since_active": 216.65
+    "highest_close_since_active": 217.93
   },
   {
     "symbol": "NUE",
@@ -153,13 +156,14 @@
       "2026-07-29",
       "2026-07-30",
       "2026-07-31",
-      "2026-08-03"
+      "2026-08-03",
+      "2026-08-04"
     ],
     "status": "active",
     "invalid_reason": null,
     "slot_blocked_today": false,
     "watch_days": 0,
-    "active_days": 4,
+    "active_days": 5,
     "signal_date_close": 265.6199951171875,
     "active_entry_price": 262.0,
     "active_start_date": "2026-07-29",
@@ -170,11 +174,11 @@
     "l2_score": 100.0,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭排列，RSI=71.8，VTF=0.92，Momentum_ATR=5.39，RS_vs_Sector=+9.6%，動能強勁。",
-    "current_price": 261.28,
+    "current_price": 274.04,
     "planned_stop_loss": 250.0,
     "effective_stop_loss": 250.0,
     "is_breakeven_locked": false,
-    "highest_close_since_active": 261.28
+    "highest_close_since_active": 274.04
   },
   {
     "symbol": "MSFT",
@@ -188,12 +192,13 @@
     "hold_period": "20",
     "strategy": "動能策略",
     "tracked_dates": [
-      "2026-08-03"
+      "2026-08-03",
+      "2026-08-04"
     ],
     "status": "watch",
     "invalid_reason": null,
-    "slot_blocked_today": false,
-    "watch_days": 0,
+    "slot_blocked_today": true,
+    "watch_days": 1,
     "active_days": 0,
     "signal_date_close": 487.6499938964844,
     "active_entry_price": null,
@@ -205,40 +210,7 @@
     "l2_score": 91.38,
     "ai_confidence": 7,
     "ai_strategy_reason": "均線多頭排列，RSI=78.3、VTF=0.71、Momentum_ATR=5.88、RS=+19.9%，動能極強。",
-    "current_price": 487.65
-  },
-  {
-    "symbol": "CMG",
-    "name": "Chipotle Mexican Grill, Inc.",
-    "sector": "Consumer Cyclical",
-    "buy_zone": "$37.0～$38.0",
-    "buy_zone_lower": 37.0,
-    "buy_zone_upper": 38.0,
-    "target": "$42.3",
-    "stop_loss": "$35.5",
-    "hold_period": "15",
-    "strategy": "動能策略",
-    "tracked_dates": [
-      "2026-07-30",
-      "2026-07-31",
-      "2026-08-03"
-    ],
-    "status": "watch",
-    "invalid_reason": null,
-    "slot_blocked_today": true,
-    "watch_days": 2,
-    "active_days": 0,
-    "signal_date_close": 38.52000045776367,
-    "active_entry_price": null,
-    "active_start_date": null,
-    "date_added": "2026-07-30",
-    "entry_regime": "BULL_TREND",
-    "market_breadth_pct": 67.8,
-    "vix_value": 17.09,
-    "l2_score": 100.0,
-    "ai_confidence": 8,
-    "ai_strategy_reason": "均線多頭排列，RSI=68.7健康，VTF=1.09帶量推進，Momentum_ATR=2.08強勢。",
-    "current_price": 37.46
+    "current_price": 492.81
   },
   {
     "symbol": "CPAY",
@@ -254,12 +226,13 @@
     "tracked_dates": [
       "2026-07-30",
       "2026-07-31",
-      "2026-08-03"
+      "2026-08-03",
+      "2026-08-04"
     ],
     "status": "watch",
     "invalid_reason": null,
     "slot_blocked_today": true,
-    "watch_days": 2,
+    "watch_days": 3,
     "active_days": 0,
     "signal_date_close": 390.1199951171875,
     "active_entry_price": null,
@@ -271,7 +244,7 @@
     "l2_score": 85.0,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭排列，RSI=66.8健康，VTF=0.32量能溫和，Momentum_ATR=3.39強勢。",
-    "current_price": 385.78
+    "current_price": 396.52
   },
   {
     "symbol": "WY",
@@ -286,12 +259,13 @@
     "strategy": "動能策略",
     "tracked_dates": [
       "2026-07-31",
-      "2026-08-03"
+      "2026-08-03",
+      "2026-08-04"
     ],
     "status": "watch",
     "invalid_reason": null,
-    "slot_blocked_today": false,
-    "watch_days": 1,
+    "slot_blocked_today": true,
+    "watch_days": 2,
     "active_days": 0,
     "signal_date_close": 25.030000686645508,
     "active_entry_price": null,
@@ -303,7 +277,7 @@
     "l2_score": 100.0,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭排列，RSI=58.5，VTF=1.47，Momentum_ATR=2.25，RS_vs_Sector=+6.2%，符合動能策略條件。",
-    "current_price": 25.23
+    "current_price": 25.83
   },
   {
     "symbol": "DXCM",
@@ -317,12 +291,13 @@
     "hold_period": "20",
     "strategy": "動能策略",
     "tracked_dates": [
-      "2026-08-03"
+      "2026-08-03",
+      "2026-08-04"
     ],
     "status": "watch",
     "invalid_reason": null,
     "slot_blocked_today": false,
-    "watch_days": 0,
+    "watch_days": 1,
     "active_days": 0,
     "signal_date_close": 87.30999755859375,
     "active_entry_price": null,
@@ -334,7 +309,7 @@
     "l2_score": 100.0,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線完美多頭排列，RSI=72.6、VTF=1.49、Momentum_ATR=4.22、RS=+19.6%，量價結構健康。",
-    "current_price": 87.31
+    "current_price": 86.94
   },
   {
     "symbol": "AMZN",
@@ -348,12 +323,13 @@
     "hold_period": "20",
     "strategy": "動能策略",
     "tracked_dates": [
-      "2026-08-03"
+      "2026-08-03",
+      "2026-08-04"
     ],
     "status": "watch",
     "invalid_reason": null,
-    "slot_blocked_today": false,
-    "watch_days": 0,
+    "slot_blocked_today": true,
+    "watch_days": 1,
     "active_days": 0,
     "signal_date_close": 284.0199890136719,
     "active_entry_price": null,
@@ -365,6 +341,66 @@
     "l2_score": 92.5,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭排列，RSI=72.2、VTF=0.46、Momentum_ATR=3.83、RS=+17.9%，動能強勁。",
-    "current_price": 284.02
+    "current_price": 277.42
+  },
+  {
+    "symbol": "PLTR",
+    "name": "Palantir Technologies Inc.",
+    "sector": "Technology",
+    "buy_zone": "$154～$159",
+    "buy_zone_lower": 154.0,
+    "buy_zone_upper": 159.0,
+    "target": "$180",
+    "stop_loss": "$145",
+    "hold_period": "10",
+    "strategy": "動能策略",
+    "tracked_dates": [
+      "2026-08-04"
+    ],
+    "status": "watch",
+    "invalid_reason": null,
+    "slot_blocked_today": false,
+    "watch_days": 0,
+    "active_days": 0,
+    "signal_date_close": 162.66000366210938,
+    "active_entry_price": null,
+    "active_start_date": null,
+    "date_added": "2026-08-04",
+    "entry_regime": "BULL_TREND",
+    "market_breadth_pct": 65.7,
+    "vix_value": 16.5,
+    "l2_score": 93.33,
+    "ai_confidence": 8,
+    "ai_strategy_reason": "RSI=72.7、VTF=3.16、Momentum_ATR=3.52、RS=+20%，均線多頭排列，量價結構強勁。"
+  },
+  {
+    "symbol": "HPE",
+    "name": "Hewlett Packard Enterprise Comp",
+    "sector": "Technology",
+    "buy_zone": "$50～$51",
+    "buy_zone_lower": 50.0,
+    "buy_zone_upper": 51.0,
+    "target": "$58",
+    "stop_loss": "$47",
+    "hold_period": "15",
+    "strategy": "動能策略",
+    "tracked_dates": [
+      "2026-08-04"
+    ],
+    "status": "watch",
+    "invalid_reason": null,
+    "slot_blocked_today": false,
+    "watch_days": 0,
+    "active_days": 0,
+    "signal_date_close": 52.38999938964844,
+    "active_entry_price": null,
+    "active_start_date": null,
+    "date_added": "2026-08-04",
+    "entry_regime": "BULL_TREND",
+    "market_breadth_pct": 65.7,
+    "vix_value": 16.5,
+    "l2_score": 91.38,
+    "ai_confidence": 6,
+    "ai_strategy_reason": "RSI=63.5、VTF=0.44、Momentum_ATR=2.60、RS=+5.7%，均線多頭排列，動能健康。"
   }
 ]

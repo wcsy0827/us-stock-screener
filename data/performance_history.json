@@ -454,6 +454,41 @@
         "return_pct": -3.55,
         "is_win": false
       }
+    },
+    {
+      "meta_data": {
+        "ticker": "CMG",
+        "company_name": "Chipotle Mexican Grill, Inc.",
+        "sector": "Consumer Cyclical"
+      },
+      "signal_details": {
+        "signal_date": "2026-07-30",
+        "entry_regime": "BULL_TREND",
+        "market_breadth_pct": 67.8,
+        "vix_value": 17.09,
+        "l2_score": 100.0,
+        "assigned_strategy": "動能策略",
+        "ai_confidence": 8,
+        "ai_strategy_reason": "均線多頭排列，RSI=68.7健康，VTF=1.09帶量推進，Momentum_ATR=2.08強勢。"
+      },
+      "execution_plan": {
+        "buy_zone_lower": 37.0,
+        "buy_zone_upper": 38.0,
+        "planned_target": "$42.3",
+        "planned_stop_loss": "$35.50"
+      },
+      "actual_outcome": {
+        "triggered_date": "2026-08-04",
+        "actual_entry_price": 38.0,
+        "exit_date": "2026-08-04",
+        "actual_exit_price": 35.5,
+        "exit_reason": "CLOSED_LOSS",
+        "holding_days": 1
+      },
+      "performance_metrics": {
+        "return_pct": -6.58,
+        "is_win": false
+      }
     }
   ]
 }
