@@ -1,62 +1,5 @@
 [
   {
-    "symbol": "APD",
-    "name": "Air Products and Chemicals, Inc",
-    "sector": "Basic Materials",
-    "buy_zone": "$286～$290",
-    "buy_zone_lower": 286.0,
-    "buy_zone_upper": 290.0,
-    "target": "$340",
-    "stop_loss": "$280",
-    "hold_period": "20",
-    "strategy": "動能策略",
-    "tracked_dates": [
-      "2026-07-02",
-      "2026-07-06",
-      "2026-07-07",
-      "2026-07-08",
-      "2026-07-09",
-      "2026-07-10",
-      "2026-07-13",
-      "2026-07-14",
-      "2026-07-15",
-      "2026-07-16",
-      "2026-07-17",
-      "2026-07-20",
-      "2026-07-21",
-      "2026-07-22",
-      "2026-07-23",
-      "2026-07-24",
-      "2026-07-27",
-      "2026-07-28",
-      "2026-07-29",
-      "2026-07-30",
-      "2026-07-31",
-      "2026-08-03",
-      "2026-08-04"
-    ],
-    "status": "active",
-    "invalid_reason": null,
-    "watch_days": 2,
-    "active_days": 20,
-    "signal_date_close": 308.86,
-    "active_entry_price": 295.0045350903574,
-    "active_start_date": "2026-07-08",
-    "date_added": "2026-07-02",
-    "entry_regime": "BULL_TREND",
-    "market_breadth_pct": 64.8,
-    "vix_value": 15.81,
-    "l2_score": 91.38,
-    "ai_confidence": 7,
-    "ai_strategy_reason": "均線多頭排列，RSI=71.8，VTF=1.19，Momentum_ATR=3.55，RS_vs_Sector=+13.0%，符合動能策略。",
-    "current_price": 294.71,
-    "planned_stop_loss": 280.0,
-    "effective_stop_loss": 280.0,
-    "is_breakeven_locked": false,
-    "highest_close_since_active": 296.8374705601679,
-    "slot_blocked_today": false
-  },
-  {
     "symbol": "JPM",
     "name": "JP Morgan Chase & Co.",
     "sector": "Financial Services",
@@ -76,13 +19,14 @@
       "2026-07-30",
       "2026-07-31",
       "2026-08-03",
-      "2026-08-04"
+      "2026-08-04",
+      "2026-08-05"
     ],
     "status": "active",
     "invalid_reason": null,
     "slot_blocked_today": false,
     "watch_days": 3,
-    "active_days": 5,
+    "active_days": 6,
     "signal_date_close": 349.8999938964844,
     "active_entry_price": 347.0,
     "active_start_date": "2026-07-29",
@@ -93,11 +37,11 @@
     "l2_score": 91.38,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭排列，RSI=66.4健康，VTF=1.05>1.0，Momentum_ATR=2.17強勢，RS_vs_Sector=+3.3%領先板塊。",
-    "current_price": 357.52,
+    "current_price": 359.24,
     "planned_stop_loss": 335.0,
     "effective_stop_loss": 335.0,
     "is_breakeven_locked": false,
-    "highest_close_since_active": 357.52
+    "highest_close_since_active": 359.24
   },
   {
     "symbol": "RTX",
@@ -117,13 +61,14 @@
       "2026-07-30",
       "2026-07-31",
       "2026-08-03",
-      "2026-08-04"
+      "2026-08-04",
+      "2026-08-05"
     ],
     "status": "active",
     "invalid_reason": null,
     "slot_blocked_today": false,
     "watch_days": 2,
-    "active_days": 4,
+    "active_days": 5,
     "signal_date_close": 218.4199981689453,
     "active_entry_price": 216.0,
     "active_start_date": "2026-07-30",
@@ -134,11 +79,11 @@
     "l2_score": 91.38,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭排列，RSI=77、VTF=0.5、Momentum_ATR=5.13，動能極強。",
-    "current_price": 217.93,
+    "current_price": 222.31,
     "planned_stop_loss": 206.0,
     "effective_stop_loss": 206.0,
     "is_breakeven_locked": false,
-    "highest_close_since_active": 217.93
+    "highest_close_since_active": 222.31
   },
   {
     "symbol": "NUE",
@@ -157,13 +102,14 @@
       "2026-07-30",
       "2026-07-31",
       "2026-08-03",
-      "2026-08-04"
+      "2026-08-04",
+      "2026-08-05"
     ],
     "status": "active",
     "invalid_reason": null,
     "slot_blocked_today": false,
     "watch_days": 0,
-    "active_days": 5,
+    "active_days": 6,
     "signal_date_close": 265.6199951171875,
     "active_entry_price": 262.0,
     "active_start_date": "2026-07-29",
@@ -174,11 +120,11 @@
     "l2_score": 100.0,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭排列，RSI=71.8，VTF=0.92，Momentum_ATR=5.39，RS_vs_Sector=+9.6%，動能強勁。",
-    "current_price": 274.04,
+    "current_price": 274.74,
     "planned_stop_loss": 250.0,
     "effective_stop_loss": 250.0,
     "is_breakeven_locked": false,
-    "highest_close_since_active": 274.04
+    "highest_close_since_active": 274.74
   },
   {
     "symbol": "MSFT",
@@ -193,12 +139,13 @@
     "strategy": "動能策略",
     "tracked_dates": [
       "2026-08-03",
-      "2026-08-04"
+      "2026-08-04",
+      "2026-08-05"
     ],
     "status": "watch",
     "invalid_reason": null,
-    "slot_blocked_today": true,
-    "watch_days": 1,
+    "slot_blocked_today": false,
+    "watch_days": 2,
     "active_days": 0,
     "signal_date_close": 487.6499938964844,
     "active_entry_price": null,
@@ -210,41 +157,7 @@
     "l2_score": 91.38,
     "ai_confidence": 7,
     "ai_strategy_reason": "均線多頭排列，RSI=78.3、VTF=0.71、Momentum_ATR=5.88、RS=+19.9%，動能極強。",
-    "current_price": 492.81
-  },
-  {
-    "symbol": "CPAY",
-    "name": "Corpay, Inc.",
-    "sector": "Technology",
-    "buy_zone": "$380～$388",
-    "buy_zone_lower": 380.0,
-    "buy_zone_upper": 388.0,
-    "target": "$429",
-    "stop_loss": "$369",
-    "hold_period": "15",
-    "strategy": "動能策略",
-    "tracked_dates": [
-      "2026-07-30",
-      "2026-07-31",
-      "2026-08-03",
-      "2026-08-04"
-    ],
-    "status": "watch",
-    "invalid_reason": null,
-    "slot_blocked_today": true,
-    "watch_days": 3,
-    "active_days": 0,
-    "signal_date_close": 390.1199951171875,
-    "active_entry_price": null,
-    "active_start_date": null,
-    "date_added": "2026-07-30",
-    "entry_regime": "BULL_TREND",
-    "market_breadth_pct": 67.8,
-    "vix_value": 17.09,
-    "l2_score": 85.0,
-    "ai_confidence": 8,
-    "ai_strategy_reason": "均線多頭排列，RSI=66.8健康，VTF=0.32量能溫和，Momentum_ATR=3.39強勢。",
-    "current_price": 396.52
+    "current_price": 487.46
   },
   {
     "symbol": "WY",
@@ -260,12 +173,13 @@
     "tracked_dates": [
       "2026-07-31",
       "2026-08-03",
-      "2026-08-04"
+      "2026-08-04",
+      "2026-08-05"
     ],
     "status": "watch",
     "invalid_reason": null,
-    "slot_blocked_today": true,
-    "watch_days": 2,
+    "slot_blocked_today": false,
+    "watch_days": 3,
     "active_days": 0,
     "signal_date_close": 25.030000686645508,
     "active_entry_price": null,
@@ -277,7 +191,7 @@
     "l2_score": 100.0,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭排列，RSI=58.5，VTF=1.47，Momentum_ATR=2.25，RS_vs_Sector=+6.2%，符合動能策略條件。",
-    "current_price": 25.83
+    "current_price": 25.84
   },
   {
     "symbol": "DXCM",
@@ -292,16 +206,17 @@
     "strategy": "動能策略",
     "tracked_dates": [
       "2026-08-03",
-      "2026-08-04"
+      "2026-08-04",
+      "2026-08-05"
     ],
-    "status": "watch",
+    "status": "active",
     "invalid_reason": null,
     "slot_blocked_today": false,
     "watch_days": 1,
-    "active_days": 0,
+    "active_days": 1,
     "signal_date_close": 87.30999755859375,
-    "active_entry_price": null,
-    "active_start_date": null,
+    "active_entry_price": 86.0,
+    "active_start_date": "2026-08-05",
     "date_added": "2026-08-03",
     "entry_regime": "BULL_TREND",
     "market_breadth_pct": 64.2,
@@ -309,7 +224,11 @@
     "l2_score": 100.0,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線完美多頭排列，RSI=72.6、VTF=1.49、Momentum_ATR=4.22、RS=+19.6%，量價結構健康。",
-    "current_price": 86.94
+    "current_price": 82.66,
+    "planned_stop_loss": 80.0,
+    "effective_stop_loss": 80.0,
+    "is_breakeven_locked": false,
+    "highest_close_since_active": 82.66
   },
   {
     "symbol": "AMZN",
@@ -324,12 +243,13 @@
     "strategy": "動能策略",
     "tracked_dates": [
       "2026-08-03",
-      "2026-08-04"
+      "2026-08-04",
+      "2026-08-05"
     ],
     "status": "watch",
     "invalid_reason": null,
     "slot_blocked_today": true,
-    "watch_days": 1,
+    "watch_days": 2,
     "active_days": 0,
     "signal_date_close": 284.0199890136719,
     "active_entry_price": null,
@@ -341,7 +261,7 @@
     "l2_score": 92.5,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭排列，RSI=72.2、VTF=0.46、Momentum_ATR=3.83、RS=+17.9%，動能強勁。",
-    "current_price": 277.42
+    "current_price": 272.65
   },
   {
     "symbol": "PLTR",
@@ -355,12 +275,13 @@
     "hold_period": "10",
     "strategy": "動能策略",
     "tracked_dates": [
-      "2026-08-04"
+      "2026-08-04",
+      "2026-08-05"
     ],
     "status": "watch",
     "invalid_reason": null,
-    "slot_blocked_today": false,
-    "watch_days": 0,
+    "slot_blocked_today": true,
+    "watch_days": 1,
     "active_days": 0,
     "signal_date_close": 162.66000366210938,
     "active_entry_price": null,
@@ -371,7 +292,8 @@
     "vix_value": 16.5,
     "l2_score": 93.33,
     "ai_confidence": 8,
-    "ai_strategy_reason": "RSI=72.7、VTF=3.16、Momentum_ATR=3.52、RS=+20%，均線多頭排列，量價結構強勁。"
+    "ai_strategy_reason": "RSI=72.7、VTF=3.16、Momentum_ATR=3.52、RS=+20%，均線多頭排列，量價結構強勁。",
+    "current_price": 158.43
   },
   {
     "symbol": "HPE",
@@ -385,12 +307,13 @@
     "hold_period": "15",
     "strategy": "動能策略",
     "tracked_dates": [
-      "2026-08-04"
+      "2026-08-04",
+      "2026-08-05"
     ],
     "status": "watch",
     "invalid_reason": null,
     "slot_blocked_today": false,
-    "watch_days": 0,
+    "watch_days": 1,
     "active_days": 0,
     "signal_date_close": 52.38999938964844,
     "active_entry_price": null,
@@ -401,6 +324,97 @@
     "vix_value": 16.5,
     "l2_score": 91.38,
     "ai_confidence": 6,
-    "ai_strategy_reason": "RSI=63.5、VTF=0.44、Momentum_ATR=2.60、RS=+5.7%，均線多頭排列，動能健康。"
+    "ai_strategy_reason": "RSI=63.5、VTF=0.44、Momentum_ATR=2.60、RS=+5.7%，均線多頭排列，動能健康。",
+    "current_price": 53.22
+  },
+  {
+    "symbol": "AMGN",
+    "name": "Amgen Inc.",
+    "sector": "Healthcare",
+    "buy_zone": "$396～$404",
+    "buy_zone_lower": 396.0,
+    "buy_zone_upper": 404.0,
+    "target": "$449",
+    "stop_loss": "$385",
+    "hold_period": "15",
+    "strategy": "動能策略",
+    "tracked_dates": [
+      "2026-08-05"
+    ],
+    "status": "watch",
+    "invalid_reason": null,
+    "slot_blocked_today": false,
+    "watch_days": 0,
+    "active_days": 0,
+    "signal_date_close": 407.8299865722656,
+    "active_entry_price": null,
+    "active_start_date": null,
+    "date_added": "2026-08-05",
+    "entry_regime": "BULL_TREND",
+    "market_breadth_pct": 67.4,
+    "vix_value": 15.81,
+    "l2_score": 100.0,
+    "ai_confidence": 8,
+    "ai_strategy_reason": "均線多頭排列，RSI=72.5，VTF=0.73，Momentum_ATR=3.82，RS=+4.8%，動能強勁。"
+  },
+  {
+    "symbol": "EMR",
+    "name": "Emerson Electric Company",
+    "sector": "Industrials",
+    "buy_zone": "$158～$161",
+    "buy_zone_lower": 158.0,
+    "buy_zone_upper": 161.0,
+    "target": "$179",
+    "stop_loss": "$153",
+    "hold_period": "15",
+    "strategy": "動能策略",
+    "tracked_dates": [
+      "2026-08-05"
+    ],
+    "status": "watch",
+    "invalid_reason": null,
+    "slot_blocked_today": false,
+    "watch_days": 0,
+    "active_days": 0,
+    "signal_date_close": 162.47000122070312,
+    "active_entry_price": null,
+    "active_start_date": null,
+    "date_added": "2026-08-05",
+    "entry_regime": "BULL_TREND",
+    "market_breadth_pct": 67.4,
+    "vix_value": 15.81,
+    "l2_score": 97.75,
+    "ai_confidence": 8,
+    "ai_strategy_reason": "均線多頭排列，RSI=72.5，VTF=0.79，Momentum_ATR=5.06，RS=+4.8%，動能強勁。"
+  },
+  {
+    "symbol": "MOS",
+    "name": "Mosaic Company (The)",
+    "sector": "Basic Materials",
+    "buy_zone": "$22.5～$23.2",
+    "buy_zone_lower": 22.5,
+    "buy_zone_upper": 23.2,
+    "target": "$26",
+    "stop_loss": "$21.5",
+    "hold_period": "15",
+    "strategy": "動能策略",
+    "tracked_dates": [
+      "2026-08-05"
+    ],
+    "status": "watch",
+    "invalid_reason": null,
+    "slot_blocked_today": false,
+    "watch_days": 0,
+    "active_days": 0,
+    "signal_date_close": 23.40999984741211,
+    "active_entry_price": null,
+    "active_start_date": null,
+    "date_added": "2026-08-05",
+    "entry_regime": "BULL_TREND",
+    "market_breadth_pct": 67.4,
+    "vix_value": 15.81,
+    "l2_score": 93.0,
+    "ai_confidence": 7,
+    "ai_strategy_reason": "均線多頭排列，RSI=58.6，VTF=1.20，Momentum_ATR=2.68，RS=+0.9%，動能穩健。"
   }
 ]

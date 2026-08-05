@@ -489,6 +489,41 @@
         "return_pct": -6.58,
         "is_win": false
       }
+    },
+    {
+      "meta_data": {
+        "ticker": "APD",
+        "company_name": "Air Products and Chemicals, Inc",
+        "sector": "Basic Materials"
+      },
+      "signal_details": {
+        "signal_date": "2026-07-02",
+        "entry_regime": "BULL_TREND",
+        "market_breadth_pct": 64.8,
+        "vix_value": 15.81,
+        "l2_score": 91.38,
+        "assigned_strategy": "動能策略",
+        "ai_confidence": 7,
+        "ai_strategy_reason": "均線多頭排列，RSI=71.8，VTF=1.19，Momentum_ATR=3.55，RS_vs_Sector=+13.0%，符合動能策略。"
+      },
+      "execution_plan": {
+        "buy_zone_lower": 286.0,
+        "buy_zone_upper": 290.0,
+        "planned_target": "$340",
+        "planned_stop_loss": "$280.00"
+      },
+      "actual_outcome": {
+        "triggered_date": "2026-07-08",
+        "actual_entry_price": 295.0045350903574,
+        "exit_date": "2026-08-05",
+        "actual_exit_price": 295.09,
+        "exit_reason": "FORCE_EXPIRED",
+        "holding_days": 21
+      },
+      "performance_metrics": {
+        "return_pct": 0.03,
+        "is_win": true
+      }
     }
   ]
 }
