@@ -102,6 +102,18 @@ def publish(
 - **不變**：`_INFO_HTML`／`_CSS`／`_build_index()` 既有的「改動後必須 `sync_index()` 重新生成 `docs/index.html`」規則不變，本次連結列的新增同樣完整走過這個流程；`docs/index.html` 與 `_build_index()` 輸出仍需全等（已驗證通過）。
 - **捨棄**：把技術文件內容也寫成 `publisher.py` 的模組層級字串常數並由 `sync_index()`／新函式生成（純靜態長文不需要模板化，徒增 `publisher.py` 體積且無實質收益）；放進 `docs/reports/` 目錄（該目錄語意是「每日報告」，會被 `reports-index.json` 動態渲染邏輯誤認為一筆報告）。
 
+### DD-11: 延長狀態顯示與延長停利線
+
+- **背景**：`tracker.py` DD-21 讓動能/突破策略到期時、收盤仍貼近峰值（回撤 <3%）的部位獲得有界延長（最多再 10 個交易日），而非到期即砍。使用者手動跟單，若報告仍顯示「持倉 18 / 15 天」這種數字，會誤以為是 bug（分子大於分母），且不知道延長期間該盯哪個價位出場。
+- **選擇**：
+  1. `_tracking_row()` active 分支：`active_days > hold_limit`（該分支既有的 `hold_limit` 本地解析值）時，狀態文字改為「持倉 {active_days} 天（已到期延長 第 {active_days - hold_limit}/{EXPIRY_EXTENSION_MAX_DAYS} 天）✅」，取代原「持倉 X / Y 天」；同一分支的價格列附加「延長停利線 ${highest_close_since_active × (1 - EXPIRY_TRAIL_RETRACE_PCT):.2f}」（`highest_close_since_active` 缺失時不顯示該段）。
+  2. `_settled_row()` 的 `FORCE_EXPIRED` 文案分兩種：`active_days > hold_period`（用 `tracker._parse_hold_period()` 解析，非本地 ad-hoc 解析）時顯示「⏰ 到期延長後趨勢轉弱（共持倉 {active_days} 天），強制出場」；否則維持原「⏰ 持倉期限（{active_days} 天）已到，強制出場」文案，區分純到期與延長後出場兩種情境。
+  3. `EXPIRY_EXTENSION_MAX_DAYS`／`EXPIRY_TRAIL_RETRACE_PCT` 自 `tracker` import（比照 DD-7 `TRAILING_ACTIVATION_PCT` 先例），不在 `publisher.py` 內重複定義常數值。
+  4. `_INFO_HTML` 的「⏰ 到期出場」列改寫為完整靜態說明（比照 DD-6/DD-8 慣例寫死數字：3%、10 天），不插值 runtime 常數，維持全等守門測試不受 `.env` 差異影響。
+- **原因**：使用者手動跟單需要知道「這個部位為什麼還在」以及「該在什麼價位出場」，延長態與延長停利線是延續 DD-7（動態止損/移動停利觸發線顯示）同一設計原則——系統內部邏輯的動態調整，必須同步反映在報告上，否則使用者仍照舊門檻操作，帳實脫節。
+- **捨棄**：新增獨立 CSS class 標記延長態（既有 `.track-item.active` 樣式已足夠，純文字差異不需要新樣式，避免 `_CSS` 變動擴大 index.html 再生成的比對面積，呼應 DD-8 同類取捨）；延長停利線使用系統當下即時計算的 ATR 錨定門檻（`tracker.py` DD-21 已將此列為明知取捨、待樣本累積後再評估，`publisher.py` 顯示層不應超前於 tracker 尚未實作的邏輯）。
+- → 詳見 `plans/2026-08-06-expiry-trend-extension.md`
+
 ## Acceptance Criteria
 
 - [ ] 每日報告頁標題顯示「美股資料截止日：YYYY-MM-DD（週X）」

@@ -367,13 +367,86 @@ class TestCheckSettlement:
         assert result is None
 
     def test_force_expired_on_hold_period_reached(self):
-        entry = _active_entry(hold_period="5", active_days=5, target="$200")
+        """反轉策略不受 DD-21 延伸白名單覆蓋，到期一律強制出場，作為通用到期測試。"""
+        entry = _active_entry(strategy="反轉策略", hold_period="5", active_days=5, target="$200")
         result = tracker._check_settlement(entry, price=101, today_high=102, today_low=100)
         assert result == (tracker.EXIT_EXPIRED, 101)
 
     def test_no_trigger_returns_none(self):
         entry = _active_entry(hold_period="10", active_days=1, target="$200")
         result = tracker._check_settlement(entry, price=101, today_high=102, today_low=100)
+        assert result is None
+
+
+# ── _check_settlement：到期趨勢延伸（DD-21）──────────────────────────
+
+class TestCheckSettlementExpiryExtension:
+    def test_momentum_at_expiry_close_to_peak_grants_extension(self):
+        """案例 1：動能策略到期日、收盤回撤 <3% → None（獲延長）。
+        此案例在舊碼（DD-21 之前）必紅：舊碼在 active_days>=hold_limit 時
+        無條件回傳 FORCE_EXPIRED，不看回撤幅度。"""
+        entry = _active_entry(strategy="動能策略", hold_period="10", active_days=10,
+                               highest_close_since_active=100.0, target="$200")
+        result = tracker._check_settlement(entry, price=98.5, today_high=99, today_low=97)
+        assert result is None
+
+    def test_momentum_at_expiry_retraced_3pct_expires(self):
+        """案例 2：動能策略到期日、收盤回撤 ≥3% → (FORCE_EXPIRED, close)。"""
+        entry = _active_entry(strategy="動能策略", hold_period="10", active_days=10,
+                               highest_close_since_active=100.0, target="$200")
+        result = tracker._check_settlement(entry, price=97, today_high=98, today_low=96)
+        assert result == (tracker.EXIT_EXPIRED, 97)
+
+    def test_reversal_strategy_never_extends(self):
+        """案例 3：反轉策略到期 → 一律 FORCE_EXPIRED，即使回撤 0%（貼峰值）。"""
+        entry = _active_entry(strategy="反轉策略", hold_period="10", active_days=10,
+                               highest_close_since_active=100.0, target="$200")
+        result = tracker._check_settlement(entry, price=100.0, today_high=100.0, today_low=99)
+        assert result == (tracker.EXIT_EXPIRED, 100.0)
+
+    def test_unknown_strategy_never_extends(self):
+        """案例 4：strategy 為 "-" 或空字串到期 → 一律 FORCE_EXPIRED（白名單制）。"""
+        for bad_strategy in ("-", ""):
+            entry = _active_entry(strategy=bad_strategy, hold_period="10", active_days=10,
+                                   highest_close_since_active=100.0, target="$200")
+            result = tracker._check_settlement(entry, price=100.0, today_high=100.0, today_low=99)
+            assert result == (tracker.EXIT_EXPIRED, 100.0)
+
+    def test_extension_hard_cap_forces_expiry(self):
+        """案例 5：延長期間 active_days >= hold_limit + 10 → FORCE_EXPIRED，即使回撤 0%。"""
+        entry = _active_entry(strategy="動能策略", hold_period="10", active_days=20,
+                               highest_close_since_active=100.0, target="$200")
+        result = tracker._check_settlement(entry, price=100.0, today_high=100.0, today_low=99)
+        assert result == (tracker.EXIT_EXPIRED, 100.0)
+
+    def test_extension_period_stop_loss_still_triggers_first(self):
+        """案例 6：延長期間盤中 today_low ≤ effective_stop_loss → 仍觸發 CLOSED_LOSS（優先序 2 先行）。"""
+        entry = _active_entry(strategy="動能策略", hold_period="10", active_days=12,
+                               effective_stop_loss=90.0, highest_close_since_active=100.0,
+                               target="$200")
+        result = tracker._check_settlement(entry, price=95, today_high=96, today_low=89)
+        assert result == (tracker.EXIT_LOSS, 90.0)
+
+    def test_extension_period_target_still_triggers_first(self):
+        """案例 7：延長期間 today_high ≥ target → 仍觸發 CLOSED_PROFIT（優先序 3 先行）。"""
+        entry = _active_entry(strategy="動能策略", hold_period="10", active_days=12,
+                               highest_close_since_active=100.0, target="$120.00")
+        result = tracker._check_settlement(entry, price=115, today_high=121, today_low=110)
+        assert result == (tracker.EXIT_PROFIT, 120.0)
+
+    def test_missing_highest_close_fails_safe_to_expired(self):
+        """案例 8：highest_close_since_active 缺失（None/0）且到期 → FORCE_EXPIRED（fail-safe）。"""
+        for missing in (None, 0):
+            entry = _active_entry(strategy="動能策略", hold_period="10", active_days=10,
+                                   highest_close_since_active=missing, target="$200")
+            result = tracker._check_settlement(entry, price=100.0, today_high=100.0, today_low=99)
+            assert result == (tracker.EXIT_EXPIRED, 100.0)
+
+    def test_breakout_strategy_at_expiry_close_to_peak_grants_extension(self):
+        """案例 9：突破策略到期回撤 <3% → None（白名單含突破）。"""
+        entry = _active_entry(strategy="突破策略", hold_period="10", active_days=10,
+                               highest_close_since_active=100.0, target="$200")
+        result = tracker._check_settlement(entry, price=99, today_high=99.5, today_low=98)
         assert result is None
 
 

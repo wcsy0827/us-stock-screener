@@ -34,6 +34,10 @@ BREAKEVEN_PROFIT_THRESHOLD = 0.5    # 達目標距離 50% 時觸發保本
 TRAILING_ACTIVATION_PCT    = 0.10   # 峰值浮盈需超過 10% 才啟動移動停利
 TRAILING_RETRACE_PCT       = 0.05   # 從峰值收盤回撤 5% 觸發出場
 
+# 到期趨勢延伸（DD-21）
+EXPIRY_EXTENSION_MAX_DAYS = 10     # 到期後最多再延長的交易日數（硬上限）
+EXPIRY_TRAIL_RETRACE_PCT  = 0.03   # 延長資格與延長期間出場：自最高收盤回撤 3%
+
 
 # ── I/O ─────────────────────────────────────────────────────────────
 
@@ -340,9 +344,19 @@ def _check_settlement(
             if max_gain_pct >= TRAILING_ACTIVATION_PCT and retrace_pct >= TRAILING_RETRACE_PCT:
                 return EXIT_TRAILING, price
 
-    # 持倉天數到期（使用收盤價）
+    # 持倉天數到期（收盤價出場）；動能/突破策略且收盤仍貼近峰值（回撤 < 3%）時
+    # 授予有界延長，讓趨勢完好的部位繼續跑（DD-21）。延長期間優先序 1~4 照常生效。
     if active_days >= hold_limit:
-        return EXIT_EXPIRED, price
+        if strategy not in ("動能策略", "突破策略"):
+            return EXIT_EXPIRED, price          # 反轉策略與未知策略不延長（白名單制）
+        if active_days >= hold_limit + EXPIRY_EXTENSION_MAX_DAYS:
+            return EXIT_EXPIRED, price          # 延長硬上限，杜絕無限持倉
+        prev_highest = entry.get("highest_close_since_active") or 0
+        if prev_highest <= 0:
+            return EXIT_EXPIRED, price          # 峰值資料缺失 → fail-safe 直接出場，不給無韁繩延長
+        if (prev_highest - price) / prev_highest >= EXPIRY_TRAIL_RETRACE_PCT:
+            return EXIT_EXPIRED, price          # 到期日起每日檢查：回撤達 3% 即收盤出場
+        return None                             # 貼近峰值 → 延長，明日再判
 
     return None
 
