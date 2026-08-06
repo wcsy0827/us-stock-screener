@@ -9,9 +9,12 @@ from pathlib import Path
 
 from tracker import (
     _max_watch_days,
+    _parse_hold_period,
     MAX_ACTIVE_POSITIONS,
     TRAILING_ACTIVATION_PCT,
     TRAILING_RETRACE_PCT,
+    EXPIRY_EXTENSION_MAX_DAYS,
+    EXPIRY_TRAIL_RETRACE_PCT,
 )
 
 WEEKDAY_ZH = ["一", "二", "三", "四", "五", "六", "日"]
@@ -428,7 +431,15 @@ def _tracking_row(e: dict, status_cls: str) -> str:
             pnl_cls = "c-active" if pnl >= 0 else "c-invalid"
             sign = "+" if pnl >= 0 else ""
             pnl_html = f' ｜ <span class="{pnl_cls}" style="font-weight:700">{sign}{pnl:.2f}%</span>'
-        status_text = f"持倉 {active_days} / {hold_limit} 天 ✅{pnl_html}"
+        if active_days > hold_limit:
+            # 到期趨勢延伸（tracker DD-21）：收盤仍貼近峰值，延長持倉而非硬砍
+            extended_days = active_days - hold_limit
+            status_text = (
+                f"持倉 {active_days} 天（已到期延長 "
+                f"第 {extended_days}/{EXPIRY_EXTENSION_MAX_DAYS} 天）✅{pnl_html}"
+            )
+        else:
+            status_text = f"持倉 {active_days} / {hold_limit} 天 ✅{pnl_html}"
         entry_str = f'進場 ${entry_p:.2f}｜' if entry_p else ""
 
         # 動態止損：顯示系統實際用於結算的 effective_stop_loss（保本鎖定後會上移至
@@ -449,9 +460,17 @@ def _tracking_row(e: dict, status_cls: str) -> str:
                 trigger = highest * (1 - TRAILING_RETRACE_PCT)
                 trailing_html = f"｜移動停利線 ${trigger:.2f}"
 
+        # 到期延伸停利線（tracker DD-21）：延長期間收盤自峰值回撤達此線即出場
+        extension_html = ""
+        if active_days > hold_limit:
+            highest_ext = e.get("highest_close_since_active")
+            if highest_ext:
+                ext_trigger = highest_ext * (1 - EXPIRY_TRAIL_RETRACE_PCT)
+                extension_html = f"｜延長停利線 ${ext_trigger:.2f}"
+
         prices_html = (
             f'<div class="track-prices">{price_str}{entry_str}目標 {tgt}'
-            f"｜止損 {sl_display}{trailing_html}</div>"
+            f"｜止損 {sl_display}{trailing_html}{extension_html}</div>"
         )
     elif status_cls == "watch":
         remaining = max(0, _max_watch_days(e) - days)
@@ -507,7 +526,15 @@ def _settled_row(e: dict) -> str:
     elif exit_reason == "CLOSED_TRAILING_STOP":
         reason_html = '<span class="c-watch">📈 移動停利觸發，鎖利出場</span>'
     else:
-        reason_html = f'<span class="c-watch">⏰ 持倉期限（{active_days} 天）已到，強制出場</span>'
+        hold_limit = _parse_hold_period(e.get("hold_period", "-"))
+        if active_days > hold_limit:
+            # 到期延伸後趨勢轉弱才出場（tracker DD-21），與純到期文案區分
+            reason_html = (
+                f'<span class="c-watch">⏰ 到期延長後趨勢轉弱'
+                f'（共持倉 {active_days} 天），強制出場</span>'
+            )
+        else:
+            reason_html = f'<span class="c-watch">⏰ 持倉期限（{active_days} 天）已到，強制出場</span>'
 
     pnl_html = ""
     if entry_price and exit_price:
@@ -924,7 +951,7 @@ _INFO_HTML = """
       <tr><td>🛑 停損</td><td>當日最低價觸及有效止損即停損出場（出場價 = 止損價）；同日雙觸發（黑天鵝）保守判為停損</td></tr>
       <tr><td>🔒 保本鎖定</td><td>收盤浮盈達目標距離 50% 時，止損自動上移至買入區間上緣，報告標註「🔒保本」</td></tr>
       <tr><td>📈 移動停利</td><td>動能/突破策略峰值浮盈超過 10% 後，收盤自峰值回撤 5% 即鎖利出場（出場價 = 收盤價；反轉策略不適用）</td></tr>
-      <tr><td>⏰ 到期出場</td><td>持倉達 AI 設定的持有天數仍未觸發上述條件，以收盤價強制出場</td></tr>
+      <tr><td>⏰ 到期出場</td><td>持倉達 AI 設定天數時，動能/突破策略若收盤仍在期間最高收盤 3% 以內，自動延長持倉（最多再 10 個交易日），期間收盤自峰值回撤 3% 即出場；反轉策略與趨勢已弱者照舊到期出場</td></tr>
     </table>
   </div>
 

@@ -91,7 +91,14 @@ active 部位結算依下列優先順序判定，盤中止損/停利使用**當�
 2. 盤中止損：today_low ≤ effective_stop_loss                          → CLOSED_LOSS
 3. 盤中停利：today_high ≥ target                                      → CLOSED_PROFIT
 4. 移動停利：峰值浮盈 > 10% 且收盤回撤 ≥ 5%（僅動能/突破策略）       → CLOSED_TRAILING_STOP
-5. 持倉到期：active_days ≥ hold_period                                → FORCE_EXPIRED
+5. 持倉到期：active_days ≥ hold_period → 五分支判斷（DD-21，到期趨勢延伸）：
+   a. strategy 不在 {"動能策略","突破策略"}                          → FORCE_EXPIRED（白名單制，反轉/未知策略不延長）
+   b. active_days ≥ hold_period + EXPIRY_EXTENSION_MAX_DAYS（10）    → FORCE_EXPIRED（延長硬上限）
+   c. highest_close_since_active 缺失或 ≤ 0                          → FORCE_EXPIRED（fail-safe，無峰值資料不給無韁繩延長）
+   d. (highest_close_since_active − price) / highest_close_since_active ≥ EXPIRY_TRAIL_RETRACE_PCT（3%）
+                                                                       → FORCE_EXPIRED（已回撤達標，到期當天即出場，不多賴一天）
+   e. 以上皆不成立（動能/突破策略、未達延長硬上限、峰值資料存在、回撤 <3%）
+                                                                       → None（延長，明日再判；延長期間優先序 1~4 照常生效）
 ```
 
 止損使用 `effective_stop_loss`（動態有效止損，見 DD-12），初始值等於 `planned_stop_loss`；觸發保本鎖定後上移至 `buy_zone_upper`。
@@ -352,6 +359,15 @@ def _is_expired(entry: dict) -> bool:
 - **捨棄**：事後擇優（初版 v1 設計：觸價者中信心高者得名額，`free_slots` 計數器 + 優先序排序迭代——與事前掛單的真實操作錯位，會把使用者沒掛單的交易寫進績效，見上方 v2 修訂說明）；當日結算即退還名額（違反「掛單當下不可知未來」的現實語意）；強平超額 active 部位（人為製造非市場事件的出場紀錄，污染績效資料庫）；滿倉時直接不加新訊號進 watchlist（報告失去 AI 判斷完整性，且次日名額釋出時無候選可用）；名單持久化寫入 watchlist（確定性重算已保證報告與次日資格一致，持久化徒增欄位與失步風險）。
 - → 詳見 `plans/2026-07-10-max-active-positions-cap.md`（v1 上限機制）、`plans/2026-07-10-order-plan-roster.md`（v2 名單制修訂 + 前端掛單計畫）
 
+### DD-21: 到期趨勢延伸出場
+
+- **背景**：`performance_history.json` 15 筆結算數據顯示盈虧比倒掛（實現約 1:0.82，計畫 1:2.5）：8 筆獲利中 7 筆是 `FORCE_EXPIRED` 到期砍在小賺（平均 +2.96%，其中 PCAR 出場時仍在上升趨勢 +7.61%），僅 1 筆真正觸及目標價；虧損單平均 -4.63%，幾乎全額吃滿止損。到期機制在趨勢仍完好時就把獲利部位砍掉，虧損端卻已吃到設計上限，兩端不對稱侵蝕期望值。
+- **選擇**：`_check_settlement()` 第 5 段（持倉到期）改為五分支：僅動能/突破策略（白名單制）、且未達 `hold_period + EXPIRY_EXTENSION_MAX_DAYS`（10 個交易日）硬上限、且 `highest_close_since_active` 存在、且收盤自峰值回撤 `< EXPIRY_TRAIL_RETRACE_PCT`（3%）者，到期時獲得延長（回傳 `None`，明日再判）；其餘（反轉/未知策略、達硬上限、峰值資料缺失、回撤已達 3%）維持原行為，`FORCE_EXPIRED` 收盤出場。到期當天即檢查回撤，已回撤達標者當天照舊出場，不多賴一天。零新增 exit_reason（沿用既有 `FORCE_EXPIRED`）、零新增 watchlist 欄位（延長態完全由 `active_days > hold_period` 推導）、函式簽名不變。延長期間既有優先序 1~4（黑天鵝/止損/停利/移動停利）照常先行判定，延長邏輯只作用在優先序 5 內部。
+- **原因**：延長給趨勢仍在跑的部位機會兌現更大漲幅，同時 3%（比既有移動停利的 5% 更緊）確保延長期間不會把已實現的浮盈又還回去；白名單排除反轉策略（進場點在 EMA50 下方，波動語意與動能/突破不同，DD-13 移動停利已有相同排除先例）與未知/缺值策略（避免隱性均線判斷在極端資料下誤判資格）；零新欄位延續 DD-18「單一事實來源」慣例（`active_days`/`hold_period` 已可推導出延長態與延長天數，不需另存）；沿用既有 `FORCE_EXPIRED` 避免在 `performance_history.json` schema 與下游（`analyzer.py`、`publisher.py`）新增一個語意等價的分類。
+- **捨棄**：`收盤 > EMA10` 且 `收盤 > EMA20` 雙均線 gate（v1 draft，經抗辯審查：雙條件在動能股正常多頭排列下高度共線、無額外分辨力；EMA 於資料不足 20 交易日時為 `None`，均線比較會拋 `TypeError` 中斷整輪 `run_tracker()`）；新增 `EXIT_EXPIRED_TREND_WEAK` 專屬 exit_reason（下游語意與 `FORCE_EXPIRED` 完全等價，只增加維護面）；新增 `is_extended`/`extension_start_date`/`extension_days_used` 三個持久化欄位（均可從既有 `active_days`/`hold_period` 推導或從未被任何顯示邏輯讀取；抗辯審查另指出若延長態欄位只寫在拆股 `adj` 臨時副本、未同步寫回 `original_entry`，會形同永遠停留在初始值，此為採用零新欄位設計後天然消除的風險面）；`EXPIRY_EXTENSION_MAX_DAYS`/`EXPIRY_TRAIL_RETRACE_PCT` 改用 env 變數（僅 15 筆樣本，尚無跨環境調參需求，寫死更誠實反映「待驗證假設」的階段）。
+- **已知取捨（明知不處理）**：固定 3% 回撤門檻對 L1 上限 8% ATR% 的高波動股可能偏緊，延長機制對這類股票近乎形同虛設；延長部位持續佔用 `MAX_ACTIVE_POSITIONS`（DD-20）名額不釋放，屬忠實記帳（真實部位仍持有，非 bug）。兩者待累積更多結算樣本後再評估是否需要 ATR 錨定或名額例外規則。
+- → 詳見 `plans/2026-08-06-expiry-trend-extension.md`（含 v1 draft、三方抗辯審查逐條記錄）
+
 ---
 
 ## performance_history.json Schema
@@ -455,3 +471,12 @@ def _is_expired(entry: dict) -> bool:
 - [ ] **DD-20 滿倉時新訊號照常入 watch**：active 數已達上限，當日 L3 新訊號 → 正常加入 watchlist（status=watch）
 - [ ] **DD-20 reset 路徑清旗標**：旗標 True 的 watch 條目再次入選 L3（覆寫展期）→ `slot_blocked_today=False`
 - [ ] **DD-20 存檔順序不變**：優先序排序僅影響評估順序，`save_watchlist` 寫出的條目順序與讀入時一致
+- [ ] **DD-21 動能到期貼峰值獲延長**：動能策略到期日、收盤自峰值回撤 <3% → `_check_settlement()` 回傳 `None`（不出場）
+- [ ] **DD-21 動能到期已回撤即出場**：動能策略到期日、收盤自峰值回撤 ≥3% → `(FORCE_EXPIRED, close)`
+- [ ] **DD-21 反轉策略不延長**：反轉策略到期，即使回撤 0%（貼峰值）→ 一律 `(FORCE_EXPIRED, close)`
+- [ ] **DD-21 未知策略不延長**：`strategy` 為 `"-"`/空字串到期 → 一律 `FORCE_EXPIRED`（白名單制）
+- [ ] **DD-21 延長硬上限**：延長期間 `active_days >= hold_period + EXPIRY_EXTENSION_MAX_DAYS` → `FORCE_EXPIRED`，即使回撤 0%
+- [ ] **DD-21 延長期間止損優先**：延長期間 `today_low ≤ effective_stop_loss` → 仍觸發 `CLOSED_LOSS`（優先序 2 先於延長判斷）
+- [ ] **DD-21 延長期間停利優先**：延長期間 `today_high ≥ target` → 仍觸發 `CLOSED_PROFIT`（優先序 3 先於延長判斷）
+- [ ] **DD-21 峰值資料缺失 fail-safe**：`highest_close_since_active` 為 `None`/`0` 且到期 → `FORCE_EXPIRED`
+- [ ] **DD-21 突破策略同樣適用**：突破策略到期回撤 <3% → `None`（白名單含突破策略）
