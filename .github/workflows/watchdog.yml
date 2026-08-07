@@ -1,0 +1,71 @@
+name: Screener Watchdog
+
+on:
+  schedule:
+    # UTC 23:00 = 主排程 (21:30 UTC) 後 1.5 小時緩衝，容忍延遲重試
+    - cron: '0 23 * * 1-5'
+  workflow_dispatch:  # 允許手動測試
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check-last-run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Check last_run.json freshness
+        id: check
+        run: |
+          python3 - <<'EOF'
+          import json
+          from datetime import date, timedelta
+          import os
+
+          def most_recent_weekday(d):
+              while d.weekday() >= 5:  # 5=Sat, 6=Sun
+                  d -= timedelta(days=1)
+              return d
+
+          expected = most_recent_weekday(date.today())
+
+          with open("docs/data/last_run.json") as f:
+              last_run = json.load(f)
+          market_date = date.fromisoformat(last_run["market_date"])
+
+          stale = market_date != expected
+          with open(os.environ["GITHUB_OUTPUT"], "a") as out:
+              out.write(f"stale={'true' if stale else 'false'}\n")
+              out.write(f"expected={expected.isoformat()}\n")
+              out.write(f"actual={market_date.isoformat()}\n")
+
+          print(f"expected={expected}, actual={market_date}, stale={stale}")
+          EOF
+
+      - name: Open issue if stale
+        if: steps.check.outputs.stale == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          EXPECTED: ${{ steps.check.outputs.expected }}
+          ACTUAL: ${{ steps.check.outputs.actual }}
+        run: |
+          TITLE="⚠️ 排程監控：報告未更新（預期 $EXPECTED，實際 $ACTUAL）"
+          EXISTING=$(gh issue list --label screener-watchdog --state open --search "in:title \"$EXPECTED\"" --json number --jq '.[0].number')
+          if [ -n "$EXISTING" ]; then
+            echo "Issue #$EXISTING 已存在，略過建立"
+          else
+            gh issue create \
+              --title "$TITLE" \
+              --label screener-watchdog \
+              --body "自動排程監控偵測到 \`docs/data/last_run.json\` 的 \`market_date\` 停留在 **$ACTUAL**，預期應為 **$EXPECTED**（最近一個平日）。
+
+              可能原因：
+              - daily-screener.yml 的排程觸發被 GitHub Actions 跳過（曾發生過，見 2026-08-07 事故）
+              - 美股假日導致 yfinance 無新數據（此情況為正常，可直接關閉本 issue）
+              - daily-screener.yml 執行失敗
+
+              請至 [Daily Stock Screener 執行記錄](../../actions/workflows/daily-screener.yml) 確認，必要時手動觸發 workflow_dispatch 補跑。"
+          fi

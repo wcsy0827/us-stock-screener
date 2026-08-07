@@ -232,6 +232,7 @@ S&P 500 (~503 支)
 - 排程：週一至五 UTC 21:30（台灣時間隔日 05:30）
 - Secrets：`DEEPSEEK_API_KEY` 設在 repo Settings → Secrets and variables → Actions
 - 手動觸發：Actions 頁 → Daily Stock Screener → Run workflow
+- **排程監控（`watchdog.yml`）**：GitHub Actions 的 `schedule` 觸發偶發性會被跳過（2026-08-06 實際發生：`daily-screener.yml` 當天完全沒有任何 `schedule` 事件的執行紀錄，workflow 本身狀態正常）。`.github/workflows/watchdog.yml` 於每個平日 UTC 23:00（`daily-screener.yml` 排程後 1.5 小時緩衝）比對 `docs/data/last_run.json` 的 `market_date` 是否等於「最近一個平日」，不符則自動開一個標籤 `screener-watchdog` 的 GitHub Issue（同一預期日期不重複開單）。**已知限制**：美股假日當天 `market_date` 正常會停留在前一交易日，watchdog 邏輯僅按平日（Mon-Fri）判斷、不查美股假日曆，此時會誤報，屬預期中的可接受雜訊，收到後確認是假日即可關閉 issue。
 
 ### 時區行為（重要）
 

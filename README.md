@@ -340,6 +340,10 @@ python main.py --dry-run --yes
 
 `.github/workflows/tests.yml`：`src/**`、`tests/**` 或 `docs/index.html` 有變動的 push/PR 會自動跑 `pytest`（涵蓋 `tracker.py` 純函式與 `docs/index.html` ↔ `_build_index()` 全等守門），與每日排程的 `daily-screener.yml` 分開、互不影響。
 
+### 排程監控
+
+`.github/workflows/watchdog.yml`：每個平日 UTC 23:00（主排程後 1.5 小時緩衝）檢查 `docs/data/last_run.json` 的 `market_date` 是否跟上最近一個平日，若排程被 GitHub Actions 跳過（實際發生過）或執行失敗，自動開一個 `screener-watchdog` 標籤的 Issue 通知。美股假日當天會有已知的誤報（`market_date` 停留在前一交易日是正常行為），確認後直接關閉即可。
+
 ### 手動觸發
 
 1. 前往 repo 的 **Actions** 頁面
@@ -396,7 +400,9 @@ us-stock-screener/
 │   ├── test_analyzer.py    # analyzer.py 純函式單元測試
 │   └── test_publisher_info_sync.py  # docs/index.html ↔ _build_index() 全等守門
 ├── .github/workflows/
-│   └── daily-screener.yml  # GitHub Actions workflow
+│   ├── daily-screener.yml  # GitHub Actions workflow（每日排程）
+│   ├── tests.yml           # 單元測試 CI
+│   └── watchdog.yml        # 排程監控（漏跑自動開 Issue）
 ├── requirements.txt
 ├── requirements-dev.txt    # 開發依賴（含 pytest）
 ├── pytest.ini
