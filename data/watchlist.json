@@ -405,12 +405,12 @@
     "symbol": "VEEV",
     "name": "Veeva Systems Inc.",
     "sector": "Healthcare",
-    "buy_zone": "$211～$215",
-    "buy_zone_lower": 211.0,
+    "buy_zone": "$210～$215",
+    "buy_zone_lower": 210.0,
     "buy_zone_upper": 215.0,
-    "target": "$250",
-    "stop_loss": "$203",
-    "hold_period": "20",
+    "target": "$240",
+    "stop_loss": "$202",
+    "hold_period": "15",
     "strategy": "動能策略",
     "tracked_dates": [
       "2026-08-06"
@@ -429,18 +429,48 @@
     "vix_value": 15.15,
     "l2_score": 91.38,
     "ai_confidence": 8,
-    "ai_strategy_reason": "RSI=70.2、VTF=1.10、Momentum_ATR=3.50、RS=+5.7%，均線多頭排列，動能強勁。"
+    "ai_strategy_reason": "均線多頭排列，RSI=70.2，VTF=1.10，Momentum_ATR=3.50，RS=+5.7%，符合動能策略條件。"
+  },
+  {
+    "symbol": "DASH",
+    "name": "DoorDash, Inc.",
+    "sector": "Consumer Cyclical",
+    "buy_zone": "$206～$210",
+    "buy_zone_lower": 206.0,
+    "buy_zone_upper": 210.0,
+    "target": "$235",
+    "stop_loss": "$198",
+    "hold_period": "15",
+    "strategy": "動能策略",
+    "tracked_dates": [
+      "2026-08-06"
+    ],
+    "status": "watch",
+    "invalid_reason": null,
+    "slot_blocked_today": false,
+    "watch_days": 0,
+    "active_days": 0,
+    "signal_date_close": 213.25999450683594,
+    "active_entry_price": null,
+    "active_start_date": null,
+    "date_added": "2026-08-06",
+    "entry_regime": "BULL_TREND",
+    "market_breadth_pct": 67.2,
+    "vix_value": 15.15,
+    "l2_score": 85.0,
+    "ai_confidence": 7,
+    "ai_strategy_reason": "均線多頭排列，RSI=69.9，VTF=0.22，Momentum_ATR=2.63，RS=+7.0%，符合動能策略條件。"
   },
   {
     "symbol": "PFE",
     "name": "Pfizer, Inc.",
     "sector": "Healthcare",
-    "buy_zone": "$25.6～$25.9",
-    "buy_zone_lower": 25.6,
-    "buy_zone_upper": 25.9,
-    "target": "$30",
-    "stop_loss": "$24.8",
-    "hold_period": "20",
+    "buy_zone": "$25.5～$26.0",
+    "buy_zone_lower": 25.5,
+    "buy_zone_upper": 26.0,
+    "target": "$29",
+    "stop_loss": "$24.5",
+    "hold_period": "15",
     "strategy": "動能策略",
     "tracked_dates": [
       "2026-08-06"
@@ -459,36 +489,6 @@
     "vix_value": 15.15,
     "l2_score": 91.38,
     "ai_confidence": 7,
-    "ai_strategy_reason": "RSI=70.5、VTF=1.01、Momentum_ATR=4.73、RS=+3.6%，均線多頭排列，動能強勁。"
-  },
-  {
-    "symbol": "FAST",
-    "name": "Fastenal Company",
-    "sector": "Industrials",
-    "buy_zone": "$49.5～$50.2",
-    "buy_zone_lower": 49.5,
-    "buy_zone_upper": 50.2,
-    "target": "$58",
-    "stop_loss": "$48.2",
-    "hold_period": "20",
-    "strategy": "動能策略",
-    "tracked_dates": [
-      "2026-08-06"
-    ],
-    "status": "watch",
-    "invalid_reason": null,
-    "slot_blocked_today": false,
-    "watch_days": 0,
-    "active_days": 0,
-    "signal_date_close": 50.79999923706055,
-    "active_entry_price": null,
-    "active_start_date": null,
-    "date_added": "2026-08-06",
-    "entry_regime": "BULL_TREND",
-    "market_breadth_pct": 67.2,
-    "vix_value": 15.15,
-    "l2_score": 85.0,
-    "ai_confidence": 6,
-    "ai_strategy_reason": "RSI=69.5、VTF=0.61、Momentum_ATR=3.45、RS=+3.7%，均線多頭排列，動能強勁。"
+    "ai_strategy_reason": "均線多頭排列，RSI=70.5，VTF=1.01，Momentum_ATR=4.73，RS=+3.6%，符合動能策略條件。"
   }
 ]
