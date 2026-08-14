@@ -26,13 +26,14 @@
       "2026-08-10",
       "2026-08-11",
       "2026-08-12",
-      "2026-08-13"
+      "2026-08-13",
+      "2026-08-14"
     ],
     "status": "active",
     "invalid_reason": null,
     "slot_blocked_today": false,
     "watch_days": 3,
-    "active_days": 12,
+    "active_days": 13,
     "signal_date_close": 349.8999938964844,
     "active_entry_price": 347.0,
     "active_start_date": "2026-07-29",
@@ -43,7 +44,7 @@
     "l2_score": 91.38,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭排列，RSI=66.4健康，VTF=1.05>1.0，Momentum_ATR=2.17強勢，RS_vs_Sector=+3.3%領先板塊。",
-    "current_price": 363.11,
+    "current_price": 362.84,
     "planned_stop_loss": 335.0,
     "effective_stop_loss": 335.0,
     "is_breakeven_locked": false,
@@ -74,13 +75,14 @@
       "2026-08-10",
       "2026-08-11",
       "2026-08-12",
-      "2026-08-13"
+      "2026-08-13",
+      "2026-08-14"
     ],
     "status": "active",
     "invalid_reason": null,
     "slot_blocked_today": false,
     "watch_days": 2,
-    "active_days": 11,
+    "active_days": 12,
     "signal_date_close": 218.4199981689453,
     "active_entry_price": 216.0,
     "active_start_date": "2026-07-30",
@@ -91,7 +93,7 @@
     "l2_score": 91.38,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭排列，RSI=77、VTF=0.5、Momentum_ATR=5.13，動能極強。",
-    "current_price": 220.48,
+    "current_price": 222.97,
     "planned_stop_loss": 206.0,
     "effective_stop_loss": 206.0,
     "is_breakeven_locked": false,
@@ -121,13 +123,14 @@
       "2026-08-10",
       "2026-08-11",
       "2026-08-12",
-      "2026-08-13"
+      "2026-08-13",
+      "2026-08-14"
     ],
     "status": "active",
     "invalid_reason": null,
     "slot_blocked_today": false,
     "watch_days": 0,
-    "active_days": 12,
+    "active_days": 13,
     "signal_date_close": 265.6199951171875,
     "active_entry_price": 262.0,
     "active_start_date": "2026-07-29",
@@ -138,7 +141,7 @@
     "l2_score": 100.0,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭排列，RSI=71.8，VTF=0.92，Momentum_ATR=5.39，RS_vs_Sector=+9.6%，動能強勁。",
-    "current_price": 272.29,
+    "current_price": 268.91,
     "planned_stop_loss": 250.0,
     "effective_stop_loss": 250.0,
     "is_breakeven_locked": false,
@@ -164,13 +167,14 @@
       "2026-08-10",
       "2026-08-11",
       "2026-08-12",
-      "2026-08-13"
+      "2026-08-13",
+      "2026-08-14"
     ],
     "status": "active",
     "invalid_reason": null,
     "slot_blocked_today": false,
     "watch_days": 1,
-    "active_days": 7,
+    "active_days": 8,
     "signal_date_close": 87.30999755859375,
     "active_entry_price": 86.0,
     "active_start_date": "2026-08-05",
@@ -181,7 +185,7 @@
     "l2_score": 100.0,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線完美多頭排列，RSI=72.6、VTF=1.49、Momentum_ATR=4.22、RS=+19.6%，量價結構健康。",
-    "current_price": 91.48,
+    "current_price": 89.75,
     "planned_stop_loss": 80.0,
     "effective_stop_loss": 86.0,
     "is_breakeven_locked": true,
@@ -205,13 +209,14 @@
       "2026-08-10",
       "2026-08-11",
       "2026-08-12",
-      "2026-08-13"
+      "2026-08-13",
+      "2026-08-14"
     ],
     "status": "active",
     "invalid_reason": null,
     "slot_blocked_today": false,
     "watch_days": 0,
-    "active_days": 6,
+    "active_days": 7,
     "signal_date_close": 407.8299865722656,
     "active_entry_price": 404.0,
     "active_start_date": "2026-08-06",
@@ -222,113 +227,11 @@
     "l2_score": 100.0,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭排列，RSI=72.5，VTF=0.73，Momentum_ATR=3.82，RS=+4.8%，動能強勁。",
-    "current_price": 417.84,
+    "current_price": 415.21,
     "planned_stop_loss": 385.0,
     "effective_stop_loss": 385.0,
     "is_breakeven_locked": false,
     "highest_close_since_active": 417.84
-  },
-  {
-    "symbol": "APA",
-    "name": "APA Corporation",
-    "sector": "Energy",
-    "buy_zone": "$39.5～$40.5",
-    "buy_zone_lower": 39.5,
-    "buy_zone_upper": 40.5,
-    "target": "$45",
-    "stop_loss": "$38",
-    "hold_period": "20",
-    "strategy": "動能策略",
-    "tracked_dates": [
-      "2026-08-10",
-      "2026-08-11",
-      "2026-08-12",
-      "2026-08-13"
-    ],
-    "status": "watch",
-    "invalid_reason": null,
-    "slot_blocked_today": true,
-    "watch_days": 3,
-    "active_days": 0,
-    "signal_date_close": 41.02000045776367,
-    "active_entry_price": null,
-    "active_start_date": null,
-    "date_added": "2026-08-10",
-    "entry_regime": "BULL_TREND",
-    "market_breadth_pct": 65.8,
-    "vix_value": 15.46,
-    "l2_score": 91.38,
-    "ai_confidence": 8,
-    "ai_strategy_reason": "RSI=69、VTF=1.14、Momentum_ATR=4.29、RS=+11.7%，均線多頭排列，量價結構健康。",
-    "current_price": 40.0
-  },
-  {
-    "symbol": "TSCO",
-    "name": "Tractor Supply Company",
-    "sector": "Consumer Cyclical",
-    "buy_zone": "$33.5～$34.2",
-    "buy_zone_lower": 33.5,
-    "buy_zone_upper": 34.2,
-    "target": "$38",
-    "stop_loss": "$32.4",
-    "hold_period": "20",
-    "strategy": "動能策略",
-    "tracked_dates": [
-      "2026-08-10",
-      "2026-08-11",
-      "2026-08-12",
-      "2026-08-13"
-    ],
-    "status": "watch",
-    "invalid_reason": null,
-    "slot_blocked_today": false,
-    "watch_days": 3,
-    "active_days": 0,
-    "signal_date_close": 34.619998931884766,
-    "active_entry_price": null,
-    "active_start_date": null,
-    "date_added": "2026-08-10",
-    "entry_regime": "BULL_TREND",
-    "market_breadth_pct": 65.8,
-    "vix_value": 15.46,
-    "l2_score": 97.75,
-    "ai_confidence": 7,
-    "ai_strategy_reason": "RSI=69、VTF=1.05、Momentum_ATR=3.7、RS=+3.4%，均線多頭排列，量價配合。",
-    "current_price": 36.17
-  },
-  {
-    "symbol": "NTRS",
-    "name": "Northern Trust Corporation",
-    "sector": "Financial Services",
-    "buy_zone": "$184～$186",
-    "buy_zone_lower": 184.0,
-    "buy_zone_upper": 186.0,
-    "target": "$205",
-    "stop_loss": "$180",
-    "hold_period": "20",
-    "strategy": "動能策略",
-    "tracked_dates": [
-      "2026-08-10",
-      "2026-08-11",
-      "2026-08-12",
-      "2026-08-13"
-    ],
-    "status": "watch",
-    "invalid_reason": null,
-    "slot_blocked_today": false,
-    "watch_days": 3,
-    "active_days": 0,
-    "signal_date_close": 187.86000061035156,
-    "active_entry_price": null,
-    "active_start_date": null,
-    "date_added": "2026-08-10",
-    "entry_regime": "BULL_TREND",
-    "market_breadth_pct": 65.8,
-    "vix_value": 15.46,
-    "l2_score": 86.5,
-    "ai_confidence": 6,
-    "ai_strategy_reason": "RSI=62.6、VTF=0.87、RS=+3.1%，均線多頭排列，但Momentum_ATR僅0.31，動能偏弱。",
-    "current_price": 190.48
   },
   {
     "symbol": "KKR",
@@ -344,12 +247,13 @@
     "tracked_dates": [
       "2026-08-11",
       "2026-08-12",
-      "2026-08-13"
+      "2026-08-13",
+      "2026-08-14"
     ],
     "status": "watch",
     "invalid_reason": null,
     "slot_blocked_today": false,
-    "watch_days": 2,
+    "watch_days": 3,
     "active_days": 0,
     "signal_date_close": 110.97000122070312,
     "active_entry_price": null,
@@ -361,7 +265,7 @@
     "l2_score": 100.0,
     "ai_confidence": 9,
     "ai_strategy_reason": "均線完美多頭排列，RSI=67.2，VTF=1.75，Momentum_ATR=2.58，RS=+5.6%，量價結構健康。",
-    "current_price": 115.3
+    "current_price": 114.01
   },
   {
     "symbol": "APO",
@@ -377,12 +281,13 @@
     "tracked_dates": [
       "2026-08-11",
       "2026-08-12",
-      "2026-08-13"
+      "2026-08-13",
+      "2026-08-14"
     ],
     "status": "watch",
     "invalid_reason": null,
     "slot_blocked_today": false,
-    "watch_days": 2,
+    "watch_days": 3,
     "active_days": 0,
     "signal_date_close": 140.27999877929688,
     "active_entry_price": null,
@@ -394,7 +299,7 @@
     "l2_score": 91.38,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭排列，RSI=69.2，VTF=1.07，Momentum_ATR=3.80，RS=+8.5%，動能強勁。",
-    "current_price": 143.58
+    "current_price": 140.76
   },
   {
     "symbol": "SMCI",
@@ -409,12 +314,13 @@
     "strategy": "動能策略",
     "tracked_dates": [
       "2026-08-12",
-      "2026-08-13"
+      "2026-08-13",
+      "2026-08-14"
     ],
     "status": "watch",
     "invalid_reason": null,
     "slot_blocked_today": false,
-    "watch_days": 1,
+    "watch_days": 2,
     "active_days": 0,
     "signal_date_close": 37.61000061035156,
     "active_entry_price": null,
@@ -426,7 +332,7 @@
     "l2_score": 100.0,
     "ai_confidence": 8,
     "ai_strategy_reason": "RSI=67.6、VTF=2.53、Momentum_ATR=5.11、RS=+26.1%，均線多頭排列，量價齊揚。",
-    "current_price": 39.16
+    "current_price": 39.84
   },
   {
     "symbol": "HPE",
@@ -441,12 +347,13 @@
     "strategy": "動能策略",
     "tracked_dates": [
       "2026-08-12",
-      "2026-08-13"
+      "2026-08-13",
+      "2026-08-14"
     ],
     "status": "watch",
     "invalid_reason": null,
-    "slot_blocked_today": false,
-    "watch_days": 1,
+    "slot_blocked_today": true,
+    "watch_days": 2,
     "active_days": 0,
     "signal_date_close": 58.790000915527344,
     "active_entry_price": null,
@@ -458,7 +365,7 @@
     "l2_score": 91.38,
     "ai_confidence": 7,
     "ai_strategy_reason": "RSI=72.5、VTF=1.20、Momentum_ATR=4.40、RS=+10.2%，均線多頭排列，動能強勁。",
-    "current_price": 59.82
+    "current_price": 58.71
   },
   {
     "symbol": "ANET",
@@ -473,12 +380,13 @@
     "strategy": "動能策略",
     "tracked_dates": [
       "2026-08-12",
-      "2026-08-13"
+      "2026-08-13",
+      "2026-08-14"
     ],
     "status": "watch",
     "invalid_reason": null,
     "slot_blocked_today": true,
-    "watch_days": 1,
+    "watch_days": 2,
     "active_days": 0,
     "signal_date_close": 210.5,
     "active_entry_price": null,
@@ -490,7 +398,7 @@
     "l2_score": 91.38,
     "ai_confidence": 7,
     "ai_strategy_reason": "RSI=69.3、VTF=0.91、Momentum_ATR=3.83、RS=+7.5%，均線多頭排列，動能穩健。",
-    "current_price": 203.62
+    "current_price": 198.82
   },
   {
     "symbol": "WDAY",
@@ -504,12 +412,13 @@
     "hold_period": "20",
     "strategy": "動能策略",
     "tracked_dates": [
-      "2026-08-13"
+      "2026-08-13",
+      "2026-08-14"
     ],
     "status": "watch",
     "invalid_reason": null,
-    "slot_blocked_today": false,
-    "watch_days": 0,
+    "slot_blocked_today": true,
+    "watch_days": 1,
     "active_days": 0,
     "signal_date_close": 206.4499969482422,
     "active_entry_price": null,
@@ -520,7 +429,8 @@
     "vix_value": 14.63,
     "l2_score": 100.0,
     "ai_confidence": 8,
-    "ai_strategy_reason": "均線多頭排列，RSI=75，VTF=0.69，Momentum_ATR=5.04，RS=+13.4%，動能強勁。"
+    "ai_strategy_reason": "均線多頭排列，RSI=75，VTF=0.69，Momentum_ATR=5.04，RS=+13.4%，動能強勁。",
+    "current_price": 198.68
   },
   {
     "symbol": "FDX",
@@ -534,12 +444,13 @@
     "hold_period": "15",
     "strategy": "動能策略",
     "tracked_dates": [
-      "2026-08-13"
+      "2026-08-13",
+      "2026-08-14"
     ],
     "status": "watch",
     "invalid_reason": null,
-    "slot_blocked_today": false,
-    "watch_days": 0,
+    "slot_blocked_today": true,
+    "watch_days": 1,
     "active_days": 0,
     "signal_date_close": 339.3500061035156,
     "active_entry_price": null,
@@ -550,7 +461,8 @@
     "vix_value": 14.63,
     "l2_score": 91.38,
     "ai_confidence": 7,
-    "ai_strategy_reason": "均線多頭排列，RSI=68.9，VTF=1.13，Momentum_ATR=3.37，RS=+6.2%，動能健康。"
+    "ai_strategy_reason": "均線多頭排列，RSI=68.9，VTF=1.13，Momentum_ATR=3.37，RS=+6.2%，動能健康。",
+    "current_price": 334.64
   },
   {
     "symbol": "INTU",
@@ -564,12 +476,13 @@
     "hold_period": "15",
     "strategy": "動能策略",
     "tracked_dates": [
-      "2026-08-13"
+      "2026-08-13",
+      "2026-08-14"
     ],
     "status": "watch",
     "invalid_reason": null,
-    "slot_blocked_today": false,
-    "watch_days": 0,
+    "slot_blocked_today": true,
+    "watch_days": 1,
     "active_days": 0,
     "signal_date_close": 358.2900085449219,
     "active_entry_price": null,
@@ -580,6 +493,97 @@
     "vix_value": 14.63,
     "l2_score": 91.38,
     "ai_confidence": 7,
-    "ai_strategy_reason": "均線多頭排列，RSI=71.8，VTF=0.87，Momentum_ATR=4.57，RS=+8.7%，動能強勁。"
+    "ai_strategy_reason": "均線多頭排列，RSI=71.8，VTF=0.87，Momentum_ATR=4.57，RS=+8.7%，動能強勁。",
+    "current_price": 345.66
+  },
+  {
+    "symbol": "FOXA",
+    "name": "Fox Corporation",
+    "sector": "Communication Services",
+    "buy_zone": "$66.9～$68.5",
+    "buy_zone_lower": 66.9,
+    "buy_zone_upper": 68.5,
+    "target": "$76",
+    "stop_loss": "$64.7",
+    "hold_period": "20",
+    "strategy": "動能策略",
+    "tracked_dates": [
+      "2026-08-14"
+    ],
+    "status": "watch",
+    "invalid_reason": null,
+    "slot_blocked_today": false,
+    "watch_days": 0,
+    "active_days": 0,
+    "signal_date_close": 69.04000091552734,
+    "active_entry_price": null,
+    "active_start_date": null,
+    "date_added": "2026-08-14",
+    "entry_regime": "BULL_TREND",
+    "market_breadth_pct": 68.6,
+    "vix_value": 14.25,
+    "l2_score": 91.38,
+    "ai_confidence": 8,
+    "ai_strategy_reason": "均線多頭排列，RSI=75.3，VTF=0.99，Momentum_ATR=5.65，RS=+7.9%，動能強勁。"
+  },
+  {
+    "symbol": "STX",
+    "name": "Seagate Technology Holdings PLC",
+    "sector": "Technology",
+    "buy_zone": "$899.2～$924.2",
+    "buy_zone_lower": 899.2,
+    "buy_zone_upper": 924.2,
+    "target": "$1070",
+    "stop_loss": "$850.0",
+    "hold_period": "20",
+    "strategy": "動能策略",
+    "tracked_dates": [
+      "2026-08-14"
+    ],
+    "status": "watch",
+    "invalid_reason": null,
+    "slot_blocked_today": false,
+    "watch_days": 0,
+    "active_days": 0,
+    "signal_date_close": 973.4400024414062,
+    "active_entry_price": null,
+    "active_start_date": null,
+    "date_added": "2026-08-14",
+    "entry_regime": "BULL_TREND",
+    "market_breadth_pct": 68.6,
+    "vix_value": 14.25,
+    "l2_score": 85.0,
+    "ai_confidence": 8,
+    "ai_strategy_reason": "均線多頭排列，RSI=62.0，VTF=0.51，Momentum_ATR=2.30，RS=+19.5%，動能強勁。"
+  },
+  {
+    "symbol": "SYF",
+    "name": "Synchrony Financial",
+    "sector": "Financial Services",
+    "buy_zone": "$77.0～$79.0",
+    "buy_zone_lower": 77.0,
+    "buy_zone_upper": 79.0,
+    "target": "$89",
+    "stop_loss": "$75.1",
+    "hold_period": "20",
+    "strategy": "動能策略",
+    "tracked_dates": [
+      "2026-08-14"
+    ],
+    "status": "watch",
+    "invalid_reason": null,
+    "slot_blocked_today": false,
+    "watch_days": 0,
+    "active_days": 0,
+    "signal_date_close": 81.0,
+    "active_entry_price": null,
+    "active_start_date": null,
+    "date_added": "2026-08-14",
+    "entry_regime": "BULL_TREND",
+    "market_breadth_pct": 68.6,
+    "vix_value": 14.25,
+    "l2_score": 85.0,
+    "ai_confidence": 7,
+    "ai_strategy_reason": "均線多頭排列，RSI=65.4，VTF=0.50，Momentum_ATR=3.79，RS=+3.0%，動能穩健。"
   }
 ]
