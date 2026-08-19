@@ -1,14 +1,14 @@
 {
-  "generated_at_utc": "2026-08-18T21:56:34Z",
-  "market_date": "2026-08-18",
-  "total_settled": 15,
+  "generated_at_utc": "2026-08-19T21:56:54Z",
+  "market_date": "2026-08-19",
+  "total_settled": 16,
   "dimensions": {
     "by_regime": [
       {
         "key": "BULL_TREND",
-        "trades": 14,
-        "win_rate": 57.1,
-        "avg_return_pct": 0.11
+        "trades": 15,
+        "win_rate": 60.0,
+        "avg_return_pct": 0.16
       },
       {
         "key": "CONSOLIDATION_VOLATILE",
@@ -20,9 +20,9 @@
     "by_strategy": [
       {
         "key": "動能策略",
-        "trades": 14,
-        "win_rate": 57.1,
-        "avg_return_pct": 0.11
+        "trades": 15,
+        "win_rate": 60.0,
+        "avg_return_pct": 0.16
       },
       {
         "key": "突破策略",
@@ -45,6 +45,12 @@
         "avg_return_pct": -0.52
       },
       {
+        "key": "Basic Materials",
+        "trades": 2,
+        "win_rate": 100.0,
+        "avg_return_pct": 0.43
+      },
+      {
         "key": "Consumer Cyclical",
         "trades": 2,
         "win_rate": 0.0,
@@ -57,12 +63,6 @@
         "avg_return_pct": 2.06
       },
       {
-        "key": "Basic Materials",
-        "trades": 1,
-        "win_rate": 100.0,
-        "avg_return_pct": 0.03
-      },
-      {
         "key": "Real Estate",
         "trades": 1,
         "win_rate": 100.0,
@@ -71,8 +71,8 @@
     ]
   },
   "prompt_lines": [
-    "【Regime】BULL_TREND：14 筆結算，勝率 57.1%，平均報酬 +0.11%",
-    "【策略】動能策略：14 筆結算，勝率 57.1%，平均報酬 +0.11%",
+    "【Regime】BULL_TREND：15 筆結算，勝率 60.0%，平均報酬 +0.16%",
+    "【策略】動能策略：15 筆結算，勝率 60.0%，平均報酬 +0.16%",
     "【產業】Industrials：6 筆結算，勝率 66.7%，平均報酬 +1.59%",
     "【產業】Financial Services：3 筆結算，勝率 33.3%，平均報酬 -0.52%"
   ]
