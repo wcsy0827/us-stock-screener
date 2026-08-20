@@ -559,6 +559,76 @@
         "return_pct": 0.84,
         "is_win": true
       }
+    },
+    {
+      "meta_data": {
+        "ticker": "JPM",
+        "company_name": "JP Morgan Chase & Co.",
+        "sector": "Financial Services"
+      },
+      "signal_details": {
+        "signal_date": "2026-07-23",
+        "entry_regime": "BULL_TREND",
+        "market_breadth_pct": 61.0,
+        "vix_value": 18.7,
+        "l2_score": 91.38,
+        "assigned_strategy": "動能策略",
+        "ai_confidence": 8,
+        "ai_strategy_reason": "均線多頭排列，RSI=66.4健康，VTF=1.05>1.0，Momentum_ATR=2.17強勢，RS_vs_Sector=+3.3%領先板塊。"
+      },
+      "execution_plan": {
+        "buy_zone_lower": 343.0,
+        "buy_zone_upper": 347.0,
+        "planned_target": "$385",
+        "planned_stop_loss": "$335.00"
+      },
+      "actual_outcome": {
+        "triggered_date": "2026-07-29",
+        "actual_entry_price": 347.0,
+        "exit_date": "2026-08-20",
+        "actual_exit_price": 351.55,
+        "exit_reason": "FORCE_EXPIRED",
+        "holding_days": 17
+      },
+      "performance_metrics": {
+        "return_pct": 1.31,
+        "is_win": true
+      }
+    },
+    {
+      "meta_data": {
+        "ticker": "RTX",
+        "company_name": "RTX Corporation",
+        "sector": "Industrials"
+      },
+      "signal_details": {
+        "signal_date": "2026-07-27",
+        "entry_regime": "BULL_TREND",
+        "market_breadth_pct": 64.2,
+        "vix_value": 18.67,
+        "l2_score": 91.38,
+        "assigned_strategy": "動能策略",
+        "ai_confidence": 8,
+        "ai_strategy_reason": "均線多頭排列，RSI=77、VTF=0.5、Momentum_ATR=5.13，動能極強。"
+      },
+      "execution_plan": {
+        "buy_zone_lower": 212.0,
+        "buy_zone_upper": 216.0,
+        "planned_target": "$240",
+        "planned_stop_loss": "$206.00"
+      },
+      "actual_outcome": {
+        "triggered_date": "2026-07-30",
+        "actual_entry_price": 216.0,
+        "exit_date": "2026-08-20",
+        "actual_exit_price": 212.29,
+        "exit_reason": "FORCE_EXPIRED",
+        "holding_days": 16
+      },
+      "performance_metrics": {
+        "return_pct": -1.72,
+        "is_win": false
+      }
     }
   ]
 }
