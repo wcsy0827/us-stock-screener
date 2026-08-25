@@ -388,5 +388,15 @@
     "new": 2,
     "reset": 1,
     "removed": 3
+  },
+  {
+    "date": "2026-08-25",
+    "weekday": "二",
+    "active": 5,
+    "watch": 8,
+    "invalid": 0,
+    "new": 2,
+    "reset": 1,
+    "removed": 2
   }
 ]
