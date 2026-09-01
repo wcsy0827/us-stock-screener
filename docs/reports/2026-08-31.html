@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>美股 AI 選股 2026-08-31</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0f172a; --card: #1e293b; --border: #334155;
+  --text: #e2e8f0; --muted: #94a3b8; --subtle: #475569;
+  --active: #22c55e; --watch: #eab308; --invalid: #ef4444;
+  --expired: #6b7280; --new: #3b82f6; --reset: #a855f7;
+}
+body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 15px; line-height: 1.6; }
+a { color: var(--new); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.container { max-width: 860px; margin: 0 auto; padding: 28px 16px 48px; }
+
+/* Header */
+.page-header { margin-bottom: 28px; }
+.page-header h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 4px; }
+.page-header .date-line { font-size: 1rem; color: var(--muted); margin-bottom: 12px; }
+.scan-bar { background: var(--card); border-radius: 8px; padding: 10px 14px; font-size: 0.85rem; color: var(--muted); border-left: 3px solid var(--new); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.scan-bar .arrow { color: var(--border); }
+.scan-bar strong { color: var(--text); }
+.back-link { display: inline-flex; align-items: center; gap: 4px; margin-top: 12px; font-size: 0.85rem; color: var(--muted); }
+.back-link:hover { color: var(--new); text-decoration: none; }
+
+/* Section */
+.section { margin-bottom: 24px; }
+.section-title { font-size: 0.9rem; font-weight: 600; letter-spacing: 0.03em; padding-bottom: 8px; border-bottom: 1px solid var(--border); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+.section-count { font-weight: 400; color: var(--muted); font-size: 0.82rem; margin-left: 2px; }
+
+/* Tracking rows */
+.track-item { background: var(--card); border-radius: 8px; padding: 11px 14px; margin-bottom: 7px; border-left: 3px solid var(--expired); display: grid; gap: 2px; }
+.track-item.active  { border-left-color: var(--active); }
+.track-item.watch   { border-left-color: var(--watch); }
+.track-item.invalid { border-left-color: var(--invalid); }
+.track-item.expired { border-left-color: var(--expired); opacity: 0.6; }
+.track-header { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.track-symbol { font-weight: 700; font-size: 0.95rem; }
+.track-name { color: var(--muted); font-size: 0.85rem; }
+.strategy-tag { font-size: 0.72rem; padding: 1px 7px; border-radius: 4px; background: var(--border); color: var(--text); margin-left: auto; white-space: nowrap; }
+.track-status { font-size: 0.82rem; color: var(--muted); }
+.track-prices { font-size: 0.82rem; color: var(--text); margin-top: 2px; }
+.track-prices .cur-price { color: var(--text); font-weight: 600; }
+
+/* Stock cards */
+.stock-card { background: var(--card); border-radius: 10px; border: 1px solid var(--border); padding: 16px; margin-bottom: 12px; transition: border-color 0.15s; }
+.stock-card:hover { border-color: var(--new); }
+.stock-card.reset-card:hover { border-color: var(--reset); }
+.card-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+.card-rank { background: var(--border); color: var(--muted); border-radius: 50%; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+.card-title { flex: 1; }
+.card-symbol { font-size: 1.1rem; font-weight: 800; color: var(--new); }
+.reset-card .card-symbol { color: var(--reset); }
+.card-company { font-size: 0.88rem; color: var(--muted); }
+.card-price { text-align: right; }
+.card-price .price-val { font-size: 1rem; font-weight: 700; display: block; }
+.card-price .price-chg { font-size: 0.8rem; }
+.price-chg.up   { color: var(--active); }
+.price-chg.down { color: var(--invalid); }
+.price-chg.flat { color: var(--muted); }
+.card-badges { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 10px; }
+.badge { font-size: 0.73rem; padding: 2px 8px; border-radius: 4px; background: var(--border); color: var(--muted); }
+.reason-box { font-size: 0.875rem; line-height: 1.55; color: var(--text); padding: 10px 12px; background: #0f172a; border-radius: 7px; margin-bottom: 10px; }
+.trade-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px; margin-bottom: 10px; }
+.trade-cell { background: #0f172a; border-radius: 7px; padding: 8px 10px; }
+.trade-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-bottom: 2px; }
+.trade-val { font-size: 0.9rem; font-weight: 700; }
+.trade-val.buy  { color: var(--new); }
+.trade-val.tgt  { color: var(--active); }
+.trade-val.stop { color: var(--invalid); }
+.risk-box { font-size: 0.8rem; line-height: 1.5; color: #fcd34d; background: rgba(234,179,8,0.08); border-radius: 7px; padding: 8px 12px; border-left: 2px solid var(--watch); }
+.detail-box { font-size: 0.8rem; line-height: 1.5; color: #94a3b8; background: rgba(148,163,184,0.06); border-radius: 7px; padding: 8px 12px; border-left: 2px solid #475569; margin-top: 6px; }
+
+/* Summary footer */
+.summary-box { background: var(--card); border-radius: 10px; padding: 16px 20px; margin-top: 12px; border-top: 3px solid var(--new); }
+.summary-box h2 { font-size: 0.9rem; margin-bottom: 12px; color: var(--muted); letter-spacing: 0.03em; }
+.stat-row { display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 8px; }
+.stat-row:last-child { margin-bottom: 0; }
+.stat-group { display: flex; align-items: baseline; gap: 6px; }
+.stat-num { font-size: 1.1rem; font-weight: 800; }
+.stat-num.c-active  { color: var(--active); }
+.stat-num.c-watch   { color: var(--watch); }
+.stat-num.c-invalid { color: var(--invalid); }
+.stat-num.c-new     { color: var(--new); }
+.stat-num.c-reset   { color: var(--reset); }
+.stat-num.c-removed { color: var(--expired); }
+.stat-lbl { font-size: 0.8rem; color: var(--muted); }
+
+/* Index page */
+.index-hero { text-align: center; padding: 32px 0 20px; }
+.index-hero h1 { font-size: 1.8rem; font-weight: 800; margin-bottom: 6px; }
+.index-hero p { color: var(--muted); font-size: 0.9rem; }
+.report-list { display: flex; flex-direction: column; gap: 8px; margin-top: 24px; }
+.report-entry { background: var(--card); border-radius: 9px; padding: 14px 18px; border: 1px solid var(--border); display: flex; align-items: center; gap: 16px; text-decoration: none; color: var(--text); transition: border-color 0.15s; }
+.report-entry:hover { border-color: var(--new); text-decoration: none; color: var(--text); }
+.report-date { font-weight: 700; font-size: 0.95rem; min-width: 130px; }
+.report-weekday { font-size: 0.8rem; color: var(--muted); margin-top: 1px; }
+.report-chips { display: flex; gap: 7px; flex-wrap: wrap; margin-left: auto; }
+.chip { font-size: 0.75rem; padding: 2px 9px; border-radius: 12px; font-weight: 600; }
+.chip.active  { background: rgba(34,197,94,0.15);  color: var(--active); }
+.chip.watch   { background: rgba(234,179,8,0.15);  color: var(--watch); }
+.chip.invalid { background: rgba(239,68,68,0.12);  color: var(--invalid); }
+.chip.new     { background: rgba(59,130,246,0.15); color: var(--new); }
+.chip.reset   { background: rgba(168,85,247,0.12); color: var(--reset); }
+.chip.neutral { background: var(--border); color: var(--muted); }
+.arrow-icon { color: var(--border); font-size: 1rem; }
+.empty-state { text-align: center; padding: 48px; color: var(--muted); }
+.doc-link-row { text-align: center; margin-bottom: 20px; }
+.doc-link { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 0.85rem; }
+.doc-link:hover { border-color: var(--new); color: var(--new); text-decoration: none; }
+
+/* Market Regime Dashboard */
+.market-dashboard { border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; border: 1px solid var(--border); }
+.market-dashboard.bull          { border-left: 4px solid var(--active);  background: rgba(34,197,94,0.07); }
+.market-dashboard.consolidation { border-left: 4px solid var(--watch);   background: rgba(234,179,8,0.07); }
+.market-dashboard.panic         { border-left: 4px solid #f97316;        background: rgba(249,115,22,0.07); }
+.market-dashboard.bear          { border-left: 4px solid var(--invalid); background: rgba(239,68,68,0.1); }
+.regime-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+.regime-name { font-size: 1rem; font-weight: 700; }
+.regime-strategy { font-size: 0.82rem; color: var(--muted); margin-left: auto; }
+.regime-metrics { display: flex; gap: 20px; flex-wrap: wrap; }
+.regime-metric { min-width: 80px; }
+.regime-metric-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 2px; }
+.regime-metric-val { font-size: 1rem; font-weight: 700; }
+.regime-metric-sub { font-size: 0.72rem; color: var(--muted); margin-top: 1px; }
+.spy-above { color: var(--active); }
+.spy-below { color: var(--invalid); }
+.defense-banner { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.3); border-radius: 10px; padding: 20px 24px; text-align: center; margin-bottom: 16px; }
+.defense-banner .defense-title { font-size: 1rem; font-weight: 700; color: var(--invalid); margin-bottom: 6px; }
+.defense-banner .defense-desc { font-size: 0.85rem; color: var(--muted); line-height: 1.7; }
+
+/* System info (index page) */
+details { margin-bottom: 20px; }
+summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 8px; padding: 12px 16px; background: var(--card); border-radius: 9px; border: 1px solid var(--border); font-weight: 600; font-size: 0.9rem; user-select: none; }
+summary::-webkit-details-marker { display: none; }
+details summary::before { content: "▶"; font-size: 0.65rem; color: var(--muted); transition: transform 0.2s; flex-shrink: 0; }
+details[open] summary::before { transform: rotate(90deg); }
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding-top: 12px; }
+.info-card { background: var(--card); border-radius: 9px; border: 1px solid var(--border); padding: 14px 16px; }
+.info-card h3 { font-size: 0.78rem; font-weight: 700; margin-bottom: 10px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
+.info-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+.info-table th { text-align: left; padding: 4px 8px; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--border); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.info-table td { padding: 5px 8px; border-bottom: 1px solid rgba(51,65,85,0.4); line-height: 1.5; vertical-align: top; }
+.info-table td:first-child { white-space: nowrap; }
+.info-table tr:last-child td { border-bottom: none; }
+.pipe-flow { display: flex; flex-direction: column; gap: 3px; }
+.pipe-step { display: flex; align-items: flex-start; gap: 8px; font-size: 0.8rem; line-height: 1.5; }
+.pipe-badge { background: var(--border); color: var(--muted); border-radius: 4px; padding: 1px 7px; font-size: 0.7rem; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+.pipe-arrow { color: var(--subtle); font-size: 0.75rem; padding-left: 16px; }
+.report-section-title { font-size: 0.82rem; font-weight: 600; color: var(--muted); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 10px; }
+
+.tip-wrap { position: relative; display: inline-flex; align-items: center; gap: 5px; }
+.tip-icon { display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; border-radius: 50%; background: var(--border); color: var(--muted); font-size: 0.68rem; font-weight: 700; cursor: help; flex-shrink: 0; }
+.tip-box { display: none; position: absolute; right: 0; top: calc(100% + 6px); background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 0.78rem; line-height: 1.65; color: var(--text); font-weight: 400; width: 230px; z-index: 20; box-shadow: 0 4px 16px rgba(0,0,0,0.5); white-space: normal; text-align: left; }
+.tip-wrap:hover .tip-box { display: block; }
+
+/* Data freshness indicator */
+.date-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 4px; }
+.date-label { font-size: 0.8rem; color: var(--muted); }
+.date-val { font-size: 1rem; color: var(--text); font-weight: 600; }
+.freshness-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 0.75rem; padding: 2px 9px; border-radius: 10px; font-weight: 600; cursor: pointer; }
+.freshness-ok    { background: rgba(34,197,94,0.15);  color: var(--active); }
+.freshness-stale { background: rgba(234,179,8,0.12);  color: var(--watch); }
+.tz-note { font-size: 0.8rem; color: var(--muted); margin-top: 6px; min-height: 1.3em; }
+.run-info { font-size: 0.75rem; color: var(--muted); margin-bottom: 12px; padding: 6px 10px; background: rgba(255,255,255,0.04); border-radius: 6px; display: none; line-height: 1.8; }
+.run-info.visible { display: block; }
+
+@media (max-width: 600px) {
+  .scan-bar { flex-direction: column; align-items: flex-start; gap: 2px; }
+  .card-header { flex-wrap: wrap; }
+  .card-price { text-align: left; }
+  .report-entry { flex-wrap: wrap; }
+  .report-chips { margin-left: 0; }
+  .regime-strategy { margin-left: 0; }
+  .tip-box { right: auto; left: 0; }
+  .info-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="page-header">
+    <h1>📊 美股 AI 選股報告</h1>
+    <div class="date-meta">
+      <span class="date-label">美股資料截止日</span>
+      <span class="date-val">📅 2026-08-31（一）</span>
+      <span class="freshness-badge" id="freshness-badge" onclick="toggleRunInfo()" title="點擊查看資料來源詳情"></span>
+    </div>
+    <div class="run-info" id="run-info">載入中…</div>
+    <div class="scan-bar">
+      掃描 <strong>S&amp;P500 503支</strong>
+      <span class="arrow">→</span> L1 <strong>486支</strong>
+      <span class="arrow">→</span> L2 <strong>55支</strong>
+      <span class="arrow">→</span> AI精選 <strong>3支</strong>
+    </div>
+    <a class="back-link" href="../index.html">← 返回首頁</a>
+  </div>
+<script>
+(function() {
+  var d = '2026-08-31';
+  var parts = d.split('-');
+  var reportDay = Date.UTC(+parts[0], +parts[1]-1, +parts[2]);
+  var now = new Date();
+  var todayUTC = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  var diffDays = Math.round((todayUTC - reportDay) / 86400000);
+  var badge = document.getElementById('freshness-badge');
+  if (!badge) return;
+  if (diffDays <= 0) {
+    badge.textContent = '✓ 今日最新數據 ▸';
+    badge.className = 'freshness-badge freshness-ok';
+  } else {
+    var next = new Date(reportDay + 86400000);
+    var mo = next.getUTCMonth() + 1;
+    var dy = next.getUTCDate();
+    badge.textContent = '↻ ' + mo + '/' + dy + ' 05:30（台灣時間）更新 ▸';
+    badge.className = 'freshness-badge freshness-stale';
+  }
+})();
+
+function toggleRunInfo() {
+  var info = document.getElementById('run-info');
+  if (!info) return;
+  if (info.classList.contains('visible')) {
+    info.classList.remove('visible');
+    return;
+  }
+  info.classList.add('visible');
+  if (info._loaded) return;
+  info._loaded = true;
+  fetch('../data/last_run.json?_=' + Date.now())
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      var utc = d.run_at_utc || '—';
+      // 轉換為台灣時間顯示
+      var dt = new Date(utc);
+      var twStr = dt.toLocaleString('zh-TW', {timeZone:'Asia/Taipei', hour12:false,
+        year:'numeric', month:'2-digit', day:'2-digit',
+        hour:'2-digit', minute:'2-digit'});
+      info.innerHTML =
+        '<strong>資料來源核實</strong><br>' +
+        '執行時間（UTC）：' + utc + '<br>' +
+        '執行時間（台灣）：' + twStr + '<br>' +
+        '資料截止日：' + (d.market_date || '—') + '（若於美股盤中執行，系統會自動捨棄當日未收盤數據，此欄可能為前一交易日）<br>' +
+        '掃描：S&amp;P500 ' + (d.total_scanned || '—') + ' 支 → L1 ' +
+        (d.l1_count || '—') + ' → L2 ' + (d.l2_count || '—') +
+        ' → AI精選 ' + (d.ai_count || '—') + ' 支';
+    })
+    .catch(function() {
+      info.textContent = '⚠ 無法載入 last_run.json（本地預覽時正常，GitHub Pages 上才有此檔案）';
+    });
+}
+</script>
+
+  
+<div class="market-dashboard consolidation">
+  <div class="regime-header">
+    <span class="regime-name">⚖️ 震盪整理</span>
+    <span class="regime-strategy"><span class="tip-wrap">主推：突破策略（積極）<span class="tip-icon">?</span><span class="tip-box">條件：市場廣度 35～60% 且 VIX &lt; 20<br>帶量突破壓力位，訊號確認後積極進場</span></span></span>
+  </div>
+  <div class="regime-metrics">
+    <div class="regime-metric">
+      <div class="regime-metric-label">市場廣度</div>
+      <div class="regime-metric-val">52.6%</div>
+    </div>
+    <div class="regime-metric">
+      <div class="regime-metric-label">VIX</div>
+      <div class="regime-metric-val">14.9</div>
+      <div class="regime-metric-sub">低恐慌（市場樂觀）</div>
+    </div>
+    <div class="regime-metric">
+      <div class="regime-metric-label">SPY 位置</div>
+      <div class="regime-metric-val spy-above">✅ EMA20 之上</div>
+    </div>
+  </div>
+</div>
+
+  
+<div class="summary-box" style="margin-bottom:20px;border-top-color:#a855f7">
+  <h2>📊 歷史選股績效（累計 18 筆結算）</h2>
+  <div class="stat-row">
+    <div class="stat-group">
+      <span class="stat-num c-new">55.6%</span>
+      <span class="stat-lbl">整體勝率</span>
+    </div>
+    <div class="stat-group">
+      <span class="stat-num c-invalid">-0.09%</span>
+      <span class="stat-lbl">平均回報</span>
+    </div>
+    <div class="stat-group">
+      <span class="stat-num" style="color:var(--muted)">18</span>
+      <span class="stat-lbl">筆結算</span>
+    </div>
+  </div>
+  <div class="stat-row"><div class="stat-group"><span class="stat-num" style="font-size:0.95rem">58.8%</span><span class="stat-lbl">動能策略勝率</span></div><div class="stat-group"><span class="stat-num" style="font-size:0.95rem">0.0%</span><span class="stat-lbl">突破策略勝率</span></div></div>
+</div>
+
+  
+<div class="section">
+  <div class="section-title">
+    ✅ 有效追蹤清單<span class="section-count">（5支，上限 5 支）</span>
+  </div>
+  
+<div class="track-item active">
+  <div class="track-header">
+    <span class="track-symbol">DXCM</span>
+    <span class="track-name">DexCom, Inc.</span>
+    <span class="strategy-tag">動能策略</span>
+  </div>
+  <div class="track-status">持倉 19 / 20 天 ✅ ｜ <span class="c-active" style="font-weight:700">+5.88%</span></div>
+  <div class="track-prices"><span class="cur-price">$91.06</span>｜進場 $86.00｜目標 $96｜止損 $86.00 🔒保本</div>
+</div>
+
+<div class="track-item active">
+  <div class="track-header">
+    <span class="track-symbol">AMGN</span>
+    <span class="track-name">Amgen Inc.</span>
+    <span class="strategy-tag">動能策略</span>
+  </div>
+  <div class="track-status">持倉 18 天（已到期延長 第 3/10 天）✅ ｜ <span class="c-active" style="font-weight:700">+6.41%</span></div>
+  <div class="track-prices"><span class="cur-price">$429.88</span>｜進場 $404.00｜目標 $449｜止損 $404.00 🔒保本｜延長停利線 $427.13</div>
+</div>
+
+<div class="track-item active">
+  <div class="track-header">
+    <span class="track-symbol">WDAY</span>
+    <span class="track-name">Workday, Inc.</span>
+    <span class="strategy-tag">動能策略</span>
+  </div>
+  <div class="track-status">持倉 9 / 20 天 ✅ ｜ <span class="c-invalid" style="font-weight:700">-2.73%</span></div>
+  <div class="track-prices"><span class="cur-price">$197.45</span>｜進場 $203.00｜目標 $238｜止損 $182.00</div>
+</div>
+
+<div class="track-item active">
+  <div class="track-header">
+    <span class="track-symbol">MSI</span>
+    <span class="track-name">Motorola Solutions, Inc.</span>
+    <span class="strategy-tag">動能策略</span>
+  </div>
+  <div class="track-status">持倉 7 / 20 天 ✅ ｜ <span class="c-active" style="font-weight:700">+1.95%</span></div>
+  <div class="track-prices"><span class="cur-price">$485.30</span>｜進場 $476.00｜目標 $530｜止損 $455.00</div>
+</div>
+
+<div class="track-item active">
+  <div class="track-header">
+    <span class="track-symbol">NDSN</span>
+    <span class="track-name">Nordson Corporation</span>
+    <span class="strategy-tag">突破策略</span>
+  </div>
+  <div class="track-status">持倉 7 / 10 天 ✅ ｜ <span class="c-invalid" style="font-weight:700">-3.68%</span></div>
+  <div class="track-prices"><span class="cur-price">$321.72</span>｜進場 $334.00｜目標 $370｜止損 $319.00</div>
+</div>
+</div>
+<div class="section">
+  <div class="section-title">
+    🟡 留意清單<span class="section-count">（5支）</span>
+  </div>
+  
+<div class="track-item watch">
+  <div class="track-header">
+    <span class="track-symbol">GEN</span>
+    <span class="track-name">Gen Digital Inc.</span>
+    <span class="strategy-tag">突破策略</span>
+  </div>
+  <div class="track-status">第 4 天（等待回落至買入區間，剩 1 天自動移除）</div>
+  <div class="track-prices"><span class="cur-price">$31.00</span>｜買入區間 $29.2～$29.6｜目標 $33｜止損 $28.2｜信心 8/10｜L2 91 分</div>
+</div>
+
+<div class="track-item watch">
+  <div class="track-header">
+    <span class="track-symbol">FDX</span>
+    <span class="track-name">FedEx Corporation</span>
+    <span class="strategy-tag">突破策略</span>
+  </div>
+  <div class="track-status">第 4 天（今日觸價但未在掛單名單，未進場；剩 1 天自動移除）</div>
+  <div class="track-prices"><span class="cur-price">$327.40</span>｜買入區間 $333.0～$336.0｜目標 $370｜止損 $324.8｜信心 7/10｜L2 85 分</div>
+</div>
+
+<div class="track-item watch">
+  <div class="track-header">
+    <span class="track-symbol">CME</span>
+    <span class="track-name">CME Group Inc.</span>
+    <span class="strategy-tag">突破策略</span>
+  </div>
+  <div class="track-status">第 2 天（今日觸價但未在掛單名單，未進場；剩 3 天自動移除）</div>
+  <div class="track-prices"><span class="cur-price">$285.50</span>｜買入區間 $282～$285｜目標 $315｜止損 $275｜信心 7/10｜L2 82 分</div>
+</div>
+
+<div class="track-item watch">
+  <div class="track-header">
+    <span class="track-symbol">SLB</span>
+    <span class="track-name">SLB Limited</span>
+    <span class="strategy-tag">突破策略</span>
+  </div>
+  <div class="track-status">第 1 天（等待回落至買入區間，剩 4 天自動移除）</div>
+  <div class="track-prices">買入區間 $59.5～$60.5｜目標 $69｜止損 $57.5｜信心 8/10｜L2 91 分</div>
+</div>
+
+<div class="track-item watch">
+  <div class="track-header">
+    <span class="track-symbol">WMB</span>
+    <span class="track-name">Williams Companies, Inc. (The)</span>
+    <span class="strategy-tag">突破策略</span>
+  </div>
+  <div class="track-status">第 1 天（等待回落至買入區間，剩 4 天自動移除）</div>
+  <div class="track-prices">買入區間 $74.5～$75.5｜目標 $83｜止損 $72.5｜信心 7/10｜L2 86 分</div>
+</div>
+</div>
+<div class="section">
+  <div class="section-title">
+    ❌ 失效訊號<span class="section-count">（3支，仍在追蹤期內）</span>
+  </div>
+  
+<div class="track-item invalid">
+  <div class="track-header">
+    <span class="track-symbol">CHD</span>
+    <span class="track-name">Church &amp; Dwight Company, Inc.</span>
+    <span class="strategy-tag">突破策略</span>
+  </div>
+  <div class="track-status">第 4 天 ── 趨勢轉弱，訊號失效（剩 1 天自動移除）</div>
+  <div class="track-prices"><span class="cur-price">$99.78</span>｜買入區間 $102.0～$103.0｜目標 $113｜止損 $99.7｜信心 7/10｜L2 91 分</div>
+</div>
+
+<div class="track-item invalid">
+  <div class="track-header">
+    <span class="track-symbol">SNPS</span>
+    <span class="track-name">Synopsys, Inc.</span>
+    <span class="strategy-tag">突破策略</span>
+  </div>
+  <div class="track-status">第 3 天 ── 跌破止損價 $456.00，錯過買點（剩 2 天自動移除）</div>
+  <div class="track-prices"><span class="cur-price">$439.59</span>｜買入區間 $465～$470｜目標 $512｜止損 $456｜信心 8/10｜L2 84 分</div>
+</div>
+
+<div class="track-item invalid">
+  <div class="track-header">
+    <span class="track-symbol">NVDA</span>
+    <span class="track-name">NVIDIA Corporation</span>
+    <span class="strategy-tag">突破策略</span>
+  </div>
+  <div class="track-status">第 3 天 ── 跌破止損價 $224.00，錯過買點（剩 2 天自動移除）</div>
+  <div class="track-prices"><span class="cur-price">$220.78</span>｜買入區間 $228～$230｜目標 $251｜止損 $224｜信心 8/10｜L2 83 分</div>
+</div>
+</div>
+<div class="section">
+  <div class="section-title">
+    🗑 今日移除<span class="section-count">（3支）</span>
+  </div>
+  
+<div class="track-item expired">
+  <div class="track-header">
+    <span class="track-symbol">HOOD</span>
+    <span class="track-name">Robinhood Markets, Inc.</span>
+    <span class="strategy-tag">突破策略</span>
+  </div>
+  <div class="track-status">已追蹤 5 天，今日移除</div>
+  
+</div>
+
+<div class="track-item expired">
+  <div class="track-header">
+    <span class="track-symbol">IBKR</span>
+    <span class="track-name">Interactive Brokers Group, Inc.</span>
+    <span class="strategy-tag">突破策略</span>
+  </div>
+  <div class="track-status">已追蹤 5 天，今日移除</div>
+  
+</div>
+
+<div class="track-item expired">
+  <div class="track-header">
+    <span class="track-symbol">RMD</span>
+    <span class="track-name">ResMed Inc.</span>
+    <span class="strategy-tag">突破策略</span>
+  </div>
+  <div class="track-status">已追蹤 5 天，今日移除</div>
+  
+</div>
+</div>
+<div class="section">
+  <div class="section-title">
+    🆕 今日新進觀察名單<span class="section-count">（2支）</span>
+  </div>
+  
+<div class="stock-card ">
+  <div class="card-header">
+    <div class="card-rank">1</div>
+    <div class="card-title">
+      <div class="card-symbol">SLB</div>
+      <div class="card-company">SLB Limited</div>
+    </div>
+    <div class="card-price">
+      <span class="price-val">$60.10</span>
+      <span class="price-chg up">▲4.83%</span>
+    </div>
+  </div>
+  <div class="card-badges">
+    <span class="badge">📊 評分 91</span>
+    <span class="badge">信心 8/10</span>
+    <span class="badge">🏭 Energy</span>
+    <span class="badge">📋 突破策略</span>
+  </div>
+  <div class="reason-box">🤖 能源板塊ETF近5日上漲3.1%，產業趨勢強勁支撐個股表現。SLB為板塊領頭羊，RS_vs_Sector高達+9.7%，顯示強勢動能。基本面穩健，Fwd_PE=18.6合理，Profit_Margin=8.5%為正，Rev_Growth_YoY=5.0%穩定成長。量價結構健康，帶量突破關鍵壓力位，符合突破策略積極進場條件。</div>
+  <div class="detail-box">📋 策略依據：VTF=1.98&gt;1.5，Close距High_20D僅0.6%，Vol_vs_20DAvg=3.16&gt;1.5，攻擊量確認突破。</div>
+  <div class="trade-grid">
+    <div class="trade-cell">
+      <div class="trade-label">買入區間</div>
+      <div class="trade-val buy">$59.5～$60.5</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">目標價</div>
+      <div class="trade-val tgt">$69</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">止損</div>
+      <div class="trade-val stop">$57.5</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">持有週期</div>
+      <div class="trade-val">10</div>
+    </div>
+  </div>
+  <div class="risk-box">⚠️ RSI=76.6接近超買區，短線可能回檔；Energy ETF波動較大，需留意油價變化。</div>
+  <div class="detail-box">💡 信心評分依據：技術面強勢且量能確認，產業ETF上漲支撐，基本面穩健，信心高。</div>
+</div>
+
+<div class="stock-card ">
+  <div class="card-header">
+    <div class="card-rank">2</div>
+    <div class="card-title">
+      <div class="card-symbol">WMB</div>
+      <div class="card-company">Williams Companies, Inc. (The)</div>
+    </div>
+    <div class="card-price">
+      <span class="price-val">$75.05</span>
+      <span class="price-chg up">▲1.79%</span>
+    </div>
+  </div>
+  <div class="card-badges">
+    <span class="badge">📊 評分 86</span>
+    <span class="badge">信心 7/10</span>
+    <span class="badge">🏭 Energy</span>
+    <span class="badge">📋 突破策略</span>
+  </div>
+  <div class="reason-box">🤖 能源板塊ETF近5日上漲3.1%，產業趨勢正面。WMB具備突破潛力，VTF=1.49接近1.5門檻，Vol_vs_20DAvg=2.87顯示強勁量能。基本面優異，Profit_Margin=24.9%高於多數候選股，Rev_Growth_YoY=7.8%穩健成長，Fwd_PE=28.6略高但可接受。量價結構健康，突破訊號明確。</div>
+  <div class="detail-box">📋 策略依據：VTF=1.49接近1.5，Close距High_20D僅1.1%，Vol_vs_20DAvg=2.87&gt;1.5，量能確認。</div>
+  <div class="trade-grid">
+    <div class="trade-cell">
+      <div class="trade-label">買入區間</div>
+      <div class="trade-val buy">$74.5～$75.5</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">目標價</div>
+      <div class="trade-val tgt">$83</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">止損</div>
+      <div class="trade-val stop">$72.5</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">持有週期</div>
+      <div class="trade-val">10</div>
+    </div>
+  </div>
+  <div class="risk-box">⚠️ RSI=57.1未過熱，但距52週高點僅-6.3%，上方壓力需留意；Short_Float=2.2%低，軋空風險小。</div>
+  <div class="detail-box">💡 信心評分依據：量能強勁且產業支撐，但VTF未達1.5門檻，信心略降。</div>
+</div>
+</div>
+<div class="section">
+  <div class="section-title">
+    🔄 重新入選，重置追蹤<span class="section-count">（1支）</span>
+  </div>
+  
+<div class="stock-card reset-card">
+  <div class="card-header">
+    <div class="card-rank">1</div>
+    <div class="card-title">
+      <div class="card-symbol">CRWD</div>
+      <div class="card-company">CrowdStrike Holdings, Inc.</div>
+    </div>
+    <div class="card-price">
+      <span class="price-val">$231.00</span>
+      <span class="price-chg up">▲5.77%</span>
+    </div>
+  </div>
+  <div class="card-badges">
+    <span class="badge">📊 評分 92</span>
+    <span class="badge">信心 6/10</span>
+    <span class="badge">🏭 Technology</span>
+    <span class="badge">📋 突破策略</span>
+  </div>
+  <div class="reason-box">🤖 科技板塊ETF近5日上漲2.6%，產業趨勢正面。CRWD為板塊領頭羊，RS_vs_Sector高達+22.0%，顯示極強動能。基本面強勁，Rev_Growth_YoY=25.8%高成長，Profit_Margin=0.8%轉正，但Fwd_PE=144.7偏高，估值需留意。量價結構健康，帶量推進，符合突破策略條件。</div>
+  <div class="detail-box">📋 策略依據：VTF=1.10&lt;1.5未達門檻，但Close距High_20D僅1.2%，Vol_vs_20DAvg=1.88&gt;1.5，量能確認。</div>
+  <div class="trade-grid">
+    <div class="trade-cell">
+      <div class="trade-label">買入區間</div>
+      <div class="trade-val buy">$228～$231</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">目標價</div>
+      <div class="trade-val tgt">$254</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">止損</div>
+      <div class="trade-val stop">$222</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">持有週期</div>
+      <div class="trade-val">10</div>
+    </div>
+  </div>
+  <div class="risk-box">⚠️ Fwd_PE=144.7估值過高，若成長放緩恐修正；RSI=63健康，但距52週高點僅-1.2%，追高風險。</div>
+  <div class="detail-box">💡 信心評分依據：技術面強勢且產業支撐，但估值過高且VTF未達1.5，信心中等。</div>
+</div>
+</div>
+<div class="section">
+  <div class="section-title">
+    📋 明日掛單計畫<span class="section-count">（6支，名額 0，持倉已滿，明日不建議掛新單）</span>
+  </div>
+  
+<div class="track-item watch">
+  <div class="track-header">
+    <span class="track-symbol">#1 GEN</span>
+    <span class="track-name">Gen Digital Inc.</span>
+    <span class="strategy-tag">突破策略</span>
+  </div>
+  <div class="track-status">⏸ 備援（名額外）｜信心 8/10｜L2 91 分</div>
+  <div class="track-prices">掛單價 $29.60｜買入區間 $29.2～$29.6｜止損 $28.2｜目標 $33｜剩 1 天觀察期</div>
+</div>
+
+<div class="track-item watch">
+  <div class="track-header">
+    <span class="track-symbol">#2 SLB</span>
+    <span class="track-name">SLB Limited</span>
+    <span class="strategy-tag">突破策略</span>
+  </div>
+  <div class="track-status">⏸ 備援（名額外）｜信心 8/10｜L2 91 分</div>
+  <div class="track-prices">掛單價 $60.50｜買入區間 $59.5～$60.5｜止損 $57.5｜目標 $69｜剩 4 天觀察期</div>
+</div>
+
+<div class="track-item watch">
+  <div class="track-header">
+    <span class="track-symbol">#3 WMB</span>
+    <span class="track-name">Williams Companies, Inc. (The)</span>
+    <span class="strategy-tag">突破策略</span>
+  </div>
+  <div class="track-status">⏸ 備援（名額外）｜信心 7/10｜L2 86 分</div>
+  <div class="track-prices">掛單價 $75.50｜買入區間 $74.5～$75.5｜止損 $72.5｜目標 $83｜剩 4 天觀察期</div>
+</div>
+
+<div class="track-item watch">
+  <div class="track-header">
+    <span class="track-symbol">#4 FDX</span>
+    <span class="track-name">FedEx Corporation</span>
+    <span class="strategy-tag">突破策略</span>
+  </div>
+  <div class="track-status">⏸ 備援（名額外）｜信心 7/10｜L2 85 分</div>
+  <div class="track-prices">掛單價 $336.00｜買入區間 $333.0～$336.0｜止損 $324.8｜目標 $370｜剩 1 天觀察期</div>
+</div>
+
+<div class="track-item watch">
+  <div class="track-header">
+    <span class="track-symbol">#5 CME</span>
+    <span class="track-name">CME Group Inc.</span>
+    <span class="strategy-tag">突破策略</span>
+  </div>
+  <div class="track-status">⏸ 備援（名額外）｜信心 7/10｜L2 82 分</div>
+  <div class="track-prices">掛單價 $285.00｜買入區間 $282～$285｜止損 $275｜目標 $315｜剩 3 天觀察期</div>
+</div>
+
+<div class="track-item watch">
+  <div class="track-header">
+    <span class="track-symbol">#6 CRWD</span>
+    <span class="track-name">CrowdStrike Holdings, Inc.</span>
+    <span class="strategy-tag">突破策略</span>
+  </div>
+  <div class="track-status">⏸ 備援（名額外）｜信心 6/10｜L2 92 分</div>
+  <div class="track-prices">掛單價 $231.00｜買入區間 $228～$231｜止損 $222｜目標 $254｜剩 4 天觀察期</div>
+</div>
+</div>
+
+  <div class="summary-box">
+    <h2>📈 今日統計</h2>
+    <div class="stat-row">
+      <div class="stat-group"><span class="stat-num c-active">5 / 5</span><span class="stat-lbl">持倉／上限</span></div>
+      <div class="stat-group"><span class="stat-num c-watch">5</span><span class="stat-lbl">支留意</span></div>
+      <div class="stat-group"><span class="stat-num c-invalid">3</span><span class="stat-lbl">支失效</span></div>
+    </div>
+    <div class="stat-row">
+      <div class="stat-group"><span class="stat-num c-new">2</span><span class="stat-lbl">支新增</span></div>
+      <div class="stat-group"><span class="stat-num c-reset">1</span><span class="stat-lbl">支重新入選</span></div>
+      <div class="stat-group"><span class="stat-num c-removed">3</span><span class="stat-lbl">支移除</span></div>
+      
+    </div>
+  </div>
+</div>
+</body>
+</html>
