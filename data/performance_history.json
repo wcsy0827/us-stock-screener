@@ -629,6 +629,41 @@
         "return_pct": -1.72,
         "is_win": false
       }
+    },
+    {
+      "meta_data": {
+        "ticker": "NDSN",
+        "company_name": "Nordson Corporation",
+        "sector": "Industrials"
+      },
+      "signal_details": {
+        "signal_date": "2026-08-20",
+        "entry_regime": "CONSOLIDATION",
+        "market_breadth_pct": 59.3,
+        "vix_value": 16.01,
+        "l2_score": 100.0,
+        "assigned_strategy": "突破策略",
+        "ai_confidence": 8,
+        "ai_strategy_reason": "VTF=2.81>1.5且量能為20日均量3.22倍，收盤價距20日高點僅0.6%，符合帶量突破條件。"
+      },
+      "execution_plan": {
+        "buy_zone_lower": 327.0,
+        "buy_zone_upper": 334.0,
+        "planned_target": "$370",
+        "planned_stop_loss": "$319.00"
+      },
+      "actual_outcome": {
+        "triggered_date": "2026-08-21",
+        "actual_entry_price": 334.0,
+        "exit_date": "2026-09-01",
+        "actual_exit_price": 319.0,
+        "exit_reason": "CLOSED_LOSS",
+        "holding_days": 8
+      },
+      "performance_metrics": {
+        "return_pct": -4.49,
+        "is_win": false
+      }
     }
   ]
 }
