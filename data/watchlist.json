@@ -32,13 +32,14 @@
       "2026-08-27",
       "2026-08-28",
       "2026-08-31",
-      "2026-09-01"
+      "2026-09-01",
+      "2026-09-02"
     ],
     "status": "active",
     "invalid_reason": null,
     "slot_blocked_today": false,
     "watch_days": 1,
-    "active_days": 20,
+    "active_days": 21,
     "signal_date_close": 87.30999755859375,
     "active_entry_price": 86.0,
     "active_start_date": "2026-08-05",
@@ -49,7 +50,7 @@
     "l2_score": 100.0,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線完美多頭排列，RSI=72.6、VTF=1.49、Momentum_ATR=4.22、RS=+19.6%，量價結構健康。",
-    "current_price": 90.14,
+    "current_price": 89.69,
     "planned_stop_loss": 80.0,
     "effective_stop_loss": 86.0,
     "is_breakeven_locked": true,
@@ -86,13 +87,14 @@
       "2026-08-27",
       "2026-08-28",
       "2026-08-31",
-      "2026-09-01"
+      "2026-09-01",
+      "2026-09-02"
     ],
     "status": "active",
     "invalid_reason": null,
     "slot_blocked_today": false,
     "watch_days": 0,
-    "active_days": 19,
+    "active_days": 20,
     "signal_date_close": 407.8299865722656,
     "active_entry_price": 404.0,
     "active_start_date": "2026-08-06",
@@ -103,11 +105,11 @@
     "l2_score": 100.0,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭排列，RSI=72.5，VTF=0.73，Momentum_ATR=3.82，RS=+4.8%，動能強勁。",
-    "current_price": 438.12,
+    "current_price": 442.84,
     "planned_stop_loss": 385.0,
     "effective_stop_loss": 404.0,
     "is_breakeven_locked": true,
-    "highest_close_since_active": 438.12
+    "highest_close_since_active": 442.84
   },
   {
     "symbol": "WDAY",
@@ -134,13 +136,14 @@
       "2026-08-27",
       "2026-08-28",
       "2026-08-31",
-      "2026-09-01"
+      "2026-09-01",
+      "2026-09-02"
     ],
     "status": "active",
     "invalid_reason": null,
     "slot_blocked_today": false,
     "watch_days": 3,
-    "active_days": 10,
+    "active_days": 11,
     "signal_date_close": 206.4499969482422,
     "active_entry_price": 203.0,
     "active_start_date": "2026-08-19",
@@ -151,7 +154,7 @@
     "l2_score": 100.0,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭排列，RSI=75，VTF=0.69，Momentum_ATR=5.04，RS=+13.4%，動能強勁。",
-    "current_price": 198.38,
+    "current_price": 200.87,
     "planned_stop_loss": 182.0,
     "effective_stop_loss": 182.0,
     "is_breakeven_locked": false,
@@ -178,13 +181,14 @@
       "2026-08-27",
       "2026-08-28",
       "2026-08-31",
-      "2026-09-01"
+      "2026-09-01",
+      "2026-09-02"
     ],
     "status": "active",
     "invalid_reason": null,
     "slot_blocked_today": false,
     "watch_days": 1,
-    "active_days": 8,
+    "active_days": 9,
     "signal_date_close": 480.8399963378906,
     "active_entry_price": 476.0,
     "active_start_date": "2026-08-21",
@@ -195,45 +199,11 @@
     "l2_score": 91.38,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭排列，RSI=68.2，VTF=0.69，Momentum_ATR=5.48，RS=+7.1%，符合動能策略標準。",
-    "current_price": 491.24,
+    "current_price": 478.92,
     "planned_stop_loss": 455.0,
     "effective_stop_loss": 455.0,
     "is_breakeven_locked": false,
     "highest_close_since_active": 491.24
-  },
-  {
-    "symbol": "SNPS",
-    "name": "Synopsys, Inc.",
-    "sector": "Technology",
-    "buy_zone": "$465～$470",
-    "buy_zone_lower": 465.0,
-    "buy_zone_upper": 470.0,
-    "target": "$512",
-    "stop_loss": "$456",
-    "hold_period": "10",
-    "strategy": "突破策略",
-    "tracked_dates": [
-      "2026-08-27",
-      "2026-08-28",
-      "2026-08-31",
-      "2026-09-01"
-    ],
-    "status": "invalid",
-    "invalid_reason": "跌破止損價 $456.00，錯過買點",
-    "slot_blocked_today": false,
-    "watch_days": 0,
-    "active_days": 0,
-    "signal_date_close": 464.8900146484375,
-    "active_entry_price": null,
-    "active_start_date": null,
-    "date_added": "2026-08-27",
-    "entry_regime": "CONSOLIDATION",
-    "market_breadth_pct": 57.4,
-    "vix_value": 14.51,
-    "l2_score": 84.33,
-    "ai_confidence": 8,
-    "ai_strategy_reason": "VTF=2.09>1.5，Close 距 High_20D 僅 -0.02%，Vol_vs_20DAvg=2.46>1.5，攻擊量確認突破。",
-    "current_price": 414.82
   },
   {
     "symbol": "CRWD",
@@ -248,7 +218,8 @@
     "strategy": "突破策略",
     "tracked_dates": [
       "2026-08-31",
-      "2026-09-01"
+      "2026-09-01",
+      "2026-09-02"
     ],
     "status": "invalid",
     "invalid_reason": "跌破止損價 $222.00，錯過買點",
@@ -265,41 +236,7 @@
     "l2_score": 92.5,
     "ai_confidence": 6,
     "ai_strategy_reason": "VTF=1.10<1.5未達門檻，但Close距High_20D僅1.2%，Vol_vs_20DAvg=1.88>1.5，量能確認。",
-    "current_price": 215.07
-  },
-  {
-    "symbol": "NVDA",
-    "name": "NVIDIA Corporation",
-    "sector": "Technology",
-    "buy_zone": "$228～$230",
-    "buy_zone_lower": 228.0,
-    "buy_zone_upper": 230.0,
-    "target": "$251",
-    "stop_loss": "$224",
-    "hold_period": "10",
-    "strategy": "突破策略",
-    "tracked_dates": [
-      "2026-08-27",
-      "2026-08-28",
-      "2026-08-31",
-      "2026-09-01"
-    ],
-    "status": "invalid",
-    "invalid_reason": "跌破止損價 $224.00，錯過買點",
-    "slot_blocked_today": false,
-    "watch_days": 0,
-    "active_days": 0,
-    "signal_date_close": 227.97999572753906,
-    "active_entry_price": null,
-    "active_start_date": null,
-    "date_added": "2026-08-27",
-    "entry_regime": "CONSOLIDATION",
-    "market_breadth_pct": 57.4,
-    "vix_value": 14.51,
-    "l2_score": 83.0,
-    "ai_confidence": 8,
-    "ai_strategy_reason": "VTF=1.14<1.5，但 Close 距 High_20D -1.08%，Vol_vs_20DAvg=2.38>1.5，量能充足。",
-    "current_price": 217.44
+    "current_price": 203.42
   },
   {
     "symbol": "CME",
@@ -315,12 +252,13 @@
     "tracked_dates": [
       "2026-08-28",
       "2026-08-31",
-      "2026-09-01"
+      "2026-09-01",
+      "2026-09-02"
     ],
     "status": "watch",
     "invalid_reason": null,
     "slot_blocked_today": true,
-    "watch_days": 2,
+    "watch_days": 3,
     "active_days": 0,
     "signal_date_close": 285.79998779296875,
     "active_entry_price": null,
@@ -332,7 +270,7 @@
     "l2_score": 82.38,
     "ai_confidence": 7,
     "ai_strategy_reason": "VTF=1.09、Vol_vs_20DAvg=1.53、Close距High_20D=0.2%，量能突破，RS=+2.6%板塊內相對強勢。",
-    "current_price": 286.45
+    "current_price": 277.77
   },
   {
     "symbol": "SLB",
@@ -347,7 +285,8 @@
     "strategy": "突破策略",
     "tracked_dates": [
       "2026-08-31",
-      "2026-09-01"
+      "2026-09-01",
+      "2026-09-02"
     ],
     "status": "invalid",
     "invalid_reason": "跌破止損價 $57.50，錯過買點",
@@ -364,7 +303,7 @@
     "l2_score": 91.0,
     "ai_confidence": 8,
     "ai_strategy_reason": "VTF=1.98>1.5，Close距High_20D僅0.6%，Vol_vs_20DAvg=3.16>1.5，攻擊量確認突破。",
-    "current_price": 57.15
+    "current_price": 58.13
   },
   {
     "symbol": "WMB",
@@ -379,12 +318,13 @@
     "strategy": "突破策略",
     "tracked_dates": [
       "2026-08-31",
-      "2026-09-01"
+      "2026-09-01",
+      "2026-09-02"
     ],
     "status": "watch",
     "invalid_reason": null,
     "slot_blocked_today": true,
-    "watch_days": 1,
+    "watch_days": 2,
     "active_days": 0,
     "signal_date_close": 75.05000305175781,
     "active_entry_price": null,
@@ -396,37 +336,38 @@
     "l2_score": 85.83,
     "ai_confidence": 7,
     "ai_strategy_reason": "VTF=1.49接近1.5，Close距High_20D僅1.1%，Vol_vs_20DAvg=2.87>1.5，量能確認。",
-    "current_price": 75.23
+    "current_price": 75.16
   },
   {
     "symbol": "DE",
     "name": "Deere & Company",
     "sector": "Industrials",
-    "buy_zone": "$656～$671",
-    "buy_zone_lower": 656.0,
-    "buy_zone_upper": 671.0,
-    "target": "$745",
-    "stop_loss": "$636",
+    "buy_zone": "$690～$698",
+    "buy_zone_lower": 690.0,
+    "buy_zone_upper": 698.0,
+    "target": "$770",
+    "stop_loss": "$669",
     "hold_period": "10",
     "strategy": "突破策略",
     "tracked_dates": [
-      "2026-09-01"
+      "2026-09-02"
     ],
     "status": "watch",
     "invalid_reason": null,
     "slot_blocked_today": false,
     "watch_days": 0,
     "active_days": 0,
-    "signal_date_close": 676.0800170898438,
+    "signal_date_close": 698.3699951171875,
     "active_entry_price": null,
     "active_start_date": null,
-    "date_added": "2026-09-01",
+    "date_added": "2026-09-02",
     "entry_regime": "CONSOLIDATION",
-    "market_breadth_pct": 50.0,
-    "vix_value": 16.34,
+    "market_breadth_pct": 48.7,
+    "vix_value": 15.2,
     "l2_score": 100.0,
     "ai_confidence": 8,
-    "ai_strategy_reason": "VTF=1.57>1.5，Close 距 High_20D 僅 -0.3%，Vol_vs_20DAvg=1.83>1.5 攻擊量確認，RSI=66.2 健康。"
+    "ai_strategy_reason": "VTF=1.28>1.5? 否，但量能1.54倍，RSI=69.5，距20日高點-0.3%，符合突破緩衝。",
+    "current_price": 698.37
   },
   {
     "symbol": "CF",
@@ -440,52 +381,59 @@
     "hold_period": "10",
     "strategy": "突破策略",
     "tracked_dates": [
-      "2026-09-01"
+      "2026-09-01",
+      "2026-09-02"
     ],
-    "status": "watch",
+    "status": "active",
     "invalid_reason": null,
     "slot_blocked_today": false,
     "watch_days": 0,
-    "active_days": 0,
+    "active_days": 1,
     "signal_date_close": 135.60000610351562,
-    "active_entry_price": null,
-    "active_start_date": null,
+    "active_entry_price": 134.0,
+    "active_start_date": "2026-09-02",
     "date_added": "2026-09-01",
     "entry_regime": "CONSOLIDATION",
     "market_breadth_pct": 50.0,
     "vix_value": 16.34,
     "l2_score": 100.0,
     "ai_confidence": 8,
-    "ai_strategy_reason": "VTF=1.52>1.5，Close 距 High_20D -0.1%，Vol_vs_20DAvg=1.49 接近攻擊量，RSI=69.2 強勢未過熱。"
+    "ai_strategy_reason": "VTF=1.52>1.5，Close 距 High_20D -0.1%，Vol_vs_20DAvg=1.49 接近攻擊量，RSI=69.2 強勢未過熱。",
+    "current_price": 139.27,
+    "planned_stop_loss": 126.0,
+    "effective_stop_loss": 126.0,
+    "is_breakeven_locked": false,
+    "highest_close_since_active": 139.27
   },
   {
     "symbol": "CTVA",
     "name": "Corteva, Inc.",
     "sector": "Basic Materials",
-    "buy_zone": "$85～$87",
-    "buy_zone_lower": 85.0,
-    "buy_zone_upper": 87.0,
-    "target": "$96",
-    "stop_loss": "$82",
+    "buy_zone": "$88～$90",
+    "buy_zone_lower": 88.0,
+    "buy_zone_upper": 90.0,
+    "target": "$99",
+    "stop_loss": "$84",
     "hold_period": "10",
     "strategy": "突破策略",
     "tracked_dates": [
-      "2026-09-01"
+      "2026-09-02"
     ],
     "status": "watch",
     "invalid_reason": null,
     "slot_blocked_today": false,
     "watch_days": 0,
     "active_days": 0,
-    "signal_date_close": 87.7300033569336,
+    "signal_date_close": 89.97000122070312,
     "active_entry_price": null,
     "active_start_date": null,
-    "date_added": "2026-09-01",
+    "date_added": "2026-09-02",
     "entry_regime": "CONSOLIDATION",
-    "market_breadth_pct": 50.0,
-    "vix_value": 16.34,
-    "l2_score": 91.38,
+    "market_breadth_pct": 48.7,
+    "vix_value": 15.2,
+    "l2_score": 91.0,
     "ai_confidence": 7,
-    "ai_strategy_reason": "VTF=1.06 略低於1.5，但 Close 距 High_20D -0.1%，Vol_vs_20DAvg=1.23 接近攻擊量，RSI=68.7 強勢。"
+    "ai_strategy_reason": "VTF=0.74，量能1.83倍，RSI=72.2，距20日高點-0.9%，符合突破緩衝。",
+    "current_price": 89.97
   }
 ]
