@@ -33,13 +33,14 @@
       "2026-08-28",
       "2026-08-31",
       "2026-09-01",
-      "2026-09-02"
+      "2026-09-02",
+      "2026-09-03"
     ],
     "status": "active",
     "invalid_reason": null,
     "slot_blocked_today": false,
     "watch_days": 1,
-    "active_days": 21,
+    "active_days": 22,
     "signal_date_close": 87.30999755859375,
     "active_entry_price": 86.0,
     "active_start_date": "2026-08-05",
@@ -50,7 +51,7 @@
     "l2_score": 100.0,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線完美多頭排列，RSI=72.6、VTF=1.49、Momentum_ATR=4.22、RS=+19.6%，量價結構健康。",
-    "current_price": 89.69,
+    "current_price": 89.71,
     "planned_stop_loss": 80.0,
     "effective_stop_loss": 86.0,
     "is_breakeven_locked": true,
@@ -88,13 +89,14 @@
       "2026-08-28",
       "2026-08-31",
       "2026-09-01",
-      "2026-09-02"
+      "2026-09-02",
+      "2026-09-03"
     ],
     "status": "active",
     "invalid_reason": null,
     "slot_blocked_today": false,
     "watch_days": 0,
-    "active_days": 20,
+    "active_days": 21,
     "signal_date_close": 407.8299865722656,
     "active_entry_price": 404.0,
     "active_start_date": "2026-08-06",
@@ -105,11 +107,11 @@
     "l2_score": 100.0,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭排列，RSI=72.5，VTF=0.73，Momentum_ATR=3.82，RS=+4.8%，動能強勁。",
-    "current_price": 442.84,
+    "current_price": 444.12,
     "planned_stop_loss": 385.0,
     "effective_stop_loss": 404.0,
     "is_breakeven_locked": true,
-    "highest_close_since_active": 442.84
+    "highest_close_since_active": 444.12
   },
   {
     "symbol": "WDAY",
@@ -137,13 +139,14 @@
       "2026-08-28",
       "2026-08-31",
       "2026-09-01",
-      "2026-09-02"
+      "2026-09-02",
+      "2026-09-03"
     ],
     "status": "active",
     "invalid_reason": null,
     "slot_blocked_today": false,
     "watch_days": 3,
-    "active_days": 11,
+    "active_days": 12,
     "signal_date_close": 206.4499969482422,
     "active_entry_price": 203.0,
     "active_start_date": "2026-08-19",
@@ -154,11 +157,11 @@
     "l2_score": 100.0,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭排列，RSI=75，VTF=0.69，Momentum_ATR=5.04，RS=+13.4%，動能強勁。",
-    "current_price": 200.87,
+    "current_price": 206.92,
     "planned_stop_loss": 182.0,
     "effective_stop_loss": 182.0,
     "is_breakeven_locked": false,
-    "highest_close_since_active": 204.72
+    "highest_close_since_active": 206.92
   },
   {
     "symbol": "MSI",
@@ -182,13 +185,14 @@
       "2026-08-28",
       "2026-08-31",
       "2026-09-01",
-      "2026-09-02"
+      "2026-09-02",
+      "2026-09-03"
     ],
     "status": "active",
     "invalid_reason": null,
     "slot_blocked_today": false,
     "watch_days": 1,
-    "active_days": 9,
+    "active_days": 10,
     "signal_date_close": 480.8399963378906,
     "active_entry_price": 476.0,
     "active_start_date": "2026-08-21",
@@ -199,7 +203,7 @@
     "l2_score": 91.38,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭排列，RSI=68.2，VTF=0.69，Momentum_ATR=5.48，RS=+7.1%，符合動能策略標準。",
-    "current_price": 478.92,
+    "current_price": 472.23,
     "planned_stop_loss": 455.0,
     "effective_stop_loss": 455.0,
     "is_breakeven_locked": false,
@@ -219,7 +223,8 @@
     "tracked_dates": [
       "2026-08-31",
       "2026-09-01",
-      "2026-09-02"
+      "2026-09-02",
+      "2026-09-03"
     ],
     "status": "invalid",
     "invalid_reason": "跌破止損價 $222.00，錯過買點",
@@ -236,41 +241,7 @@
     "l2_score": 92.5,
     "ai_confidence": 6,
     "ai_strategy_reason": "VTF=1.10<1.5未達門檻，但Close距High_20D僅1.2%，Vol_vs_20DAvg=1.88>1.5，量能確認。",
-    "current_price": 203.42
-  },
-  {
-    "symbol": "CME",
-    "name": "CME Group Inc.",
-    "sector": "Financial Services",
-    "buy_zone": "$282～$285",
-    "buy_zone_lower": 282.0,
-    "buy_zone_upper": 285.0,
-    "target": "$315",
-    "stop_loss": "$275",
-    "hold_period": "10",
-    "strategy": "突破策略",
-    "tracked_dates": [
-      "2026-08-28",
-      "2026-08-31",
-      "2026-09-01",
-      "2026-09-02"
-    ],
-    "status": "watch",
-    "invalid_reason": null,
-    "slot_blocked_today": true,
-    "watch_days": 3,
-    "active_days": 0,
-    "signal_date_close": 285.79998779296875,
-    "active_entry_price": null,
-    "active_start_date": null,
-    "date_added": "2026-08-28",
-    "entry_regime": "CONSOLIDATION",
-    "market_breadth_pct": 55.5,
-    "vix_value": 14.43,
-    "l2_score": 82.38,
-    "ai_confidence": 7,
-    "ai_strategy_reason": "VTF=1.09、Vol_vs_20DAvg=1.53、Close距High_20D=0.2%，量能突破，RS=+2.6%板塊內相對強勢。",
-    "current_price": 277.77
+    "current_price": 214.97
   },
   {
     "symbol": "SLB",
@@ -286,7 +257,8 @@
     "tracked_dates": [
       "2026-08-31",
       "2026-09-01",
-      "2026-09-02"
+      "2026-09-02",
+      "2026-09-03"
     ],
     "status": "invalid",
     "invalid_reason": "跌破止損價 $57.50，錯過買點",
@@ -303,7 +275,7 @@
     "l2_score": 91.0,
     "ai_confidence": 8,
     "ai_strategy_reason": "VTF=1.98>1.5，Close距High_20D僅0.6%，Vol_vs_20DAvg=3.16>1.5，攻擊量確認突破。",
-    "current_price": 58.13
+    "current_price": 57.41
   },
   {
     "symbol": "WMB",
@@ -319,12 +291,13 @@
     "tracked_dates": [
       "2026-08-31",
       "2026-09-01",
-      "2026-09-02"
+      "2026-09-02",
+      "2026-09-03"
     ],
     "status": "watch",
     "invalid_reason": null,
     "slot_blocked_today": true,
-    "watch_days": 2,
+    "watch_days": 3,
     "active_days": 0,
     "signal_date_close": 75.05000305175781,
     "active_entry_price": null,
@@ -336,7 +309,7 @@
     "l2_score": 85.83,
     "ai_confidence": 7,
     "ai_strategy_reason": "VTF=1.49接近1.5，Close距High_20D僅1.1%，Vol_vs_20DAvg=2.87>1.5，量能確認。",
-    "current_price": 75.16
+    "current_price": 74.05
   },
   {
     "symbol": "DE",
@@ -350,12 +323,13 @@
     "hold_period": "10",
     "strategy": "突破策略",
     "tracked_dates": [
-      "2026-09-02"
+      "2026-09-02",
+      "2026-09-03"
     ],
     "status": "watch",
     "invalid_reason": null,
-    "slot_blocked_today": false,
-    "watch_days": 0,
+    "slot_blocked_today": true,
+    "watch_days": 1,
     "active_days": 0,
     "signal_date_close": 698.3699951171875,
     "active_entry_price": null,
@@ -367,7 +341,7 @@
     "l2_score": 100.0,
     "ai_confidence": 8,
     "ai_strategy_reason": "VTF=1.28>1.5? 否，但量能1.54倍，RSI=69.5，距20日高點-0.3%，符合突破緩衝。",
-    "current_price": 698.37
+    "current_price": 694.41
   },
   {
     "symbol": "CF",
@@ -382,13 +356,14 @@
     "strategy": "突破策略",
     "tracked_dates": [
       "2026-09-01",
-      "2026-09-02"
+      "2026-09-02",
+      "2026-09-03"
     ],
     "status": "active",
     "invalid_reason": null,
     "slot_blocked_today": false,
     "watch_days": 0,
-    "active_days": 1,
+    "active_days": 2,
     "signal_date_close": 135.60000610351562,
     "active_entry_price": 134.0,
     "active_start_date": "2026-09-02",
@@ -399,7 +374,7 @@
     "l2_score": 100.0,
     "ai_confidence": 8,
     "ai_strategy_reason": "VTF=1.52>1.5，Close 距 High_20D -0.1%，Vol_vs_20DAvg=1.49 接近攻擊量，RSI=69.2 強勢未過熱。",
-    "current_price": 139.27,
+    "current_price": 137.81,
     "planned_stop_loss": 126.0,
     "effective_stop_loss": 126.0,
     "is_breakeven_locked": false,
@@ -417,12 +392,13 @@
     "hold_period": "10",
     "strategy": "突破策略",
     "tracked_dates": [
-      "2026-09-02"
+      "2026-09-02",
+      "2026-09-03"
     ],
     "status": "watch",
     "invalid_reason": null,
-    "slot_blocked_today": false,
-    "watch_days": 0,
+    "slot_blocked_today": true,
+    "watch_days": 1,
     "active_days": 0,
     "signal_date_close": 89.97000122070312,
     "active_entry_price": null,
@@ -434,6 +410,96 @@
     "l2_score": 91.0,
     "ai_confidence": 7,
     "ai_strategy_reason": "VTF=0.74，量能1.83倍，RSI=72.2，距20日高點-0.9%，符合突破緩衝。",
-    "current_price": 89.97
+    "current_price": 88.62
+  },
+  {
+    "symbol": "HOOD",
+    "name": "Robinhood Markets, Inc.",
+    "sector": "Financial Services",
+    "buy_zone": "$122～$124",
+    "buy_zone_lower": 122.0,
+    "buy_zone_upper": 124.0,
+    "target": "$145",
+    "stop_loss": "$115",
+    "hold_period": "10",
+    "strategy": "突破策略",
+    "tracked_dates": [
+      "2026-09-03"
+    ],
+    "status": "watch",
+    "invalid_reason": null,
+    "slot_blocked_today": false,
+    "watch_days": 0,
+    "active_days": 0,
+    "signal_date_close": 124.72000122070312,
+    "active_entry_price": null,
+    "active_start_date": null,
+    "date_added": "2026-09-03",
+    "entry_regime": "CONSOLIDATION",
+    "market_breadth_pct": 48.4,
+    "vix_value": 14.32,
+    "l2_score": 100.0,
+    "ai_confidence": 8,
+    "ai_strategy_reason": "VTF=2.44，Vol_vs_20DAvg=2.53，RS=+18.8%，突破20日高點，量能確認。"
+  },
+  {
+    "symbol": "DELL",
+    "name": "Dell Technologies Inc.",
+    "sector": "Technology",
+    "buy_zone": "$510～$516",
+    "buy_zone_lower": 510.0,
+    "buy_zone_upper": 516.0,
+    "target": "$570",
+    "stop_loss": "$485",
+    "hold_period": "10",
+    "strategy": "突破策略",
+    "tracked_dates": [
+      "2026-09-03"
+    ],
+    "status": "watch",
+    "invalid_reason": null,
+    "slot_blocked_today": false,
+    "watch_days": 0,
+    "active_days": 0,
+    "signal_date_close": 516.3900146484375,
+    "active_entry_price": null,
+    "active_start_date": null,
+    "date_added": "2026-09-03",
+    "entry_regime": "CONSOLIDATION",
+    "market_breadth_pct": 48.4,
+    "vix_value": 14.32,
+    "l2_score": 92.5,
+    "ai_confidence": 7,
+    "ai_strategy_reason": "VTF=1.23，Vol_vs_20DAvg=2.53，RS=+13.0%，價格接近20日高點，量能放大。"
+  },
+  {
+    "symbol": "SPGI",
+    "name": "S&P Global Inc.",
+    "sector": "Financial Services",
+    "buy_zone": "$448～$452",
+    "buy_zone_lower": 448.0,
+    "buy_zone_upper": 452.0,
+    "target": "$500",
+    "stop_loss": "$435",
+    "hold_period": "10",
+    "strategy": "突破策略",
+    "tracked_dates": [
+      "2026-09-03"
+    ],
+    "status": "watch",
+    "invalid_reason": null,
+    "slot_blocked_today": false,
+    "watch_days": 0,
+    "active_days": 0,
+    "signal_date_close": 450.5799865722656,
+    "active_entry_price": null,
+    "active_start_date": null,
+    "date_added": "2026-09-03",
+    "entry_regime": "CONSOLIDATION",
+    "market_breadth_pct": 48.4,
+    "vix_value": 14.32,
+    "l2_score": 84.38,
+    "ai_confidence": 6,
+    "ai_strategy_reason": "VTF=1.21，Vol_vs_20DAvg=1.38，RS=+0.9%，接近20日高點，量能溫和放大。"
   }
 ]
