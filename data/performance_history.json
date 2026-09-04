@@ -664,6 +664,41 @@
         "return_pct": -4.49,
         "is_win": false
       }
+    },
+    {
+      "meta_data": {
+        "ticker": "DXCM",
+        "company_name": "DexCom, Inc.",
+        "sector": "Healthcare"
+      },
+      "signal_details": {
+        "signal_date": "2026-08-03",
+        "entry_regime": "BULL_TREND",
+        "market_breadth_pct": 64.2,
+        "vix_value": 15.86,
+        "l2_score": 100.0,
+        "assigned_strategy": "動能策略",
+        "ai_confidence": 8,
+        "ai_strategy_reason": "均線完美多頭排列，RSI=72.6、VTF=1.49、Momentum_ATR=4.22、RS=+19.6%，量價結構健康。"
+      },
+      "execution_plan": {
+        "buy_zone_lower": 84.0,
+        "buy_zone_upper": 86.0,
+        "planned_target": "$96",
+        "planned_stop_loss": "$80.00"
+      },
+      "actual_outcome": {
+        "triggered_date": "2026-08-05",
+        "actual_entry_price": 86.0,
+        "exit_date": "2026-09-04",
+        "actual_exit_price": 87.9,
+        "exit_reason": "FORCE_EXPIRED",
+        "holding_days": 23
+      },
+      "performance_metrics": {
+        "return_pct": 2.21,
+        "is_win": true
+      }
     }
   ]
 }
