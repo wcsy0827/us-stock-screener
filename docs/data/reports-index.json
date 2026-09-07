@@ -472,11 +472,11 @@
   {
     "date": "2026-09-04",
     "weekday": "五",
-    "active": 4,
-    "watch": 8,
+    "active": 5,
+    "watch": 7,
     "invalid": 0,
     "new": 3,
     "reset": 0,
-    "removed": 3
+    "removed": 0
   }
 ]
