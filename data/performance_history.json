@@ -699,6 +699,41 @@
         "return_pct": 2.21,
         "is_win": true
       }
+    },
+    {
+      "meta_data": {
+        "ticker": "AMGN",
+        "company_name": "Amgen Inc.",
+        "sector": "Healthcare"
+      },
+      "signal_details": {
+        "signal_date": "2026-08-05",
+        "entry_regime": "BULL_TREND",
+        "market_breadth_pct": 67.4,
+        "vix_value": 15.81,
+        "l2_score": 100.0,
+        "assigned_strategy": "動能策略",
+        "ai_confidence": 8,
+        "ai_strategy_reason": "均線多頭排列，RSI=72.5，VTF=0.73，Momentum_ATR=3.82，RS=+4.8%，動能強勁。"
+      },
+      "execution_plan": {
+        "buy_zone_lower": 396.0,
+        "buy_zone_upper": 404.0,
+        "planned_target": "$449",
+        "planned_stop_loss": "$385.00"
+      },
+      "actual_outcome": {
+        "triggered_date": "2026-08-06",
+        "actual_entry_price": 404.0,
+        "exit_date": "2026-09-08",
+        "actual_exit_price": 404.0,
+        "exit_reason": "CLOSED_LOSS",
+        "holding_days": 23
+      },
+      "performance_metrics": {
+        "return_pct": 0.0,
+        "is_win": false
+      }
     }
   ]
 }
