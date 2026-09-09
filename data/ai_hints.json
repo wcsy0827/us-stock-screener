@@ -1,14 +1,14 @@
 {
-  "generated_at_utc": "2026-09-08T23:36:45Z",
-  "market_date": "2026-09-08",
-  "total_settled": 20,
+  "generated_at_utc": "2026-09-09T23:30:06Z",
+  "market_date": "2026-09-09",
+  "total_settled": 21,
   "dimensions": {
     "by_regime": [
       {
         "key": "BULL_TREND",
-        "trades": 18,
-        "win_rate": 61.1,
-        "avg_return_pct": 0.23
+        "trades": 19,
+        "win_rate": 57.9,
+        "avg_return_pct": 0.22
       },
       {
         "key": "CONSOLIDATION",
@@ -26,9 +26,9 @@
     "by_strategy": [
       {
         "key": "動能策略",
-        "trades": 18,
-        "win_rate": 61.1,
-        "avg_return_pct": 0.23
+        "trades": 19,
+        "win_rate": 57.9,
+        "avg_return_pct": 0.22
       },
       {
         "key": "突破策略",
@@ -63,16 +63,16 @@
         "avg_return_pct": -8.66
       },
       {
+        "key": "Healthcare",
+        "trades": 2,
+        "win_rate": 50.0,
+        "avg_return_pct": 1.1
+      },
+      {
         "key": "Technology",
         "trades": 2,
         "win_rate": 50.0,
         "avg_return_pct": 2.06
-      },
-      {
-        "key": "Healthcare",
-        "trades": 1,
-        "win_rate": 100.0,
-        "avg_return_pct": 2.21
       },
       {
         "key": "Real Estate",
@@ -83,8 +83,8 @@
     ]
   },
   "prompt_lines": [
-    "【Regime】BULL_TREND：18 筆結算，勝率 61.1%，平均報酬 +0.23%",
-    "【策略】動能策略：18 筆結算，勝率 61.1%，平均報酬 +0.23%",
+    "【Regime】BULL_TREND：19 筆結算，勝率 57.9%，平均報酬 +0.22%",
+    "【策略】動能策略：19 筆結算，勝率 57.9%，平均報酬 +0.22%",
     "【產業】Industrials：8 筆結算，勝率 50.0%，平均報酬 +0.41%",
     "【產業】Financial Services：4 筆結算，勝率 50.0%，平均報酬 -0.06%"
   ]
