@@ -734,6 +734,41 @@
         "return_pct": 0.0,
         "is_win": false
       }
+    },
+    {
+      "meta_data": {
+        "ticker": "MU",
+        "company_name": "Micron Technology, Inc.",
+        "sector": "Technology"
+      },
+      "signal_details": {
+        "signal_date": "2026-09-04",
+        "entry_regime": "CONSOLIDATION",
+        "market_breadth_pct": 48.9,
+        "vix_value": 15.3,
+        "l2_score": 91.38,
+        "assigned_strategy": "突破策略",
+        "ai_confidence": 9,
+        "ai_strategy_reason": "VTF=0.97接近1.0，Close距High_20D僅-1.9%，突破在即；Vol_vs_20DAvg=1.27量能溫和放大，RS_vs_Sector=+5.6%領先板塊。"
+      },
+      "execution_plan": {
+        "buy_zone_lower": 1005.0,
+        "buy_zone_upper": 1020.0,
+        "planned_target": "$1120",
+        "planned_stop_loss": "$950.00"
+      },
+      "actual_outcome": {
+        "triggered_date": "2026-09-09",
+        "actual_entry_price": 1020.0,
+        "exit_date": "2026-09-15",
+        "actual_exit_price": 950.0,
+        "exit_reason": "CLOSED_LOSS",
+        "holding_days": 5
+      },
+      "performance_metrics": {
+        "return_pct": -6.86,
+        "is_win": false
+      }
     }
   ]
 }

@@ -32,13 +32,14 @@
       "2026-09-09",
       "2026-09-10",
       "2026-09-11",
-      "2026-09-14"
+      "2026-09-14",
+      "2026-09-15"
     ],
     "status": "active",
     "invalid_reason": null,
     "slot_blocked_today": false,
     "watch_days": 3,
-    "active_days": 18,
+    "active_days": 19,
     "signal_date_close": 206.4499969482422,
     "active_entry_price": 203.0,
     "active_start_date": "2026-08-19",
@@ -49,7 +50,7 @@
     "l2_score": 100.0,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭排列，RSI=75，VTF=0.69，Momentum_ATR=5.04，RS=+13.4%，動能強勁。",
-    "current_price": 185.7,
+    "current_price": 190.67,
     "planned_stop_loss": 182.0,
     "effective_stop_loss": 182.0,
     "is_breakeven_locked": false,
@@ -84,13 +85,14 @@
       "2026-09-09",
       "2026-09-10",
       "2026-09-11",
-      "2026-09-14"
+      "2026-09-14",
+      "2026-09-15"
     ],
     "status": "active",
     "invalid_reason": null,
     "slot_blocked_today": false,
     "watch_days": 1,
-    "active_days": 16,
+    "active_days": 17,
     "signal_date_close": 480.8399963378906,
     "active_entry_price": 476.0,
     "active_start_date": "2026-08-21",
@@ -101,7 +103,7 @@
     "l2_score": 91.38,
     "ai_confidence": 8,
     "ai_strategy_reason": "均線多頭排列，RSI=68.2，VTF=0.69，Momentum_ATR=5.48，RS=+7.1%，符合動能策略標準。",
-    "current_price": 466.16,
+    "current_price": 469.14,
     "planned_stop_loss": 455.0,
     "effective_stop_loss": 455.0,
     "is_breakeven_locked": false,
@@ -126,13 +128,14 @@
       "2026-09-09",
       "2026-09-10",
       "2026-09-11",
-      "2026-09-14"
+      "2026-09-14",
+      "2026-09-15"
     ],
     "status": "active",
     "invalid_reason": null,
     "slot_blocked_today": false,
     "watch_days": 2,
-    "active_days": 5,
+    "active_days": 6,
     "signal_date_close": 698.3699951171875,
     "active_entry_price": 698.0,
     "active_start_date": "2026-09-04",
@@ -143,7 +146,7 @@
     "l2_score": 100.0,
     "ai_confidence": 8,
     "ai_strategy_reason": "VTF=1.28>1.5? 否，但量能1.54倍，RSI=69.5，距20日高點-0.3%，符合突破緩衝。",
-    "current_price": 675.74,
+    "current_price": 684.04,
     "planned_stop_loss": 669.0,
     "effective_stop_loss": 669.0,
     "is_breakeven_locked": false,
@@ -169,13 +172,14 @@
       "2026-09-09",
       "2026-09-10",
       "2026-09-11",
-      "2026-09-14"
+      "2026-09-14",
+      "2026-09-15"
     ],
     "status": "active",
     "invalid_reason": null,
     "slot_blocked_today": false,
     "watch_days": 0,
-    "active_days": 8,
+    "active_days": 9,
     "signal_date_close": 135.60000610351562,
     "active_entry_price": 134.0,
     "active_start_date": "2026-09-02",
@@ -186,7 +190,7 @@
     "l2_score": 100.0,
     "ai_confidence": 8,
     "ai_strategy_reason": "VTF=1.52>1.5，Close 距 High_20D -0.1%，Vol_vs_20DAvg=1.49 接近攻擊量，RSI=69.2 強勢未過熱。",
-    "current_price": 133.07,
+    "current_price": 135.54,
     "planned_stop_loss": 126.0,
     "effective_stop_loss": 126.0,
     "is_breakeven_locked": false,
@@ -205,11 +209,12 @@
     "strategy": "突破策略",
     "tracked_dates": [
       "2026-09-11",
-      "2026-09-14"
+      "2026-09-14",
+      "2026-09-15"
     ],
-    "status": "watch",
-    "invalid_reason": null,
-    "slot_blocked_today": true,
+    "status": "invalid",
+    "invalid_reason": "跌破止損價 $555.00，錯過買點",
+    "slot_blocked_today": false,
     "watch_days": 1,
     "active_days": 0,
     "signal_date_close": 567.2899780273438,
@@ -222,114 +227,38 @@
     "l2_score": 97.75,
     "ai_confidence": 9,
     "ai_strategy_reason": "VTF=1.79、Vol_vs_20DAvg=1.63 帶量逼近 High_20D $567.75，距高點 -0.1% 符合突破緩衝帶。",
-    "current_price": 567.29
-  },
-  {
-    "symbol": "MU",
-    "name": "Micron Technology, Inc.",
-    "sector": "Technology",
-    "buy_zone": "$1005～$1020",
-    "buy_zone_lower": 1005.0,
-    "buy_zone_upper": 1020.0,
-    "target": "$1120",
-    "stop_loss": "$950",
-    "hold_period": "10",
-    "strategy": "突破策略",
-    "tracked_dates": [
-      "2026-09-04",
-      "2026-09-08",
-      "2026-09-09",
-      "2026-09-10",
-      "2026-09-11",
-      "2026-09-14"
-    ],
-    "status": "active",
-    "invalid_reason": null,
-    "slot_blocked_today": false,
-    "watch_days": 1,
-    "active_days": 4,
-    "signal_date_close": 1016.5900268554688,
-    "active_entry_price": 1020.0,
-    "active_start_date": "2026-09-09",
-    "date_added": "2026-09-04",
-    "entry_regime": "CONSOLIDATION",
-    "market_breadth_pct": 48.9,
-    "vix_value": 15.3,
-    "l2_score": 91.38,
-    "ai_confidence": 9,
-    "ai_strategy_reason": "VTF=0.97接近1.0，Close距High_20D僅-1.9%，突破在即；Vol_vs_20DAvg=1.27量能溫和放大，RS_vs_Sector=+5.6%領先板塊。",
-    "current_price": 975.26,
-    "planned_stop_loss": 950.0,
-    "effective_stop_loss": 950.0,
-    "is_breakeven_locked": false,
-    "highest_close_since_active": 1027.77
+    "current_price": 543.51
   },
   {
     "symbol": "SWKS",
     "name": "Skyworks Solutions, Inc.",
     "sector": "Technology",
-    "buy_zone": "$83.50～$84.50",
-    "buy_zone_lower": 83.5,
-    "buy_zone_upper": 84.5,
-    "target": "$95",
-    "stop_loss": "$81.00",
-    "hold_period": "8",
-    "strategy": "突破策略",
-    "tracked_dates": [
-      "2026-09-10",
-      "2026-09-11",
-      "2026-09-14"
-    ],
-    "status": "watch",
-    "invalid_reason": null,
-    "slot_blocked_today": true,
-    "watch_days": 2,
-    "active_days": 0,
-    "signal_date_close": 84.02999877929688,
-    "active_entry_price": null,
-    "active_start_date": null,
-    "date_added": "2026-09-10",
-    "entry_regime": "CONSOLIDATION",
-    "market_breadth_pct": 38.1,
-    "vix_value": 17.84,
-    "l2_score": 82.0,
-    "ai_confidence": 7,
-    "ai_strategy_reason": "VTF=1.32、Vol_vs_20DAvg=1.90量能充沛，距High_20D -2.2%逼近壓力，Momentum_ATR=3.96。",
-    "current_price": 88.35
-  },
-  {
-    "symbol": "META",
-    "name": "Meta Platforms, Inc.",
-    "sector": "Communication Services",
-    "buy_zone": "$645～$653",
-    "buy_zone_lower": 645.0,
-    "buy_zone_upper": 653.0,
-    "target": "$720",
-    "stop_loss": "$623",
+    "buy_zone": "$88～$90",
+    "buy_zone_lower": 88.0,
+    "buy_zone_upper": 90.0,
+    "target": "$105",
+    "stop_loss": "$85",
     "hold_period": "10",
     "strategy": "突破策略",
     "tracked_dates": [
-      "2026-09-09",
-      "2026-09-10",
-      "2026-09-11",
-      "2026-09-14"
+      "2026-09-15"
     ],
     "status": "watch",
     "invalid_reason": null,
-    "slot_blocked_today": true,
-    "watch_days": 3,
+    "slot_blocked_today": false,
+    "watch_days": 0,
     "active_days": 0,
-    "signal_date_close": 653.6900024414062,
+    "signal_date_close": 90.0,
     "active_entry_price": null,
     "active_start_date": null,
-    "date_added": "2026-09-09",
+    "date_added": "2026-09-15",
     "entry_regime": "CONSOLIDATION",
-    "market_breadth_pct": 42.8,
-    "vix_value": 16.46,
+    "market_breadth_pct": 37.7,
+    "vix_value": 17.2,
     "l2_score": 91.0,
-    "ai_confidence": 8,
-    "ai_strategy_reason": "VTF=1.11>0，RSI=70.5，RS_vs_Sector=+11.7%，量能放大1.66倍，突破動能強勁。",
-    "current_price": 648.03
+    "ai_confidence": 6,
+    "ai_strategy_reason": "VTF=1.96帶量、距High_20D -2.5%接近突破、Momentum_ATR=4.70強動能、RS+19.8%領頭羊",
+    "current_price": 90.0
   },
   {
     "symbol": "HPE",
@@ -344,11 +273,12 @@
     "strategy": "突破策略",
     "tracked_dates": [
       "2026-09-11",
-      "2026-09-14"
+      "2026-09-14",
+      "2026-09-15"
     ],
-    "status": "watch",
-    "invalid_reason": null,
-    "slot_blocked_today": true,
+    "status": "invalid",
+    "invalid_reason": "跌破止損價 $60.50，錯過買點",
+    "slot_blocked_today": false,
     "watch_days": 1,
     "active_days": 0,
     "signal_date_close": 62.09000015258789,
@@ -361,7 +291,7 @@
     "l2_score": 86.5,
     "ai_confidence": 8,
     "ai_strategy_reason": "VTF=1.75、Vol_vs_20DAvg=1.66 攻擊量確認，Close $62.09 貼近 High_20D $62.15。",
-    "current_price": 62.09
+    "current_price": 55.88
   },
   {
     "symbol": "DVN",
@@ -376,12 +306,13 @@
     "strategy": "突破策略",
     "tracked_dates": [
       "2026-09-11",
-      "2026-09-14"
+      "2026-09-14",
+      "2026-09-15"
     ],
     "status": "watch",
     "invalid_reason": null,
     "slot_blocked_today": true,
-    "watch_days": 1,
+    "watch_days": 2,
     "active_days": 0,
     "signal_date_close": 50.22999954223633,
     "active_entry_price": null,
@@ -393,7 +324,7 @@
     "l2_score": 85.0,
     "ai_confidence": 8,
     "ai_strategy_reason": "VTF=0.96 偏弱但 Close $50.23 幾乎觸及 High_20D $50.24，量能待補。",
-    "current_price": 50.23
+    "current_price": 51.33
   },
   {
     "symbol": "AAPL",
@@ -409,12 +340,13 @@
     "tracked_dates": [
       "2026-09-10",
       "2026-09-11",
-      "2026-09-14"
+      "2026-09-14",
+      "2026-09-15"
     ],
     "status": "watch",
     "invalid_reason": null,
-    "slot_blocked_today": true,
-    "watch_days": 2,
+    "slot_blocked_today": false,
+    "watch_days": 3,
     "active_days": 0,
     "signal_date_close": 326.57000732421875,
     "active_entry_price": null,
@@ -426,7 +358,7 @@
     "l2_score": 71.88,
     "ai_confidence": 7,
     "ai_strategy_reason": "VTF=1.42、Vol_vs_20DAvg=1.66量能確認，距High_20D -1.3%貼近壓力，Momentum_ATR=2.70。",
-    "current_price": 332.27
+    "current_price": 331.34
   },
   {
     "symbol": "CRWD",
@@ -440,12 +372,13 @@
     "hold_period": "10",
     "strategy": "突破策略",
     "tracked_dates": [
-      "2026-09-14"
+      "2026-09-14",
+      "2026-09-15"
     ],
     "status": "watch",
     "invalid_reason": null,
-    "slot_blocked_today": false,
-    "watch_days": 0,
+    "slot_blocked_today": true,
+    "watch_days": 1,
     "active_days": 0,
     "signal_date_close": 235.3800048828125,
     "active_entry_price": null,
@@ -456,7 +389,8 @@
     "vix_value": 17.1,
     "l2_score": 92.5,
     "ai_confidence": 8,
-    "ai_strategy_reason": "VTF=1.66 帶量推進，距 High_20D 僅 -1.7% 處於突破觸發帶，Vol_vs_20DAvg=2.23 量能確認充足。"
+    "ai_strategy_reason": "VTF=1.66 帶量推進，距 High_20D 僅 -1.7% 處於突破觸發帶，Vol_vs_20DAvg=2.23 量能確認充足。",
+    "current_price": 242.49
   },
   {
     "symbol": "BBY",
@@ -470,12 +404,13 @@
     "hold_period": "10",
     "strategy": "突破策略",
     "tracked_dates": [
-      "2026-09-14"
+      "2026-09-14",
+      "2026-09-15"
     ],
     "status": "watch",
     "invalid_reason": null,
-    "slot_blocked_today": false,
-    "watch_days": 0,
+    "slot_blocked_today": true,
+    "watch_days": 1,
     "active_days": 0,
     "signal_date_close": 94.83000183105469,
     "active_entry_price": null,
@@ -486,7 +421,8 @@
     "vix_value": 17.1,
     "l2_score": 91.38,
     "ai_confidence": 7,
-    "ai_strategy_reason": "距 High_20D 僅 -0.1% 貼線待突破，VTF=1.17 量能中性偏多，RSI=66.1 未過熱。"
+    "ai_strategy_reason": "距 High_20D 僅 -0.1% 貼線待突破，VTF=1.17 量能中性偏多，RSI=66.1 未過熱。",
+    "current_price": 93.24
   },
   {
     "symbol": "FTNT",
@@ -500,12 +436,13 @@
     "hold_period": "10",
     "strategy": "突破策略",
     "tracked_dates": [
-      "2026-09-14"
+      "2026-09-14",
+      "2026-09-15"
     ],
     "status": "watch",
     "invalid_reason": null,
-    "slot_blocked_today": false,
-    "watch_days": 0,
+    "slot_blocked_today": true,
+    "watch_days": 1,
     "active_days": 0,
     "signal_date_close": 170.17999267578125,
     "active_entry_price": null,
@@ -516,6 +453,67 @@
     "vix_value": 17.1,
     "l2_score": 91.38,
     "ai_confidence": 7,
-    "ai_strategy_reason": "距 High_20D -2.1% 處於突破緩衝帶，VTF=1.15 帶量推進，Momentum_ATR=2.00 動能達強勢門檻。"
+    "ai_strategy_reason": "距 High_20D -2.1% 處於突破緩衝帶，VTF=1.15 帶量推進，Momentum_ATR=2.00 動能達強勢門檻。",
+    "current_price": 172.37
+  },
+  {
+    "symbol": "RVTY",
+    "name": "Revvity, Inc.",
+    "sector": "Healthcare",
+    "buy_zone": "$138～$140",
+    "buy_zone_lower": 138.0,
+    "buy_zone_upper": 140.0,
+    "target": "$165",
+    "stop_loss": "$134",
+    "hold_period": "10",
+    "strategy": "突破策略",
+    "tracked_dates": [
+      "2026-09-15"
+    ],
+    "status": "watch",
+    "invalid_reason": null,
+    "slot_blocked_today": false,
+    "watch_days": 0,
+    "active_days": 0,
+    "signal_date_close": 140.19000244140625,
+    "active_entry_price": null,
+    "active_start_date": null,
+    "date_added": "2026-09-15",
+    "entry_regime": "CONSOLIDATION",
+    "market_breadth_pct": 37.7,
+    "vix_value": 17.2,
+    "l2_score": 91.0,
+    "ai_confidence": 8,
+    "ai_strategy_reason": "VTF=2.23帶量推進、Vol_vs_20DAvg=2.07攻擊量確認、距High_20D僅-0.0%貼近突破、Momentum_ATR=5.92強動能"
+  },
+  {
+    "symbol": "TMO",
+    "name": "Thermo Fisher Scientific Inc",
+    "sector": "Healthcare",
+    "buy_zone": "$636～$640",
+    "buy_zone_lower": 636.0,
+    "buy_zone_upper": 640.0,
+    "target": "$720",
+    "stop_loss": "$620",
+    "hold_period": "10",
+    "strategy": "突破策略",
+    "tracked_dates": [
+      "2026-09-15"
+    ],
+    "status": "watch",
+    "invalid_reason": null,
+    "slot_blocked_today": false,
+    "watch_days": 0,
+    "active_days": 0,
+    "signal_date_close": 641.3900146484375,
+    "active_entry_price": null,
+    "active_start_date": null,
+    "date_added": "2026-09-15",
+    "entry_regime": "CONSOLIDATION",
+    "market_breadth_pct": 37.7,
+    "vix_value": 17.2,
+    "l2_score": 80.75,
+    "ai_confidence": 7,
+    "ai_strategy_reason": "VTF=1.65帶量、Vol_vs_20DAvg=1.64攻擊量、距High_20D -0.9%貼近突破、Momentum_ATR=3.29"
   }
 ]
