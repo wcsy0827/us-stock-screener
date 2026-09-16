@@ -1,7 +1,7 @@
 {
-  "generated_at_utc": "2026-09-15T23:40:45Z",
-  "market_date": "2026-09-15",
-  "total_settled": 21,
+  "generated_at_utc": "2026-09-16T23:49:16Z",
+  "market_date": "2026-09-16",
+  "total_settled": 22,
   "dimensions": {
     "by_regime": [
       {
@@ -12,9 +12,9 @@
       },
       {
         "key": "CONSOLIDATION",
-        "trades": 1,
+        "trades": 2,
         "win_rate": 0.0,
-        "avg_return_pct": -4.49
+        "avg_return_pct": -5.68
       },
       {
         "key": "CONSOLIDATION_VOLATILE",
@@ -32,9 +32,9 @@
       },
       {
         "key": "突破策略",
-        "trades": 2,
+        "trades": 3,
         "win_rate": 0.0,
-        "avg_return_pct": -4.02
+        "avg_return_pct": -4.97
       }
     ],
     "by_sector": [
@@ -49,6 +49,12 @@
         "trades": 4,
         "win_rate": 50.0,
         "avg_return_pct": -0.06
+      },
+      {
+        "key": "Technology",
+        "trades": 3,
+        "win_rate": 33.3,
+        "avg_return_pct": -0.91
       },
       {
         "key": "Basic Materials",
@@ -69,12 +75,6 @@
         "avg_return_pct": 1.1
       },
       {
-        "key": "Technology",
-        "trades": 2,
-        "win_rate": 50.0,
-        "avg_return_pct": 2.06
-      },
-      {
         "key": "Real Estate",
         "trades": 1,
         "win_rate": 100.0,
@@ -85,7 +85,9 @@
   "prompt_lines": [
     "【Regime】BULL_TREND：19 筆結算，勝率 57.9%，平均報酬 +0.22%",
     "【策略】動能策略：19 筆結算，勝率 57.9%，平均報酬 +0.22%",
+    "【策略】突破策略：3 筆結算，勝率 0.0%，平均報酬 -4.97%",
     "【產業】Industrials：8 筆結算，勝率 50.0%，平均報酬 +0.41%",
-    "【產業】Financial Services：4 筆結算，勝率 50.0%，平均報酬 -0.06%"
+    "【產業】Financial Services：4 筆結算，勝率 50.0%，平均報酬 -0.06%",
+    "【產業】Technology：3 筆結算，勝率 33.3%，平均報酬 -0.91%"
   ]
 }

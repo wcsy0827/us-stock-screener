@@ -769,6 +769,111 @@
         "return_pct": -6.86,
         "is_win": false
       }
+    },
+    {
+      "meta_data": {
+        "ticker": "WDAY",
+        "company_name": "Workday, Inc.",
+        "sector": "Technology"
+      },
+      "signal_details": {
+        "signal_date": "2026-08-13",
+        "entry_regime": "BULL_TREND",
+        "market_breadth_pct": 67.0,
+        "vix_value": 14.63,
+        "l2_score": 100.0,
+        "assigned_strategy": "動能策略",
+        "ai_confidence": 8,
+        "ai_strategy_reason": "均線多頭排列，RSI=75，VTF=0.69，Momentum_ATR=5.04，RS=+13.4%，動能強勁。"
+      },
+      "execution_plan": {
+        "buy_zone_lower": 194.0,
+        "buy_zone_upper": 203.0,
+        "planned_target": "$238",
+        "planned_stop_loss": "$182.00"
+      },
+      "actual_outcome": {
+        "triggered_date": "2026-08-19",
+        "actual_entry_price": 203.0,
+        "exit_date": "2026-09-16",
+        "actual_exit_price": 187.76,
+        "exit_reason": "FORCE_EXPIRED",
+        "holding_days": 20
+      },
+      "performance_metrics": {
+        "return_pct": -7.51,
+        "is_win": false
+      }
+    },
+    {
+      "meta_data": {
+        "ticker": "DE",
+        "company_name": "Deere & Company",
+        "sector": "Industrials"
+      },
+      "signal_details": {
+        "signal_date": "2026-09-02",
+        "entry_regime": "CONSOLIDATION",
+        "market_breadth_pct": 48.7,
+        "vix_value": 15.2,
+        "l2_score": 100.0,
+        "assigned_strategy": "突破策略",
+        "ai_confidence": 8,
+        "ai_strategy_reason": "VTF=1.28>1.5? 否，但量能1.54倍，RSI=69.5，距20日高點-0.3%，符合突破緩衝。"
+      },
+      "execution_plan": {
+        "buy_zone_lower": 690.0,
+        "buy_zone_upper": 698.0,
+        "planned_target": "$770",
+        "planned_stop_loss": "$669.00"
+      },
+      "actual_outcome": {
+        "triggered_date": "2026-09-04",
+        "actual_entry_price": 698.0,
+        "exit_date": "2026-09-16",
+        "actual_exit_price": 669.0,
+        "exit_reason": "CLOSED_LOSS",
+        "holding_days": 7
+      },
+      "performance_metrics": {
+        "return_pct": -4.15,
+        "is_win": false
+      }
+    },
+    {
+      "meta_data": {
+        "ticker": "CF",
+        "company_name": "CF Industries Holdings, Inc.",
+        "sector": "Basic Materials"
+      },
+      "signal_details": {
+        "signal_date": "2026-09-01",
+        "entry_regime": "CONSOLIDATION",
+        "market_breadth_pct": 50.0,
+        "vix_value": 16.34,
+        "l2_score": 100.0,
+        "assigned_strategy": "突破策略",
+        "ai_confidence": 8,
+        "ai_strategy_reason": "VTF=1.52>1.5，Close 距 High_20D -0.1%，Vol_vs_20DAvg=1.49 接近攻擊量，RSI=69.2 強勢未過熱。"
+      },
+      "execution_plan": {
+        "buy_zone_lower": 131.0,
+        "buy_zone_upper": 134.0,
+        "planned_target": "$149",
+        "planned_stop_loss": "$126.00"
+      },
+      "actual_outcome": {
+        "triggered_date": "2026-09-02",
+        "actual_entry_price": 134.0,
+        "exit_date": "2026-09-16",
+        "actual_exit_price": 131.99,
+        "exit_reason": "FORCE_EXPIRED",
+        "holding_days": 10
+      },
+      "performance_metrics": {
+        "return_pct": -1.5,
+        "is_win": false
+      }
     }
   ]
 }
