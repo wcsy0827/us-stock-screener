@@ -1,60 +1,5 @@
 [
   {
-    "symbol": "MSI",
-    "name": "Motorola Solutions, Inc.",
-    "sector": "Technology",
-    "buy_zone": "$468～$476",
-    "buy_zone_lower": 468.0,
-    "buy_zone_upper": 476.0,
-    "target": "$530",
-    "stop_loss": "$455",
-    "hold_period": "20",
-    "strategy": "動能策略",
-    "tracked_dates": [
-      "2026-08-19",
-      "2026-08-20",
-      "2026-08-21",
-      "2026-08-24",
-      "2026-08-25",
-      "2026-08-26",
-      "2026-08-27",
-      "2026-08-28",
-      "2026-08-31",
-      "2026-09-01",
-      "2026-09-02",
-      "2026-09-03",
-      "2026-09-04",
-      "2026-09-08",
-      "2026-09-09",
-      "2026-09-10",
-      "2026-09-11",
-      "2026-09-14",
-      "2026-09-15",
-      "2026-09-16",
-      "2026-09-17"
-    ],
-    "status": "active",
-    "invalid_reason": null,
-    "slot_blocked_today": false,
-    "watch_days": 1,
-    "active_days": 19,
-    "signal_date_close": 480.8399963378906,
-    "active_entry_price": 476.0,
-    "active_start_date": "2026-08-21",
-    "date_added": "2026-08-19",
-    "entry_regime": "BULL_TREND",
-    "market_breadth_pct": 62.2,
-    "vix_value": 14.89,
-    "l2_score": 91.38,
-    "ai_confidence": 8,
-    "ai_strategy_reason": "均線多頭排列，RSI=68.2，VTF=0.69，Momentum_ATR=5.48，RS=+7.1%，符合動能策略標準。",
-    "current_price": 459.68,
-    "planned_stop_loss": 455.0,
-    "effective_stop_loss": 455.0,
-    "is_breakeven_locked": false,
-    "highest_close_since_active": 491.24
-  },
-  {
     "symbol": "SWKS",
     "name": "Skyworks Solutions, Inc.",
     "sector": "Technology",
@@ -68,12 +13,13 @@
     "tracked_dates": [
       "2026-09-15",
       "2026-09-16",
-      "2026-09-17"
+      "2026-09-17",
+      "2026-09-18"
     ],
     "status": "watch",
     "invalid_reason": null,
     "slot_blocked_today": true,
-    "watch_days": 2,
+    "watch_days": 3,
     "active_days": 0,
     "signal_date_close": 90.0,
     "active_entry_price": null,
@@ -85,7 +31,7 @@
     "l2_score": 91.0,
     "ai_confidence": 6,
     "ai_strategy_reason": "VTF=1.96帶量、距High_20D -2.5%接近突破、Momentum_ATR=4.70強動能、RS+19.8%領頭羊",
-    "current_price": 91.32
+    "current_price": 88.76
   },
   {
     "symbol": "CRWD",
@@ -102,13 +48,14 @@
       "2026-09-14",
       "2026-09-15",
       "2026-09-16",
-      "2026-09-17"
+      "2026-09-17",
+      "2026-09-18"
     ],
     "status": "active",
     "invalid_reason": null,
     "slot_blocked_today": false,
     "watch_days": 1,
-    "active_days": 2,
+    "active_days": 3,
     "signal_date_close": 235.3800048828125,
     "active_entry_price": 239.0,
     "active_start_date": "2026-09-16",
@@ -119,7 +66,7 @@
     "l2_score": 92.5,
     "ai_confidence": 8,
     "ai_strategy_reason": "VTF=1.66 帶量推進，距 High_20D 僅 -1.7% 處於突破觸發帶，Vol_vs_20DAvg=2.23 量能確認充足。",
-    "current_price": 245.7,
+    "current_price": 237.65,
     "planned_stop_loss": 230.0,
     "effective_stop_loss": 230.0,
     "is_breakeven_locked": false,
@@ -140,13 +87,14 @@
       "2026-09-14",
       "2026-09-15",
       "2026-09-16",
-      "2026-09-17"
+      "2026-09-17",
+      "2026-09-18"
     ],
     "status": "active",
     "invalid_reason": null,
     "slot_blocked_today": false,
     "watch_days": 2,
-    "active_days": 1,
+    "active_days": 2,
     "signal_date_close": 94.83000183105469,
     "active_entry_price": 95.5,
     "active_start_date": "2026-09-17",
@@ -157,7 +105,7 @@
     "l2_score": 91.38,
     "ai_confidence": 7,
     "ai_strategy_reason": "距 High_20D 僅 -0.1% 貼線待突破，VTF=1.17 量能中性偏多，RSI=66.1 未過熱。",
-    "current_price": 94.56,
+    "current_price": 92.85,
     "planned_stop_loss": 92.0,
     "effective_stop_loss": 92.0,
     "is_breakeven_locked": false,
@@ -178,13 +126,14 @@
       "2026-09-14",
       "2026-09-15",
       "2026-09-16",
-      "2026-09-17"
+      "2026-09-17",
+      "2026-09-18"
     ],
     "status": "active",
     "invalid_reason": null,
     "slot_blocked_today": false,
     "watch_days": 2,
-    "active_days": 1,
+    "active_days": 2,
     "signal_date_close": 170.17999267578125,
     "active_entry_price": 171.0,
     "active_start_date": "2026-09-17",
@@ -195,7 +144,7 @@
     "l2_score": 91.38,
     "ai_confidence": 7,
     "ai_strategy_reason": "距 High_20D -2.1% 處於突破緩衝帶，VTF=1.15 帶量推進，Momentum_ATR=2.00 動能達強勢門檻。",
-    "current_price": 172.58,
+    "current_price": 169.84,
     "planned_stop_loss": 164.0,
     "effective_stop_loss": 164.0,
     "is_breakeven_locked": false,
@@ -214,12 +163,13 @@
     "strategy": "突破策略",
     "tracked_dates": [
       "2026-09-16",
-      "2026-09-17"
+      "2026-09-17",
+      "2026-09-18"
     ],
     "status": "watch",
     "invalid_reason": null,
     "slot_blocked_today": true,
-    "watch_days": 1,
+    "watch_days": 2,
     "active_days": 0,
     "signal_date_close": 145.72999572753906,
     "active_entry_price": null,
@@ -231,7 +181,7 @@
     "l2_score": 91.0,
     "ai_confidence": 7,
     "ai_strategy_reason": "VTF=1.05、距High_20D僅-1.2%、Momentum_ATR=5.62動能強勁，符合突破回測確認條件。",
-    "current_price": 146.73
+    "current_price": 143.45
   },
   {
     "symbol": "TMO",
@@ -246,16 +196,17 @@
     "strategy": "突破策略",
     "tracked_dates": [
       "2026-09-16",
-      "2026-09-17"
+      "2026-09-17",
+      "2026-09-18"
     ],
-    "status": "watch",
+    "status": "active",
     "invalid_reason": null,
     "slot_blocked_today": false,
     "watch_days": 1,
-    "active_days": 0,
+    "active_days": 1,
     "signal_date_close": 648.4299926757812,
-    "active_entry_price": null,
-    "active_start_date": null,
+    "active_entry_price": 648.0,
+    "active_start_date": "2026-09-18",
     "date_added": "2026-09-16",
     "entry_regime": "CONSOLIDATION",
     "market_breadth_pct": 35.4,
@@ -263,7 +214,11 @@
     "l2_score": 100.0,
     "ai_confidence": 7,
     "ai_strategy_reason": "距High_20D僅-0.8%貼近突破點，Momentum_ATR=2.22、RSI=69.3動能健康。",
-    "current_price": 658.32
+    "current_price": 651.45,
+    "planned_stop_loss": 629.0,
+    "effective_stop_loss": 629.0,
+    "is_breakeven_locked": false,
+    "highest_close_since_active": 651.45
   },
   {
     "symbol": "VLO",
@@ -278,12 +233,13 @@
     "strategy": "突破策略",
     "tracked_dates": [
       "2026-09-16",
-      "2026-09-17"
+      "2026-09-17",
+      "2026-09-18"
     ],
     "status": "watch",
     "invalid_reason": null,
-    "slot_blocked_today": true,
-    "watch_days": 1,
+    "slot_blocked_today": false,
+    "watch_days": 2,
     "active_days": 0,
     "signal_date_close": 403.2799987792969,
     "active_entry_price": null,
@@ -295,6 +251,6 @@
     "l2_score": 82.38,
     "ai_confidence": 6,
     "ai_strategy_reason": "距High_20D僅-1.0%、Momentum_ATR=4.43動能強勁，VTF=0.77帶量推進。",
-    "current_price": 412.53
+    "current_price": 413.28
   }
 ]

@@ -874,6 +874,41 @@
         "return_pct": -1.5,
         "is_win": false
       }
+    },
+    {
+      "meta_data": {
+        "ticker": "MSI",
+        "company_name": "Motorola Solutions, Inc.",
+        "sector": "Technology"
+      },
+      "signal_details": {
+        "signal_date": "2026-08-19",
+        "entry_regime": "BULL_TREND",
+        "market_breadth_pct": 62.2,
+        "vix_value": 14.89,
+        "l2_score": 91.38,
+        "assigned_strategy": "動能策略",
+        "ai_confidence": 8,
+        "ai_strategy_reason": "均線多頭排列，RSI=68.2，VTF=0.69，Momentum_ATR=5.48，RS=+7.1%，符合動能策略標準。"
+      },
+      "execution_plan": {
+        "buy_zone_lower": 468.0,
+        "buy_zone_upper": 476.0,
+        "planned_target": "$530",
+        "planned_stop_loss": "$455.00"
+      },
+      "actual_outcome": {
+        "triggered_date": "2026-08-21",
+        "actual_entry_price": 476.0,
+        "exit_date": "2026-09-18",
+        "actual_exit_price": 458.67,
+        "exit_reason": "FORCE_EXPIRED",
+        "holding_days": 20
+      },
+      "performance_metrics": {
+        "return_pct": -3.64,
+        "is_win": false
+      }
     }
   ]
 }
