@@ -909,6 +909,41 @@
         "return_pct": -3.64,
         "is_win": false
       }
+    },
+    {
+      "meta_data": {
+        "ticker": "RVTY",
+        "company_name": "Revvity, Inc.",
+        "sector": "Healthcare"
+      },
+      "signal_details": {
+        "signal_date": "2026-09-16",
+        "entry_regime": "CONSOLIDATION",
+        "market_breadth_pct": 35.4,
+        "vix_value": 17.71,
+        "l2_score": 91.0,
+        "assigned_strategy": "突破策略",
+        "ai_confidence": 7,
+        "ai_strategy_reason": "VTF=1.05、距High_20D僅-1.2%、Momentum_ATR=5.62動能強勁，符合突破回測確認條件。"
+      },
+      "execution_plan": {
+        "buy_zone_lower": 145.5,
+        "buy_zone_upper": 147.5,
+        "planned_target": "$168",
+        "planned_stop_loss": "$143.00"
+      },
+      "actual_outcome": {
+        "triggered_date": "2026-09-21",
+        "actual_entry_price": 147.5,
+        "exit_date": "2026-09-21",
+        "actual_exit_price": 143.0,
+        "exit_reason": "CLOSED_LOSS",
+        "holding_days": 1
+      },
+      "performance_metrics": {
+        "return_pct": -3.05,
+        "is_win": false
+      }
     }
   ]
 }
