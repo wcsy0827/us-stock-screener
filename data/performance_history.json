@@ -944,6 +944,41 @@
         "return_pct": -3.05,
         "is_win": false
       }
+    },
+    {
+      "meta_data": {
+        "ticker": "VLO",
+        "company_name": "Valero Energy Corporation",
+        "sector": "Energy"
+      },
+      "signal_details": {
+        "signal_date": "2026-09-16",
+        "entry_regime": "CONSOLIDATION",
+        "market_breadth_pct": 35.4,
+        "vix_value": 17.71,
+        "l2_score": 82.38,
+        "assigned_strategy": "突破策略",
+        "ai_confidence": 6,
+        "ai_strategy_reason": "距High_20D僅-1.0%、Momentum_ATR=4.43動能強勁，VTF=0.77帶量推進。"
+      },
+      "execution_plan": {
+        "buy_zone_lower": 400.0,
+        "buy_zone_upper": 403.0,
+        "planned_target": "$460",
+        "planned_stop_loss": "$387.00"
+      },
+      "actual_outcome": {
+        "triggered_date": "2026-09-22",
+        "actual_entry_price": 403.0,
+        "exit_date": "2026-09-22",
+        "actual_exit_price": 387.0,
+        "exit_reason": "CLOSED_LOSS",
+        "holding_days": 1
+      },
+      "performance_metrics": {
+        "return_pct": -3.97,
+        "is_win": false
+      }
     }
   ]
 }

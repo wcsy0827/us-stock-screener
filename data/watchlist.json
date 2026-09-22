@@ -16,13 +16,14 @@
       "2026-09-16",
       "2026-09-17",
       "2026-09-18",
-      "2026-09-21"
+      "2026-09-21",
+      "2026-09-22"
     ],
     "status": "active",
     "invalid_reason": null,
     "slot_blocked_today": false,
     "watch_days": 1,
-    "active_days": 4,
+    "active_days": 5,
     "signal_date_close": 235.3800048828125,
     "active_entry_price": 239.0,
     "active_start_date": "2026-09-16",
@@ -33,11 +34,11 @@
     "l2_score": 92.5,
     "ai_confidence": 8,
     "ai_strategy_reason": "VTF=1.66 帶量推進，距 High_20D 僅 -1.7% 處於突破觸發帶，Vol_vs_20DAvg=2.23 量能確認充足。",
-    "current_price": 237.65,
+    "current_price": 250.06,
     "planned_stop_loss": 230.0,
     "effective_stop_loss": 230.0,
     "is_breakeven_locked": false,
-    "highest_close_since_active": 245.7
+    "highest_close_since_active": 250.06
   },
   {
     "symbol": "BBY",
@@ -56,13 +57,14 @@
       "2026-09-16",
       "2026-09-17",
       "2026-09-18",
-      "2026-09-21"
+      "2026-09-21",
+      "2026-09-22"
     ],
     "status": "active",
     "invalid_reason": null,
     "slot_blocked_today": false,
     "watch_days": 2,
-    "active_days": 3,
+    "active_days": 4,
     "signal_date_close": 94.83000183105469,
     "active_entry_price": 95.5,
     "active_start_date": "2026-09-17",
@@ -73,11 +75,11 @@
     "l2_score": 91.38,
     "ai_confidence": 7,
     "ai_strategy_reason": "距 High_20D 僅 -0.1% 貼線待突破，VTF=1.17 量能中性偏多，RSI=66.1 未過熱。",
-    "current_price": 92.85,
+    "current_price": 94.82,
     "planned_stop_loss": 92.0,
     "effective_stop_loss": 92.0,
     "is_breakeven_locked": false,
-    "highest_close_since_active": 94.56
+    "highest_close_since_active": 95.814938230916
   },
   {
     "symbol": "FTNT",
@@ -96,13 +98,14 @@
       "2026-09-16",
       "2026-09-17",
       "2026-09-18",
-      "2026-09-21"
+      "2026-09-21",
+      "2026-09-22"
     ],
     "status": "active",
     "invalid_reason": null,
     "slot_blocked_today": false,
     "watch_days": 2,
-    "active_days": 3,
+    "active_days": 4,
     "signal_date_close": 170.17999267578125,
     "active_entry_price": 171.0,
     "active_start_date": "2026-09-17",
@@ -113,11 +116,11 @@
     "l2_score": 91.38,
     "ai_confidence": 7,
     "ai_strategy_reason": "距 High_20D -2.1% 處於突破緩衝帶，VTF=1.15 帶量推進，Momentum_ATR=2.00 動能達強勢門檻。",
-    "current_price": 169.84,
+    "current_price": 174.26,
     "planned_stop_loss": 164.0,
     "effective_stop_loss": 164.0,
     "is_breakeven_locked": false,
-    "highest_close_since_active": 172.58
+    "highest_close_since_active": 174.26
   },
   {
     "symbol": "TMO",
@@ -134,13 +137,14 @@
       "2026-09-16",
       "2026-09-17",
       "2026-09-18",
-      "2026-09-21"
+      "2026-09-21",
+      "2026-09-22"
     ],
     "status": "active",
     "invalid_reason": null,
     "slot_blocked_today": false,
     "watch_days": 1,
-    "active_days": 2,
+    "active_days": 3,
     "signal_date_close": 648.4299926757812,
     "active_entry_price": 648.0,
     "active_start_date": "2026-09-18",
@@ -151,44 +155,10 @@
     "l2_score": 100.0,
     "ai_confidence": 7,
     "ai_strategy_reason": "距High_20D僅-0.8%貼近突破點，Momentum_ATR=2.22、RSI=69.3動能健康。",
-    "current_price": 651.45,
+    "current_price": 658.52,
     "planned_stop_loss": 629.0,
     "effective_stop_loss": 629.0,
     "is_breakeven_locked": false,
-    "highest_close_since_active": 651.45
-  },
-  {
-    "symbol": "VLO",
-    "name": "Valero Energy Corporation",
-    "sector": "Energy",
-    "buy_zone": "$400～$403",
-    "buy_zone_lower": 400.0,
-    "buy_zone_upper": 403.0,
-    "target": "$460",
-    "stop_loss": "$387",
-    "hold_period": "10",
-    "strategy": "突破策略",
-    "tracked_dates": [
-      "2026-09-16",
-      "2026-09-17",
-      "2026-09-18",
-      "2026-09-21"
-    ],
-    "status": "watch",
-    "invalid_reason": null,
-    "slot_blocked_today": false,
-    "watch_days": 3,
-    "active_days": 0,
-    "signal_date_close": 403.2799987792969,
-    "active_entry_price": null,
-    "active_start_date": null,
-    "date_added": "2026-09-16",
-    "entry_regime": "CONSOLIDATION",
-    "market_breadth_pct": 35.4,
-    "vix_value": 17.71,
-    "l2_score": 82.38,
-    "ai_confidence": 6,
-    "ai_strategy_reason": "距High_20D僅-1.0%、Momentum_ATR=4.43動能強勁，VTF=0.77帶量推進。",
-    "current_price": 413.28
+    "highest_close_since_active": 658.52
   }
 ]
