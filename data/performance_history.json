@@ -979,6 +979,41 @@
         "return_pct": -3.97,
         "is_win": false
       }
+    },
+    {
+      "meta_data": {
+        "ticker": "BBY",
+        "company_name": "Best Buy Co., Inc.",
+        "sector": "Consumer Cyclical"
+      },
+      "signal_details": {
+        "signal_date": "2026-09-14",
+        "entry_regime": "CONSOLIDATION",
+        "market_breadth_pct": 37.1,
+        "vix_value": 17.1,
+        "l2_score": 91.38,
+        "assigned_strategy": "突破策略",
+        "ai_confidence": 7,
+        "ai_strategy_reason": "距 High_20D 僅 -0.1% 貼線待突破，VTF=1.17 量能中性偏多，RSI=66.1 未過熱。"
+      },
+      "execution_plan": {
+        "buy_zone_lower": 94.5,
+        "buy_zone_upper": 95.5,
+        "planned_target": "$108",
+        "planned_stop_loss": "$92.00"
+      },
+      "actual_outcome": {
+        "triggered_date": "2026-09-17",
+        "actual_entry_price": 95.5,
+        "exit_date": "2026-09-23",
+        "actual_exit_price": 91.04,
+        "exit_reason": "CLOSED_LOSS",
+        "holding_days": 5
+      },
+      "performance_metrics": {
+        "return_pct": -4.67,
+        "is_win": false
+      }
     }
   ]
 }
