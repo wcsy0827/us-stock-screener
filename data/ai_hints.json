@@ -1,7 +1,7 @@
 {
-  "generated_at_utc": "2026-09-23T23:55:43Z",
-  "market_date": "2026-09-23",
-  "total_settled": 28,
+  "generated_at_utc": "2026-09-25T00:01:11Z",
+  "market_date": "2026-09-24",
+  "total_settled": 29,
   "dimensions": {
     "by_regime": [
       {
@@ -12,9 +12,9 @@
       },
       {
         "key": "CONSOLIDATION",
-        "trades": 6,
+        "trades": 7,
         "win_rate": 0.0,
-        "avg_return_pct": -4.0
+        "avg_return_pct": -4.1
       },
       {
         "key": "CONSOLIDATION_VOLATILE",
@@ -32,9 +32,9 @@
       },
       {
         "key": "突破策略",
-        "trades": 7,
+        "trades": 8,
         "win_rate": 0.0,
-        "avg_return_pct": -3.94
+        "avg_return_pct": -4.03
       }
     ],
     "by_sector": [
@@ -63,16 +63,16 @@
         "avg_return_pct": -0.21
       },
       {
+        "key": "Consumer Cyclical",
+        "trades": 3,
+        "win_rate": 0.0,
+        "avg_return_pct": -7.33
+      },
+      {
         "key": "Healthcare",
         "trades": 3,
         "win_rate": 33.3,
         "avg_return_pct": -0.28
-      },
-      {
-        "key": "Consumer Cyclical",
-        "trades": 2,
-        "win_rate": 0.0,
-        "avg_return_pct": -8.66
       },
       {
         "key": "Energy",
@@ -90,13 +90,14 @@
   },
   "prompt_lines": [
     "【Regime】BULL_TREND：21 筆結算，勝率 52.4%，平均報酬 -0.33%",
-    "【Regime】CONSOLIDATION：6 筆結算，勝率 0.0%，平均報酬 -4.00%",
+    "【Regime】CONSOLIDATION：7 筆結算，勝率 0.0%，平均報酬 -4.10%",
     "【策略】動能策略：21 筆結算，勝率 52.4%，平均報酬 -0.33%",
-    "【策略】突破策略：7 筆結算，勝率 0.0%，平均報酬 -3.94%",
+    "【策略】突破策略：8 筆結算，勝率 0.0%，平均報酬 -4.03%",
     "【產業】Industrials：9 筆結算，勝率 44.4%，平均報酬 -0.09%",
     "【產業】Technology：5 筆結算，勝率 20.0%，平均報酬 -2.78%",
     "【產業】Financial Services：4 筆結算，勝率 50.0%，平均報酬 -0.06%",
     "【產業】Basic Materials：3 筆結算，勝率 66.7%，平均報酬 -0.21%",
+    "【產業】Consumer Cyclical：3 筆結算，勝率 0.0%，平均報酬 -7.33%",
     "【產業】Healthcare：3 筆結算，勝率 33.3%，平均報酬 -0.28%"
   ]
 }
