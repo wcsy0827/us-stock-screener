@@ -21,13 +21,14 @@
       "2026-09-23",
       "2026-09-24",
       "2026-09-25",
-      "2026-09-28"
+      "2026-09-28",
+      "2026-09-29"
     ],
     "status": "active",
     "invalid_reason": null,
     "slot_blocked_today": false,
     "watch_days": 1,
-    "active_days": 9,
+    "active_days": 10,
     "signal_date_close": 235.3800048828125,
     "active_entry_price": 239.0,
     "active_start_date": "2026-09-16",
@@ -38,7 +39,7 @@
     "l2_score": 92.5,
     "ai_confidence": 8,
     "ai_strategy_reason": "VTF=1.66 帶量推進，距 High_20D 僅 -1.7% 處於突破觸發帶，Vol_vs_20DAvg=2.23 量能確認充足。",
-    "current_price": 252.13,
+    "current_price": 259.25,
     "planned_stop_loss": 230.0,
     "effective_stop_loss": 239.0,
     "is_breakeven_locked": true,
@@ -66,13 +67,14 @@
       "2026-09-23",
       "2026-09-24",
       "2026-09-25",
-      "2026-09-28"
+      "2026-09-28",
+      "2026-09-29"
     ],
     "status": "active",
     "invalid_reason": null,
     "slot_blocked_today": false,
     "watch_days": 2,
-    "active_days": 8,
+    "active_days": 9,
     "signal_date_close": 170.17999267578125,
     "active_entry_price": 171.0,
     "active_start_date": "2026-09-17",
@@ -83,7 +85,7 @@
     "l2_score": 91.38,
     "ai_confidence": 7,
     "ai_strategy_reason": "距 High_20D -2.1% 處於突破緩衝帶，VTF=1.15 帶量推進，Momentum_ATR=2.00 動能達強勢門檻。",
-    "current_price": 173.46,
+    "current_price": 176.33,
     "planned_stop_loss": 164.0,
     "effective_stop_loss": 164.0,
     "is_breakeven_locked": false,
@@ -109,13 +111,14 @@
       "2026-09-23",
       "2026-09-24",
       "2026-09-25",
-      "2026-09-28"
+      "2026-09-28",
+      "2026-09-29"
     ],
     "status": "active",
     "invalid_reason": null,
     "slot_blocked_today": false,
     "watch_days": 1,
-    "active_days": 7,
+    "active_days": 8,
     "signal_date_close": 648.4299926757812,
     "active_entry_price": 648.0,
     "active_start_date": "2026-09-18",
@@ -126,10 +129,10 @@
     "l2_score": 100.0,
     "ai_confidence": 7,
     "ai_strategy_reason": "距High_20D僅-0.8%貼近突破點，Momentum_ATR=2.22、RSI=69.3動能健康。",
-    "current_price": 675.0,
+    "current_price": 678.6,
     "planned_stop_loss": 629.0,
     "effective_stop_loss": 629.0,
     "is_breakeven_locked": false,
-    "highest_close_since_active": 678.39
+    "highest_close_since_active": 678.6
   }
 ]
