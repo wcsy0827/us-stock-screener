@@ -1014,6 +1014,41 @@
         "return_pct": -4.67,
         "is_win": false
       }
+    },
+    {
+      "meta_data": {
+        "ticker": "CRWD",
+        "company_name": "CrowdStrike Holdings, Inc.",
+        "sector": "Technology"
+      },
+      "signal_details": {
+        "signal_date": "2026-09-14",
+        "entry_regime": "CONSOLIDATION",
+        "market_breadth_pct": 37.1,
+        "vix_value": 17.1,
+        "l2_score": 92.5,
+        "assigned_strategy": "突破策略",
+        "ai_confidence": 8,
+        "ai_strategy_reason": "VTF=1.66 帶量推進，距 High_20D 僅 -1.7% 處於突破觸發帶，Vol_vs_20DAvg=2.23 量能確認充足。"
+      },
+      "execution_plan": {
+        "buy_zone_lower": 236.0,
+        "buy_zone_upper": 239.0,
+        "planned_target": "$265",
+        "planned_stop_loss": "$230.00"
+      },
+      "actual_outcome": {
+        "triggered_date": "2026-09-16",
+        "actual_entry_price": 239.0,
+        "exit_date": "2026-09-30",
+        "actual_exit_price": 265.0,
+        "exit_reason": "CLOSED_PROFIT",
+        "holding_days": 11
+      },
+      "performance_metrics": {
+        "return_pct": 10.88,
+        "is_win": true
+      }
     }
   ]
 }
