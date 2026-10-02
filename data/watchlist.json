@@ -23,13 +23,14 @@
       "2026-09-25",
       "2026-09-28",
       "2026-09-29",
-      "2026-09-30"
+      "2026-09-30",
+      "2026-10-01"
     ],
     "status": "active",
     "invalid_reason": null,
     "slot_blocked_today": false,
     "watch_days": 2,
-    "active_days": 10,
+    "active_days": 11,
     "signal_date_close": 170.17999267578125,
     "active_entry_price": 171.0,
     "active_start_date": "2026-09-17",
@@ -40,11 +41,11 @@
     "l2_score": 91.38,
     "ai_confidence": 7,
     "ai_strategy_reason": "距 High_20D -2.1% 處於突破緩衝帶，VTF=1.15 帶量推進，Momentum_ATR=2.00 動能達強勢門檻。",
-    "current_price": 175.96,
+    "current_price": 178.76,
     "planned_stop_loss": 164.0,
     "effective_stop_loss": 164.0,
     "is_breakeven_locked": false,
-    "highest_close_since_active": 178.74
+    "highest_close_since_active": 178.76
   },
   {
     "symbol": "TMO",
@@ -68,13 +69,14 @@
       "2026-09-25",
       "2026-09-28",
       "2026-09-29",
-      "2026-09-30"
+      "2026-09-30",
+      "2026-10-01"
     ],
     "status": "active",
     "invalid_reason": null,
     "slot_blocked_today": false,
     "watch_days": 1,
-    "active_days": 9,
+    "active_days": 10,
     "signal_date_close": 648.4299926757812,
     "active_entry_price": 648.0,
     "active_start_date": "2026-09-18",
@@ -85,7 +87,7 @@
     "l2_score": 100.0,
     "ai_confidence": 7,
     "ai_strategy_reason": "距High_20D僅-0.8%貼近突破點，Momentum_ATR=2.22、RSI=69.3動能健康。",
-    "current_price": 679.61,
+    "current_price": 675.05,
     "planned_stop_loss": 629.0,
     "effective_stop_loss": 629.0,
     "is_breakeven_locked": false,
