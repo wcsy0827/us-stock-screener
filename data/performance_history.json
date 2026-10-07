@@ -1049,6 +1049,76 @@
         "return_pct": 10.88,
         "is_win": true
       }
+    },
+    {
+      "meta_data": {
+        "ticker": "FTNT",
+        "company_name": "Fortinet, Inc.",
+        "sector": "Technology"
+      },
+      "signal_details": {
+        "signal_date": "2026-09-14",
+        "entry_regime": "CONSOLIDATION",
+        "market_breadth_pct": 37.1,
+        "vix_value": 17.1,
+        "l2_score": 91.38,
+        "assigned_strategy": "突破策略",
+        "ai_confidence": 7,
+        "ai_strategy_reason": "距 High_20D -2.1% 處於突破緩衝帶，VTF=1.15 帶量推進，Momentum_ATR=2.00 動能達強勢門檻。"
+      },
+      "execution_plan": {
+        "buy_zone_lower": 169.0,
+        "buy_zone_upper": 171.0,
+        "planned_target": "$190",
+        "planned_stop_loss": "$164.00"
+      },
+      "actual_outcome": {
+        "triggered_date": "2026-09-17",
+        "actual_entry_price": 171.0,
+        "exit_date": "2026-10-06",
+        "actual_exit_price": 190.0,
+        "exit_reason": "CLOSED_PROFIT",
+        "holding_days": 14
+      },
+      "performance_metrics": {
+        "return_pct": 11.11,
+        "is_win": true
+      }
+    },
+    {
+      "meta_data": {
+        "ticker": "TMO",
+        "company_name": "Thermo Fisher Scientific Inc",
+        "sector": "Healthcare"
+      },
+      "signal_details": {
+        "signal_date": "2026-09-16",
+        "entry_regime": "CONSOLIDATION",
+        "market_breadth_pct": 35.4,
+        "vix_value": 17.71,
+        "l2_score": 100.0,
+        "assigned_strategy": "突破策略",
+        "ai_confidence": 7,
+        "ai_strategy_reason": "距High_20D僅-0.8%貼近突破點，Momentum_ATR=2.22、RSI=69.3動能健康。"
+      },
+      "execution_plan": {
+        "buy_zone_lower": 645.0,
+        "buy_zone_upper": 648.0,
+        "planned_target": "$740",
+        "planned_stop_loss": "$629.00"
+      },
+      "actual_outcome": {
+        "triggered_date": "2026-09-18",
+        "actual_entry_price": 648.0,
+        "exit_date": "2026-10-06",
+        "actual_exit_price": 656.58,
+        "exit_reason": "FORCE_EXPIRED",
+        "holding_days": 13
+      },
+      "performance_metrics": {
+        "return_pct": 1.32,
+        "is_win": true
+      }
     }
   ]
 }
