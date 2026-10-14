@@ -1119,6 +1119,41 @@
         "return_pct": 1.32,
         "is_win": true
       }
+    },
+    {
+      "meta_data": {
+        "ticker": "HCA",
+        "company_name": "HCA Healthcare, Inc.",
+        "sector": "Healthcare"
+      },
+      "signal_details": {
+        "signal_date": "2026-10-12",
+        "entry_regime": "CONSOLIDATION",
+        "market_breadth_pct": 35.6,
+        "vix_value": 15.21,
+        "l2_score": 85.0,
+        "assigned_strategy": "突破策略",
+        "ai_confidence": 8,
+        "ai_strategy_reason": "VTF=0.65、Close距High_20D僅-0.4%貼近突破位，RSI=69.4健康，Momentum_ATR=2.95強勢動能。"
+      },
+      "execution_plan": {
+        "buy_zone_lower": 457.0,
+        "buy_zone_upper": 460.0,
+        "planned_target": "$505",
+        "planned_stop_loss": "$445.00"
+      },
+      "actual_outcome": {
+        "triggered_date": "2026-10-13",
+        "actual_entry_price": 460.0,
+        "exit_date": "2026-10-13",
+        "actual_exit_price": 445.0,
+        "exit_reason": "CLOSED_LOSS",
+        "holding_days": 1
+      },
+      "performance_metrics": {
+        "return_pct": -3.26,
+        "is_win": false
+      }
     }
   ]
 }
