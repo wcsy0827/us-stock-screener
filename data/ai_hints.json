@@ -1,7 +1,7 @@
 {
-  "generated_at_utc": "2026-10-14T00:34:24Z",
-  "market_date": "2026-10-13",
-  "total_settled": 32,
+  "generated_at_utc": "2026-10-15T00:05:03Z",
+  "market_date": "2026-10-14",
+  "total_settled": 33,
   "dimensions": {
     "by_regime": [
       {
@@ -12,9 +12,9 @@
       },
       {
         "key": "CONSOLIDATION",
-        "trades": 10,
-        "win_rate": 30.0,
-        "avg_return_pct": -0.54
+        "trades": 11,
+        "win_rate": 27.3,
+        "avg_return_pct": -0.79
       },
       {
         "key": "CONSOLIDATION_VOLATILE",
@@ -32,9 +32,9 @@
       },
       {
         "key": "突破策略",
-        "trades": 11,
-        "win_rate": 27.3,
-        "avg_return_pct": -0.81
+        "trades": 12,
+        "win_rate": 25.0,
+        "avg_return_pct": -1.02
       }
     ],
     "by_sector": [
@@ -51,16 +51,16 @@
         "avg_return_pct": 1.16
       },
       {
+        "key": "Healthcare",
+        "trades": 5,
+        "win_rate": 40.0,
+        "avg_return_pct": -0.56
+      },
+      {
         "key": "Financial Services",
         "trades": 4,
         "win_rate": 50.0,
         "avg_return_pct": -0.06
-      },
-      {
-        "key": "Healthcare",
-        "trades": 4,
-        "win_rate": 50.0,
-        "avg_return_pct": 0.12
       },
       {
         "key": "Basic Materials",
@@ -90,13 +90,13 @@
   },
   "prompt_lines": [
     "【Regime】BULL_TREND：21 筆結算，勝率 52.4%，平均報酬 -0.33%",
-    "【Regime】CONSOLIDATION：10 筆結算，勝率 30.0%，平均報酬 -0.54%",
+    "【Regime】CONSOLIDATION：11 筆結算，勝率 27.3%，平均報酬 -0.79%",
     "【策略】動能策略：21 筆結算，勝率 52.4%，平均報酬 -0.33%",
-    "【策略】突破策略：11 筆結算，勝率 27.3%，平均報酬 -0.81%",
+    "【策略】突破策略：12 筆結算，勝率 25.0%，平均報酬 -1.02%",
     "【產業】Industrials：9 筆結算，勝率 44.4%，平均報酬 -0.09%",
     "【產業】Technology：7 筆結算，勝率 42.9%，平均報酬 +1.16%",
+    "【產業】Healthcare：5 筆結算，勝率 40.0%，平均報酬 -0.56%",
     "【產業】Financial Services：4 筆結算，勝率 50.0%，平均報酬 -0.06%",
-    "【產業】Healthcare：4 筆結算，勝率 50.0%，平均報酬 +0.12%",
     "【產業】Basic Materials：3 筆結算，勝率 66.7%，平均報酬 -0.21%",
     "【產業】Consumer Cyclical：3 筆結算，勝率 0.0%，平均報酬 -7.33%"
   ]
